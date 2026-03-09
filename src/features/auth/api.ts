@@ -69,6 +69,17 @@ export async function signUp({ email, password, fullName }: SignUpParams) {
   });
 
   if (error) throw error;
+
+  // DUPLICATE EMAIL DETECTION:
+  // When email confirmation is disabled, Supabase does NOT return an error
+  // for duplicate sign-ups. Instead, it returns a user object with an empty
+  // identities array. This is an intentional security measure to prevent
+  // email enumeration (attackers can't probe which emails are registered).
+  // We detect this case explicitly and throw a user-friendly error.
+  if (data.user?.identities?.length === 0) {
+    throw new Error("An account with this email already exists.");
+  }
+
   return data;
 }
 

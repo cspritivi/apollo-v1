@@ -10,7 +10,7 @@ import {
   Alert,
   ScrollView,
 } from "react-native";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { useSignUp } from "../../src/features/auth/hooks";
 
 /**
@@ -35,6 +35,7 @@ export default function SignUpScreen() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const { mutate: register, isPending } = useSignUp();
+  const router = useRouter();
 
   const handleSignUp = () => {
     if (!fullName.trim() || !email.trim() || !password.trim()) {
@@ -66,12 +67,20 @@ export default function SignUpScreen() {
         fullName: fullName.trim(),
       },
       {
+        onSuccess: () => {
+          // When email confirmation is enabled, sign-up does NOT create a
+          // session — the user must verify their email first. So the reactive
+          // redirect (onAuthStateChange) won't fire. Instead, we show a
+          // confirmation alert and navigate back to login manually.
+          Alert.alert(
+            "Sign Up Successful",
+            "Please check your email and click the confirmation link to activate your account.",
+            [{ text: "OK", onPress: () => router.replace("/(auth)/login") }],
+          );
+        },
         onError: (err) => {
           Alert.alert("Sign Up Failed", err.message);
         },
-        // No onSuccess needed — same reactive redirect as login.
-        // Sign-up creates a session, onAuthStateChange fires,
-        // root layout redirects to (app).
       },
     );
   };

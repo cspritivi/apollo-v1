@@ -28,7 +28,8 @@
     },
     "scheme": "apollo",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-asset"
     ]
   }
 }
