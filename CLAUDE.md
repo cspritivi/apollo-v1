@@ -273,8 +273,8 @@ automated changelog generation. Interviewers recognise this pattern.
 
 ## Current Status
 
-[ ] Project initialized
-[ ] Supabase project created and schema defined
+[x] Project initialized
+[x] Supabase project created and schema defined
 [ ] Auth flow implemented
 [ ] Fabric catalog screen
 [ ] Product catalog + configurator
