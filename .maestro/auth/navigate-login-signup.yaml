@@ -1,0 +1,42 @@
+# ============================================================================
+# NAVIGATION — LOGIN ↔ SIGN UP
+#
+# Tests that users can navigate between the login and sign-up screens
+# using the link at the bottom of each form.
+#
+# WHY TEST NAVIGATION:
+# Expo Router uses file-based routing with Link components. If the href
+# paths are wrong (e.g., typo in "/(auth)/sign-up"), the navigation
+# silently fails. This test catches routing issues early.
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# Start on login screen
+- assertVisible: "Welcome Back"
+- assertVisible: "Sign in to your account"
+
+# Navigate to sign-up
+- tapOn: "Don't have an account? Sign Up"
+
+# iOS may show a "Save Password?" keychain prompt when navigating away
+# from the login screen (triggered by the password field losing focus).
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- assertVisible: "Create Account"
+- assertVisible: "Sign up to get started with your tailor"
+
+# Navigate back to login
+- tapOn: "Already have an account? Sign In"
+
+# iOS may show a "Save Password?" keychain prompt when navigating away
+# from the sign-up screen (triggered by the password fields losing focus).
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- assertVisible: "Welcome Back"
+- assertVisible: "Sign in to your account"

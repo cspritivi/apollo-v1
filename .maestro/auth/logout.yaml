@@ -1,0 +1,33 @@
+# ============================================================================
+# LOGOUT — SIGN OUT FROM HOME SCREEN
+#
+# Tests the full sign-out flow: user taps Sign Out on the home screen
+# and is redirected back to the login screen.
+#
+# PREREQUISITE:
+# The user must be logged in (run login-success.yaml first, or ensure
+# a session persists from a previous test).
+#
+# HOW SIGN-OUT WORKS:
+# 1. User taps "Sign Out"
+# 2. useSignOut mutation calls signOut() in api.ts
+# 3. Supabase clears the session
+# 4. onAuthStateChange fires with event "SIGNED_OUT"
+# 5. useSession sets session to null
+# 6. Root layout detects null session → redirects to login screen
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# Should be on home screen (assumes user is already logged in)
+- assertVisible: "You are logged in!"
+
+# Tap sign out
+- tapOn: "Sign Out"
+
+# After sign-out, the auth gate in root layout redirects to login.
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000
