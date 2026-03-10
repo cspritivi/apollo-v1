@@ -1,8 +1,8 @@
 # Fabric Catalog Feature — Implementation Plan
 
-## Step 1: Data layer (`src/features/catalog/`)
-- **`api.ts`** — Supabase query functions: `fetchFabrics` (with optional filters for color tags, availability) and `fetchFabricById`
-- **`hooks.ts`** — React Query hooks: `useFabrics` and `useFabric` that wrap the API calls with caching
+## Step 1: Data layer (`src/features/catalog/`) ✅ DONE
+- **`api.ts`** — `fetchFabrics(filters?)` with optional `availableOnly` and `colorTag` filters, `fetchFabricById(id)` with `.single()`
+- **`hooks.ts`** — `useFabrics(filters?)` and `useFabric(id)` with 5-min staleTime, filter-aware cache keys, `enabled: !!id` guard on detail query
 
 ## Step 2: UI components (`src/features/catalog/components/`)
 - **`FabricCard.tsx`** — Card showing fabric image, name, price, color tags. Used in the grid/list.
@@ -16,8 +16,8 @@
 Building bottom-up (data → components → screen) means each layer is testable in isolation. The hooks don't depend on any UI, and the components don't depend on navigation. This matches the 3-layer pattern already established in auth (screen → hook → api).
 
 ## Before starting — check
-- **Do you have seed data in Supabase yet?** (Sample fabrics with images in Storage.)
-- If not, we need to seed a few rows first so the catalog actually renders. Claude can provide the SQL insert statements.
+- ✅ Seed data loaded — 20 fabrics via `supabase/seed_fabrics.sql` (placeholder image URLs)
+- ⚠️ Real images still needed — upload to Supabase Storage `fabrics` bucket and update URLs
 
-## Starting point
-Begin with Step 1 (data layer), or seed data first if needed.
+## Next up
+Step 2: UI components (FabricCard + FabricDetailModal)

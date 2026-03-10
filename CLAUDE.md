@@ -67,8 +67,15 @@ This is a deliberate architectural decision worth explaining in interviews.
 
 ## Data Model Overview
 
-These are the core entities. Full schema lives in Supabase. TypeScript types
-live in `/src/types`.
+These are the core entities. Full SQL schema lives in `/supabase` (reference
+copies — not managed by the Supabase CLI). TypeScript types live in `/src/types`.
+
+SQL files in `/supabase` (run in this order):
+1. `init_schema.sql` — All tables, indexes, `updated_at` trigger
+2. `new_auths.sql` — Auto-create profile on auth signup trigger
+3. `rls_policies.sql` — Row Level Security for all tables
+4. `measurement_history.sql` — Audit trail table + trigger for measurements
+5. `seed_fabrics.sql` — Synthetic fabric catalog data (20 entries)
 
 ### `profiles`
 Customer account linked to Supabase Auth. Stores name, contact, and preferences.
@@ -102,6 +109,11 @@ The core transaction entity. Captures:
 - Measurement snapshot at time of order
 - Current status (see Order Lifecycle below)
 - Status history (array of {status, timestamp, note})
+
+### `measurement_history`
+Automatic audit trail for measurements. A trigger snapshots the old row
+into this table before every update to `measurements`. Customers can view
+their own history (via RLS); only the trigger and service role can write.
 
 ### `alterations`
 Post-delivery alteration requests. Linked to a parent order. Has its own
@@ -275,7 +287,7 @@ automated changelog generation. Interviewers recognise this pattern.
 
 [x] Project initialized
 [x] Supabase project created and schema defined
-[ ] Auth flow implemented
+[x] Auth flow implemented
 [ ] Fabric catalog screen
 [ ] Product catalog + configurator
 [ ] Order placement flow
