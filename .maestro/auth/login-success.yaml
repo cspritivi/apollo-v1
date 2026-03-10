@@ -1,0 +1,47 @@
+# ============================================================================
+# LOGIN — HAPPY PATH
+#
+# Tests the complete sign-in flow: user enters valid credentials and is
+# redirected to the home screen.
+#
+# WHY MAESTRO OVER CUCUMBER:
+# Maestro flows are YAML files that read like BDD scenarios but without
+# the ceremony of step definitions. Each command maps directly to a user
+# action or assertion. No glue code, no regex matchers, no context objects.
+#
+# PREREQUISITE:
+# A test user must exist in Supabase Auth with the credentials below.
+# Create one manually in the Supabase dashboard or use the sign-up flow first.
+# ============================================================================
+appId: host.exp.Exponent
+# Using Expo Go's app ID since we're running in development mode.
+# In a production build, this would be the app's bundle ID.
+
+---
+
+# The app should start on the login screen (auth gate redirects unauthenticated users)
+- assertVisible: "Welcome Back"
+- assertVisible: "Sign in to your account"
+
+# Enter valid credentials
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+
+# Submit the form
+- tapOn: "Sign In"
+
+# iOS shows a "Save Password?" keychain prompt after successful login.
+# Dismiss it so it doesn't block the rest of the test.
+- tapOn:
+    text: "Not Now"
+    optional: true  # In case the prompt doesn't appear (e.g., already saved)
+
+# After successful login, the root layout's onAuthStateChange listener
+# detects the new session and redirects to the home screen.
+# We verify we've landed on the authenticated home screen.
+- extendedWaitUntil:
+    visible:
+      text: "You are logged in!"
+    timeout: 10000  # Allow time for the auth round-trip to Supabase

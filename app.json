@@ -26,8 +26,10 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "scheme": "apollo",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-asset"
     ]
   }
 }

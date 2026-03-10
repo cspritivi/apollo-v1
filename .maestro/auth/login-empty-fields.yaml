@@ -1,0 +1,22 @@
+# ============================================================================
+# LOGIN — EMPTY FIELDS VALIDATION
+#
+# Tests that the form shows an error when submitted with empty fields.
+# This validates the client-side guard in handleLogin() that prevents
+# unnecessary API calls for obviously invalid input.
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# Start on login screen
+- assertVisible: "Welcome Back"
+
+# Try to sign in without entering anything
+- tapOn: "Sign In"
+
+# The app shows an Alert.alert with this message
+- assertVisible: "Please fill in all fields."
+
+# Dismiss the alert
+- tapOn: "OK"

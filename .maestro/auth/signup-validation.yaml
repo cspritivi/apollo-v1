@@ -1,0 +1,77 @@
+# ============================================================================
+# SIGN UP — CLIENT-SIDE VALIDATION
+#
+# Tests the validation guards in the sign-up form:
+# 1. Empty fields → error
+# 2. Password mismatch → error
+# 3. Password too short → error
+#
+# These validations happen BEFORE any network call to Supabase, saving
+# bandwidth and providing instant feedback.
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# Navigate from login to sign-up screen
+- assertVisible: "Welcome Back"
+- tapOn: "Don't have an account? Sign Up"
+
+# iOS may show a "Save Password?" keychain prompt when navigating away
+# from the login screen (triggered by the password field losing focus).
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- assertVisible: "Create Account"
+
+# --- Test 1: Empty fields ---
+# "Create Account" appears twice: as the screen title AND the button text.
+# Maestro matches the first occurrence by default (the title), which doesn't
+# trigger handleSignUp. index: 1 targets the second occurrence (the button).
+- tapOn:
+    text: "Create Account"
+    index: 1
+- assertVisible: "Please fill in all fields."
+- tapOn: "OK"
+
+# --- Test 2: Password mismatch ---
+- tapOn: "Full Name"
+- inputText: "Test User"
+- tapOn: "Email"
+- inputText: "test@example.com"
+- tapOn:
+    text: "Password"
+    index: 0  # First password field (not confirm)
+- inputText: "Test123!"
+- tapOn: "Confirm Password"
+- inputText: "Different456!"
+
+- tapOn:
+    text: "Create Account"
+    index: 1
+- assertVisible: "Passwords do not match."
+- tapOn: "OK"
+
+# --- Test 3: Password too short ---
+# Clear fields and re-enter with short password
+- tapOn:
+    text: "Password"
+    index: 0
+- eraseText
+- inputText: "abc"
+- tapOn: "Confirm Password"
+- eraseText
+- inputText: "abc"
+
+- tapOn:
+    text: "Create Account"
+    index: 1
+- assertVisible: "Password must be at least 6 characters."
+- tapOn: "OK"
+
+# Navigate back to login so the next test starts on the expected screen
+- tapOn: "Already have an account? Sign In"
+- tapOn:
+    text: "Not Now"
+    optional: true
