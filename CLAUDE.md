@@ -288,7 +288,7 @@ automated changelog generation. Interviewers recognise this pattern.
 [x] Project initialized
 [x] Supabase project created and schema defined
 [x] Auth flow implemented
-[ ] Fabric catalog screen
+[x] Fabric catalog screen (data layer + UI + Maestro tests)
 [ ] Product catalog + configurator
 [ ] Order placement flow
 [ ] Order tracking / lifecycle screen

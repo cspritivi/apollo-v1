@@ -1,16 +1,61 @@
-import { Stack } from "expo-router";
+import { Tabs } from "expo-router";
 
 /**
- * App Group Layout — navigation structure for authenticated screens.
+ * App Group Layout — tab-based navigation for authenticated screens.
  *
- * WHY STACK FOR NOW (NOT TABS):
- * We'll eventually switch this to a Tab navigator when we have multiple
- * top-level sections (Catalog, Orders, Profile). For now, a Stack is
- * simpler and avoids premature abstraction. Switching to Tabs later is
- * a one-file change in this layout — the screen files don't need to change
- * at all. That's the power of file-based routing: navigation structure
- * is defined in layouts, not in screens.
+ * WHY TABS NOW (PREVIOUSLY STACK):
+ * With two top-level sections (Home and Fabrics), a tab navigator provides
+ * the expected mobile UX — users can switch between sections with a single
+ * tap and each tab preserves its own navigation state. This is the standard
+ * pattern used by every major e-commerce and catalog app (Etsy, ASOS, etc.).
+ *
+ * WHY expo-router Tabs (NOT @react-navigation/bottom-tabs DIRECTLY):
+ * Expo Router's <Tabs> wraps @react-navigation/bottom-tabs but integrates
+ * with file-based routing. Each file in app/(app)/ automatically becomes
+ * a tab screen. No manual route registration needed — adding a new tab is
+ * just creating a new file.
+ *
+ * INTERVIEW TALKING POINT:
+ * Switching from Stack to Tabs was a one-file change (this layout file only).
+ * The screen files (index.tsx, fabrics.tsx) didn't change at all. This is the
+ * power of separating navigation structure (layouts) from screen content —
+ * you can restructure navigation without touching business logic.
  */
 export default function AppLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: true,
+        tabBarActiveTintColor: "#4f46e5", // Indigo — matches price accent color
+        tabBarInactiveTintColor: "#9ca3af",
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: "600",
+        },
+        headerTitleStyle: {
+          fontWeight: "700",
+        },
+      }}
+    >
+      {/**
+       * Tab order is defined by the order of <Tabs.Screen> declarations here,
+       * NOT by the file names. This gives us explicit control over tab ordering
+       * even though the screens are file-based.
+       */}
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Home",
+          tabBarLabel: "Home",
+        }}
+      />
+      <Tabs.Screen
+        name="fabrics"
+        options={{
+          title: "Fabrics",
+          tabBarLabel: "Fabrics",
+        }}
+      />
+    </Tabs>
+  );
 }

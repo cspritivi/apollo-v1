@@ -1,0 +1,67 @@
+# ============================================================================
+# FABRIC CATALOG — DETAIL MODAL FLOW
+#
+# Tests that tapping a fabric card opens the detail modal with full
+# information, and that the modal can be dismissed.
+#
+# WHY TEST THE MODAL SEPARATELY:
+# The browse test confirms the grid renders. This test confirms the
+# card → modal interaction works, which exercises a different code path
+# (selectedFabric state, Modal component, detail data rendering).
+#
+# PREREQUISITE:
+# - Test user exists in Supabase Auth
+# - Seed data loaded (20 fabrics)
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# Authenticate
+- assertVisible: "Welcome Back"
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+- tapOn: "Sign In"
+
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "Home"
+    timeout: 10000
+
+# Navigate to Fabrics tab
+- tapOn: "Fabrics"
+
+# Wait for catalog to load
+- extendedWaitUntil:
+    visible:
+      text: "Super 150s Navy Wool"
+    timeout: 10000
+
+# Tap on a fabric card to open the detail modal
+- tapOn: "Super 150s Navy Wool"
+
+# The detail modal should show the fabric name, price, and detail header
+- extendedWaitUntil:
+    visible:
+      text: "Fabric Details"
+    timeout: 5000
+
+# Verify detail content is rendered
+- assertVisible: "Super 150s Navy Wool"
+- assertVisible: "In Stock"
+
+# Close the modal
+- tapOn:
+    text: "✕"
+
+# After closing, we should be back on the catalog grid
+- extendedWaitUntil:
+    visible:
+      text: "Super 150s Navy Wool"
+    timeout: 5000

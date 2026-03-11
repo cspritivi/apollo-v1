@@ -1,0 +1,51 @@
+# ============================================================================
+# FABRIC CATALOG — BROWSE FLOW
+#
+# Tests the complete fabric browsing experience: user logs in, navigates to
+# the Fabrics tab, sees the catalog grid, and verifies fabric data renders.
+#
+# WHY START FROM LOGIN:
+# Maestro tests run against the full app. Since the catalog is behind the
+# auth gate, we must authenticate first. This also validates that the
+# tab navigation works correctly after login.
+#
+# PREREQUISITE:
+# - Test user exists in Supabase Auth (cspritivi@gmail.com / test123456)
+# - Seed data loaded (20 fabrics via seed_fabrics.sql)
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# Authenticate first (same as auth tests — catalog is behind auth gate)
+- assertVisible: "Welcome Back"
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+- tapOn: "Sign In"
+
+# Dismiss iOS keychain prompt if it appears
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+# Wait for auth to complete and home screen to load
+- extendedWaitUntil:
+    visible:
+      text: "Home"
+    timeout: 10000
+
+# Navigate to the Fabrics tab
+- tapOn: "Fabrics"
+
+# The catalog should load and display fabric names from our seed data.
+# We check for a few known fabrics to confirm the data layer is working
+# end-to-end (Supabase → React Query → FlatList → FabricCard).
+- extendedWaitUntil:
+    visible:
+      text: "Super 150s Navy Wool"
+    timeout: 10000
+
+# Verify at least one more fabric is visible (confirms grid renders multiple items)
+- assertVisible: "White Egyptian Cotton Poplin"

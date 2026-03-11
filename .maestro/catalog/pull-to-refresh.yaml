@@ -1,0 +1,59 @@
+# ============================================================================
+# FABRIC CATALOG — PULL TO REFRESH
+#
+# Tests that pulling down on the fabric list triggers a refresh without
+# losing the existing data. This validates the React Query refetch
+# integration with FlatList's onRefresh prop.
+#
+# WHY TEST PULL-TO-REFRESH:
+# It's a common interaction that exercises the React Query cache invalidation
+# path. If the refetch breaks (e.g., returns an error), the user would see
+# an empty list or a crash. This test catches regressions.
+#
+# PREREQUISITE:
+# - Test user exists in Supabase Auth
+# - Seed data loaded
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# Authenticate
+- assertVisible: "Welcome Back"
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+- tapOn: "Sign In"
+
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "Home"
+    timeout: 10000
+
+# Navigate to Fabrics tab
+- tapOn: "Fabrics"
+
+# Wait for initial load
+- extendedWaitUntil:
+    visible:
+      text: "Super 150s Navy Wool"
+    timeout: 10000
+
+# Pull to refresh — Maestro's swipe simulates the gesture
+- swipe:
+    direction: DOWN
+    duration: 1000
+
+# After refresh, data should still be visible (not lost during refetch)
+- extendedWaitUntil:
+    visible:
+      text: "Super 150s Navy Wool"
+    timeout: 10000
+
+# Confirm a second fabric is still present (data wasn't cleared during refresh)
+- assertVisible: "White Egyptian Cotton Poplin"
