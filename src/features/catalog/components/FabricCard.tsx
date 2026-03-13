@@ -47,7 +47,17 @@ export default function FabricCard({ fabric, onPress }: FabricCardProps) {
       />
 
       <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={2}>
+        {/* testID uses the fabric id to create a unique, stable selector for
+            Maestro E2E tests. This is necessary because the parent Pressable's
+            accessibilityLabel groups all children into one atomic element on iOS,
+            making individual <Text> nodes invisible to text-based matchers.
+            testID bypasses that grouping — Maestro's id: selector can find it
+            regardless of the accessibility tree structure. */}
+        <Text
+          style={styles.name}
+          numberOfLines={2}
+          testID={`fabric-name-${fabric.id}`}
+        >
           {fabric.name}
         </Text>
 

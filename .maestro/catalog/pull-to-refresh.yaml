@@ -32,16 +32,16 @@ appId: host.exp.Exponent
 
 - extendedWaitUntil:
     visible:
-      text: "Home"
+      text: "You are logged in!"
     timeout: 10000
 
 # Navigate to Fabrics tab
 - tapOn: "Fabrics"
 
-# Wait for initial load
+# Wait for initial load (regex matches card accessibilityLabel)
 - extendedWaitUntil:
     visible:
-      text: "Super 150s Navy Wool"
+      text: "Black Wool Crepe.*"
     timeout: 10000
 
 # Pull to refresh — Maestro's swipe simulates the gesture
@@ -52,8 +52,17 @@ appId: host.exp.Exponent
 # After refresh, data should still be visible (not lost during refetch)
 - extendedWaitUntil:
     visible:
-      text: "Super 150s Navy Wool"
+      text: "Black Wool Crepe.*"
     timeout: 10000
 
 # Confirm a second fabric is still present (data wasn't cleared during refresh)
-- assertVisible: "White Egyptian Cotton Poplin"
+- assertVisible:
+    text: "Camel Wool Twill.*"
+
+# ---- CLEANUP: navigate home and log out so the next test starts fresh ----
+- tapOn: "Home"
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000

@@ -101,13 +101,22 @@ export default function FabricsScreen() {
        * letting users browse quickly. Three columns would make images too small
        * for fabric texture to be visible.
        */}
+      {/* WHY PAD WITH NULL:
+          FlatList with numColumns={2} and flex:1 cards causes the last item
+          to stretch full-width when the count is odd. Appending a null entry
+          lets us render an invisible spacer that occupies the empty cell,
+          keeping all real cards the same size. */}
       <FlatList
-        data={fabrics}
-        keyExtractor={(item) => item.id}
+        data={fabrics.length % 2 !== 0 ? [...fabrics, null] : fabrics}
+        keyExtractor={(item, index) => item?.id ?? `spacer-${index}`}
         numColumns={2}
-        renderItem={({ item }) => (
-          <FabricCard fabric={item} onPress={handleFabricPress} />
-        )}
+        renderItem={({ item }) =>
+          item ? (
+            <FabricCard fabric={item} onPress={handleFabricPress} />
+          ) : (
+            <View style={{ flex: 1, margin: 6 }} />
+          )
+        }
         contentContainerStyle={styles.listContent}
         columnWrapperStyle={styles.columnWrapper}
         showsVerticalScrollIndicator={false}

@@ -31,37 +31,46 @@ appId: host.exp.Exponent
 
 - extendedWaitUntil:
     visible:
-      text: "Home"
+      text: "You are logged in!"
     timeout: 10000
 
 # Navigate to Fabrics tab
 - tapOn: "Fabrics"
 
-# Wait for catalog to load
+# Wait for catalog to load (regex matches card accessibilityLabel)
 - extendedWaitUntil:
     visible:
-      text: "Super 150s Navy Wool"
+      text: "Black Wool Crepe.*"
     timeout: 10000
 
 # Tap on a fabric card to open the detail modal
-- tapOn: "Super 150s Navy Wool"
+- tapOn:
+    text: "Black Wool Crepe.*"
 
-# The detail modal should show the fabric name, price, and detail header
+# The detail modal should show the detail header
 - extendedWaitUntil:
     visible:
       text: "Fabric Details"
     timeout: 5000
 
-# Verify detail content is rendered
-- assertVisible: "Super 150s Navy Wool"
+# Verify detail content — inside the modal, Text elements are NOT grouped
+# by an accessibilityLabel, so exact text matching works here.
+- assertVisible: "Black Wool Crepe"
 - assertVisible: "In Stock"
 
-# Close the modal
-- tapOn:
-    text: "✕"
+# Close the modal via accessibility label on the close button
+- tapOn: "Close fabric details"
 
 # After closing, we should be back on the catalog grid
 - extendedWaitUntil:
     visible:
-      text: "Super 150s Navy Wool"
+      text: "Black Wool Crepe.*"
     timeout: 5000
+
+# ---- CLEANUP: navigate home and log out so the next test starts fresh ----
+- tapOn: "Home"
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000

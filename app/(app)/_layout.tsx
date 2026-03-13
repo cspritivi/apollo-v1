@@ -47,6 +47,12 @@ export default function AppLayout() {
         options={{
           title: "Home",
           tabBarLabel: "Home",
+          // WHY tabBarAccessibilityLabel:
+          // React Navigation builds a compound accessibility label for tab buttons
+          // (e.g., "Home, tab, 1 of 2"). Maestro's text matcher can't find "Home"
+          // inside that string. Setting an explicit accessibilityLabel overrides
+          // the compound one, making the tab reliably tappable in E2E tests.
+          tabBarAccessibilityLabel: "Home",
         }}
       />
       <Tabs.Screen
@@ -54,6 +60,7 @@ export default function AppLayout() {
         options={{
           title: "Fabrics",
           tabBarLabel: "Fabrics",
+          tabBarAccessibilityLabel: "Fabrics",
         }}
       />
     </Tabs>
