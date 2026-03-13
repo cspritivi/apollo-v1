@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
 import { useFabrics } from "../../src/features/catalog/hooks";
 import FabricCard from "../../src/features/catalog/components/FabricCard";
 import FabricDetailModal from "../../src/features/catalog/components/FabricDetailModal";
+import ColorFilterBar from "../../src/features/catalog/components/ColorFilterBar";
 import { Fabric } from "../../src/types";
 
 /**
@@ -45,6 +46,48 @@ export default function FabricsScreen() {
   // Selected fabric controls modal visibility (null = modal hidden).
   // Single state variable instead of separate `selectedFabric` + `isModalOpen`.
   const [selectedFabric, setSelectedFabric] = useState<Fabric | null>(null);
+
+  // Active color filter — null means "show all" (no filter applied).
+  // Single-select: only one color can be active at a time.
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+
+  /**
+   * DERIVED STATE WITH useMemo — two key concepts here:
+   *
+   * 1. uniqueColors: Extracts all distinct color tags from the full fabric list.
+   *    Uses a Set for O(1) deduplication — flatMap collects every tag from every
+   *    fabric into one array, then Set removes duplicates, then spread converts
+   *    back to an array. Sorted alphabetically for stable, predictable pill order.
+   *
+   * 2. filteredFabrics: Client-side filtering instead of a second server query.
+   *    WHY CLIENT-SIDE HERE: With ~20 fabrics, filtering in memory is instant.
+   *    The server-side colorTag filter in api.ts exists for when the catalog
+   *    scales to hundreds of items — at that point you'd pass colorTag to
+   *    useFabrics and let Postgres handle it (with its array containment index).
+   *    For now, client-side avoids an extra network round-trip and leverages
+   *    the data already in React Query's cache.
+   *
+   * WHY useMemo (NOT a regular variable):
+   * Without useMemo, these arrays would be recalculated on every render —
+   * including renders triggered by unrelated state changes (like opening
+   * the detail modal). useMemo caches the result and only recomputes when
+   * fabrics or selectedColor changes. This matters because flatMap + Set +
+   * sort + filter is non-trivial work, and the FlatList below would also
+   * re-render if its data reference changes (referential equality check).
+   */
+  const uniqueColors = useMemo(() => {
+    if (!fabrics) return [];
+    const tagSet = new Set(fabrics.flatMap((f) => f.color_tags));
+    return [...tagSet].sort();
+  }, [fabrics]);
+
+  const filteredFabrics = useMemo(() => {
+    if (!fabrics) return [];
+    if (!selectedColor) return fabrics;
+    // .includes() checks if the fabric's color_tags array contains the
+    // selected color — mirrors what the Postgres @> operator does server-side.
+    return fabrics.filter((f) => f.color_tags.includes(selectedColor));
+  }, [fabrics, selectedColor]);
 
   /**
    * WHY useCallback:
@@ -94,6 +137,17 @@ export default function FabricsScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Color filter bar — sits above the grid, scrolls horizontally.
+          Rendered outside the FlatList so it stays pinned at the top and
+          doesn't scroll away with the fabric grid. This is a common pattern
+          for filter UIs — the filter controls remain visible so users can
+          always see and change the active filter without scrolling back up. */}
+      <ColorFilterBar
+        colors={uniqueColors}
+        selectedColor={selectedColor}
+        onSelectColor={setSelectedColor}
+      />
+
       {/**
        * WHY numColumns={2}:
        * A 2-column grid is the standard pattern for product catalogs on mobile
@@ -107,7 +161,11 @@ export default function FabricsScreen() {
           lets us render an invisible spacer that occupies the empty cell,
           keeping all real cards the same size. */}
       <FlatList
-        data={fabrics.length % 2 !== 0 ? [...fabrics, null] : fabrics}
+        data={
+          filteredFabrics.length % 2 !== 0
+            ? [...filteredFabrics, null]
+            : filteredFabrics
+        }
         keyExtractor={(item, index) => item?.id ?? `spacer-${index}`}
         numColumns={2}
         renderItem={({ item }) =>
