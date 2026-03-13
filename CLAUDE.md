@@ -298,6 +298,66 @@ Update this checklist as features are completed.
 
 ---
 
+## Maestro E2E Testing — Lessons Learned
+
+Tests live in `.maestro/` organized by feature (e.g., `.maestro/catalog/`,
+`.maestro/auth/`). App runs in Expo Go (`appId: host.exp.Exponent`).
+
+### iOS Accessibility Grouping (Critical)
+
+React Native's `Pressable`, `TouchableOpacity`, etc. set `accessible={true}`
+by default on iOS. This groups ALL child elements into one atomic accessible
+node. Consequences for Maestro:
+
+- **Child `<Text>` nodes become invisible** to Maestro's text matcher. If a
+  `Pressable` contains `<Text>Name</Text>` and `<Text>$45.00</Text>`, Maestro
+  cannot find "Name" as a standalone element.
+- **The grouped element's text** is either the explicit `accessibilityLabel`
+  (if set) or the concatenation of all child text content.
+- **Solution for assertions:** Use regex in Maestro to match the beginning
+  of the accessibility label: `text: "Black Wool Crepe.*"` matches
+  `"Black Wool Crepe, $45.00/m"`.
+- **Solution for targeting specific elements:** Add `testID` to child elements
+  and use Maestro's `id:` selector. `testID` works even inside grouped
+  accessible parents.
+- **Never use `accessible={false}`** just to make tests pass — it breaks
+  screen reader UX for real users. Adapt test selectors instead.
+
+### React Navigation Tab Bars
+
+React Navigation wraps tab labels with platform-specific accessibility
+metadata (e.g., `"Fabrics, tab, 2 of 2"` on iOS). Plain text matching
+for `"Fabrics"` will fail.
+
+- **Fix:** Set `tabBarAccessibilityLabel: "Fabrics"` on the tab screen
+  options to override the compound label with a clean string.
+- `tabBarTestID` does NOT work reliably in Expo Go for Maestro's `id:`
+  selector. Use `tabBarAccessibilityLabel` + text matching instead.
+
+### Test Isolation
+
+Each Maestro test must leave the app in a clean state for the next test.
+Every test should end with:
+```yaml
+# Navigate home and log out
+- tapOn: "Home"
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000
+```
+
+This ensures the next test starts from the login screen with no active session.
+
+### Test File Conventions
+- File names: `kebab-case.yaml` (e.g., `browse-fabrics.yaml`)
+- Each test authenticates from scratch (login → action → logout)
+- Use `extendedWaitUntil` with timeouts for async operations (auth, data loading)
+- Use `optional: true` for dismissing system prompts (e.g., iOS keychain)
+
+---
+
 ## Open Decisions (revisit as project grows)
 
 - Payment processing: intentionally deferred. Will need research into
