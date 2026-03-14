@@ -6,10 +6,16 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
-import { useFabrics } from "../../src/features/catalog/hooks";
+import {
+  useFabrics,
+  useSavedFabrics,
+  useSaveFabric,
+  useUnsaveFabric,
+} from "../../src/features/catalog/hooks";
 import FabricCard from "../../src/features/catalog/components/FabricCard";
 import FabricDetailModal from "../../src/features/catalog/components/FabricDetailModal";
 import ColorFilterBar from "../../src/features/catalog/components/ColorFilterBar";
+import { useSession } from "../../src/hooks/useSession";
 import { Fabric } from "../../src/types";
 
 /**
@@ -33,6 +39,9 @@ import { Fabric } from "../../src/types";
  * soft-deleted (available = false), not removed, so they remain in existing orders.
  */
 export default function FabricsScreen() {
+  const { session } = useSession();
+  const userId = session?.user?.id;
+
   const {
     data: fabrics,
     isLoading,
@@ -42,6 +51,22 @@ export default function FabricsScreen() {
   } = useFabrics({
     availableOnly: true,
   });
+
+  // Fetch saved fabric IDs to show save state on each card.
+  const { data: savedFabrics } = useSavedFabrics(userId);
+  const saveMutation = useSaveFabric(userId ?? "");
+  const unsaveMutation = useUnsaveFabric(userId ?? "");
+
+  /**
+   * DERIVED STATE: A Set of saved fabric IDs for O(1) lookups.
+   * Each FabricCard needs to know if it's saved — checking a Set is
+   * instant vs scanning an array on every card render. This is rebuilt
+   * only when savedFabrics changes (via useMemo).
+   */
+  const savedFabricIds = useMemo(() => {
+    if (!savedFabrics) return new Set<string>();
+    return new Set(savedFabrics.map((s) => s.fabric_id));
+  }, [savedFabrics]);
 
   // Selected fabric controls modal visibility (null = modal hidden).
   // Single state variable instead of separate `selectedFabric` + `isModalOpen`.
@@ -102,6 +127,22 @@ export default function FabricsScreen() {
   const handleCloseModal = useCallback(() => {
     setSelectedFabric(null);
   }, []);
+
+  /**
+   * Toggle save/unsave for a fabric. Checks the derived Set to decide
+   * whether to save or unsave — this is where the O(1) Set lookup pays off.
+   * Each card calls this with its fabric ID on button press.
+   */
+  const handleToggleSave = useCallback(
+    (fabricId: string) => {
+      if (savedFabricIds.has(fabricId)) {
+        unsaveMutation.mutate(fabricId);
+      } else {
+        saveMutation.mutate(fabricId);
+      }
+    },
+    [savedFabricIds, saveMutation, unsaveMutation],
+  );
 
   // --- Loading state ---
   if (isLoading) {
@@ -170,7 +211,12 @@ export default function FabricsScreen() {
         numColumns={2}
         renderItem={({ item }) =>
           item ? (
-            <FabricCard fabric={item} onPress={handleFabricPress} />
+            <FabricCard
+              fabric={item}
+              onPress={handleFabricPress}
+              isSaved={savedFabricIds.has(item.id)}
+              onToggleSave={handleToggleSave}
+            />
           ) : (
             <View style={{ flex: 1, margin: 6 }} />
           )
@@ -189,7 +235,12 @@ export default function FabricsScreen() {
       />
 
       {/* Detail modal — rendered once, visibility controlled by selectedFabric */}
-      <FabricDetailModal fabric={selectedFabric} onClose={handleCloseModal} />
+      <FabricDetailModal
+        fabric={selectedFabric}
+        onClose={handleCloseModal}
+        isSaved={selectedFabric ? savedFabricIds.has(selectedFabric.id) : false}
+        onToggleSave={handleToggleSave}
+      />
     </View>
   );
 }

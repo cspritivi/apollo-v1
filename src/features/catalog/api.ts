@@ -1,5 +1,5 @@
 import { supabase } from "../../lib/supabase";
-import { Fabric } from "../../types";
+import { Fabric, SavedFabric } from "../../types";
 
 /**
  * Catalog API — all Supabase queries for fabric browsing live here.
@@ -88,4 +88,85 @@ export async function fetchFabricById(id: string): Promise<Fabric> {
 
   if (error) throw error;
   return data as Fabric;
+}
+
+// ============================================================================
+// SAVED FABRICS (Bookmarks)
+//
+// ARCHITECTURAL DECISION: Save/unsave operations are modeled as INSERT/DELETE
+// on a junction table, not as updates to a flag column. This is the standard
+// relational pattern for many-to-many relationships. The UNIQUE(user_id,
+// fabric_id) constraint in Postgres prevents duplicate saves without the app
+// needing to check first.
+// ============================================================================
+
+/**
+ * Fetch all saved fabric records for the current user.
+ *
+ * WHY WE FETCH SavedFabric ROWS (NOT JOINED Fabric OBJECTS):
+ * The catalog screen already has the full fabric list from useFabrics().
+ * Fetching just the junction table rows (small, fast) gives us a list of
+ * fabric_ids to match against. Joining the full fabric data here would
+ * duplicate what React Query already has cached — wasteful bandwidth and
+ * creates two sources of truth for fabric details.
+ *
+ * The component derives a Set<string> of saved fabric IDs from this data
+ * for O(1) "is saved?" lookups per card.
+ */
+export async function fetchSavedFabrics(
+  userId: string,
+): Promise<SavedFabric[]> {
+  const { data, error } = await supabase
+    .from("saved_fabrics")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false }); // Most recently saved first
+
+  if (error) throw error;
+  return data as SavedFabric[];
+}
+
+/**
+ * Save (bookmark) a fabric for the current user.
+ *
+ * WHY .select().single() AFTER INSERT:
+ * By default, Supabase INSERT returns nothing (204 No Content). Adding
+ * .select().single() tells PostgREST to return the created row, which we
+ * need for optimistic update rollback — if the server call fails, we need
+ * to know exactly what to remove from the cache.
+ */
+export async function saveFabric(
+  userId: string,
+  fabricId: string,
+): Promise<SavedFabric> {
+  const { data, error } = await supabase
+    .from("saved_fabrics")
+    .insert({ user_id: userId, fabric_id: fabricId })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as SavedFabric;
+}
+
+/**
+ * Unsave (remove bookmark) a fabric for the current user.
+ *
+ * WHY DELETE BY (user_id, fabric_id) INSTEAD OF BY id:
+ * The component knows the user_id and fabric_id but not the junction table
+ * row's id. We could fetch the id first, but that's an extra round-trip for
+ * no benefit. The UNIQUE constraint guarantees at most one row matches this
+ * pair, so the delete is precise.
+ */
+export async function unsaveFabric(
+  userId: string,
+  fabricId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("saved_fabrics")
+    .delete()
+    .eq("user_id", userId)
+    .eq("fabric_id", fabricId);
+
+  if (error) throw error;
 }

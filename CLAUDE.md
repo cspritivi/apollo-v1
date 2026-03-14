@@ -365,3 +365,10 @@ This ensures the next test starts from the login screen with no active session.
 - Push notifications for order status changes: not yet scoped.
 - Admin panel: currently using Supabase dashboard. Reassess if catalog
   management becomes complex.
+- **Fabric color filtering is client-side.** The catalog screen fetches all
+  available fabrics and filters in memory via `useMemo`. This works fine for
+  ~20 fabrics but must move to server-side filtering (the `colorTag` param
+  in `fetchFabrics` / Postgres `@>` containment) once the catalog grows to
+  100+ items. The API and hook infrastructure already support this — the
+  change is just passing `colorTag` to `useFabrics` instead of filtering
+  the result in the component.

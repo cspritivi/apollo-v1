@@ -1,8 +1,10 @@
+import { useRef, useEffect } from "react";
 import {
   View,
   Text,
   Image,
   Pressable,
+  Animated,
   ScrollView,
   Modal,
   StyleSheet,
@@ -21,6 +23,10 @@ import { Fabric } from "../../../types";
 interface FabricDetailModalProps {
   fabric: Fabric | null;
   onClose: () => void;
+  /** Whether this fabric is saved/bookmarked by the current user */
+  isSaved: boolean;
+  /** Called when the save/unsave button is pressed */
+  onToggleSave: (fabricId: string) => void;
 }
 
 /**
@@ -40,7 +46,39 @@ interface FabricDetailModalProps {
 export default function FabricDetailModal({
   fabric,
   onClose,
+  isSaved,
+  onToggleSave,
 }: FabricDetailModalProps) {
+  /**
+   * Same spring bounce animation as FabricCard — triggers when isSaved
+   * changes. See FabricCard.tsx for a detailed explanation of why we use
+   * Animated.spring, useRef, and the initial render guard.
+   */
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const isInitialRender = useRef(true);
+
+  useEffect(() => {
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
+
+    Animated.spring(scaleAnim, {
+      toValue: 1.1, // Slightly smaller bounce than FabricCard — the label
+      // is wider so a 1.3x scale would look exaggerated.
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 12,
+    }).start(() => {
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 30,
+        bounciness: 8,
+      }).start();
+    });
+  }, [isSaved, scaleAnim]);
+
   if (!fabric) return null;
 
   const priceDisplay = `$${(fabric.price_per_meter / 100).toFixed(2)} per meter`;
@@ -70,13 +108,31 @@ export default function FabricDetailModal({
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Large fabric image */}
-          <Image
-            source={{ uri: fabric.image_url }}
-            style={styles.image}
-            resizeMode="cover"
-            accessibilityLabel={`${fabric.name} fabric detail image`}
-          />
+          {/* Image container with save button overlay — same top-right
+              positioning as FabricCard for consistency across the app. */}
+          <View>
+            <Image
+              source={{ uri: fabric.image_url }}
+              style={styles.image}
+              resizeMode="cover"
+              accessibilityLabel={`${fabric.name} fabric detail image`}
+            />
+            <Pressable
+              onPress={() => onToggleSave(fabric.id)}
+              style={styles.saveButton}
+              accessibilityRole="button"
+              accessibilityLabel={isSaved ? "Unsave fabric" : "Save fabric"}
+            >
+              <Animated.View
+                style={[styles.savePill, { transform: [{ scale: scaleAnim }] }]}
+              >
+                <Text style={styles.saveLabel}>
+                  {isSaved ? "Fabric Saved" : "Save Fabric"}
+                </Text>
+                <Text style={styles.saveIcon}>{isSaved ? "✓" : "+"}</Text>
+              </Animated.View>
+            </Pressable>
+          </View>
 
           {/* Fabric name and availability badge */}
           <View style={styles.titleRow}>
@@ -172,6 +228,35 @@ const styles = StyleSheet.create({
     width: "100%",
     aspectRatio: 4 / 3, // Wider aspect ratio than card for better detail view
     backgroundColor: "#f3f4f6",
+  },
+  saveButton: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+  },
+  savePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  saveLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#374151",
+  },
+  saveIcon: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#374151",
   },
   titleRow: {
     flexDirection: "row",

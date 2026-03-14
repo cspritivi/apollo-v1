@@ -63,6 +63,18 @@ export default function AppLayout() {
           tabBarAccessibilityLabel: "Fabrics",
         }}
       />
+      {/* Saved fabrics is navigated to from the Home screen, not a tab.
+          Setting href: null hides it from the tab bar while keeping it
+          inside the (app) route group for auth protection. This is Expo
+          Router's way of having "non-tab" screens within a Tabs layout —
+          the screen exists in the navigation stack but doesn't get a tab. */}
+      <Tabs.Screen
+        name="saved-fabrics"
+        options={{
+          title: "Saved Fabrics",
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }
