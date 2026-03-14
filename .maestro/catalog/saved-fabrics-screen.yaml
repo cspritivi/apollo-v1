@@ -1,0 +1,110 @@
+# ============================================================================
+# FABRIC CATALOG — SAVED FABRICS SCREEN FLOW
+#
+# Tests the complete saved fabrics workflow: save a fabric from the catalog,
+# navigate to the Saved Fabrics screen via Home, verify the fabric appears,
+# then clean up by removing it.
+#
+# WHY TEST THE SAVED FABRICS SCREEN:
+# This is a cross-feature flow that exercises navigation (Fabrics tab →
+# Home tab → Saved Fabrics screen), data composition (saved IDs joined
+# with cached fabric data), and the SavedFabricCard component. A bug in
+# cache-first composition or navigation would break this entire screen.
+#
+# WHY SAVE BEFORE NAVIGATING:
+# The Saved Fabrics screen shows an empty state if no fabrics are saved.
+# We save one first to ensure we test the populated list, not just the
+# empty state message.
+#
+# PREREQUISITE:
+# - Test user exists in Supabase Auth (cspritivi@gmail.com / test123456)
+# - Seed data loaded
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# Authenticate
+- assertVisible: "Welcome Back"
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+- tapOn: "Sign In"
+
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "You are logged in!"
+    timeout: 10000
+
+# Navigate to Fabrics tab and save a fabric first
+- tapOn: "Fabrics"
+
+- extendedWaitUntil:
+    visible:
+      text: "Black Wool Crepe.*"
+    timeout: 10000
+
+# Save the first fabric so there's something on the Saved Fabrics screen
+- tapOn: "Save fabric"
+
+- extendedWaitUntil:
+    visible:
+      text: "Unsave fabric"
+    timeout: 5000
+
+# Navigate to Home, then to Saved Fabrics
+- tapOn: "Home"
+
+- extendedWaitUntil:
+    visible:
+      text: "You are logged in!"
+    timeout: 5000
+
+- tapOn: "Saved Fabrics"
+
+# Wait for the Saved Fabrics screen to load.
+# The screen title should be visible in the header.
+- extendedWaitUntil:
+    visible:
+      text: "Saved Fabrics"
+    timeout: 5000
+
+# The saved fabric should appear as a SavedFabricCard.
+# SavedFabricCard's Pressable has accessibilityLabel="Name, $price/m".
+# Use regex to match the name portion.
+- extendedWaitUntil:
+    visible:
+      text: ".*\\$.*\\/m"
+    timeout: 10000
+
+# Enter edit mode to clean up — tap the Edit button in the header
+- tapOn: "Edit"
+
+# The delete button should appear with accessibilityLabel "Remove X from saved"
+- extendedWaitUntil:
+    visible:
+      text: "Remove .* from saved"
+    timeout: 5000
+
+# Tap the delete button to unsave the fabric
+- tapOn:
+    text: "Remove .* from saved"
+
+# After removing, the empty state should appear
+- extendedWaitUntil:
+    visible:
+      text: "No saved fabrics"
+    timeout: 5000
+
+# ---- CLEANUP: navigate home and log out so the next test starts fresh ----
+- tapOn: "Home"
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000

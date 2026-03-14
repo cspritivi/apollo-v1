@@ -1,0 +1,78 @@
+# ============================================================================
+# FABRIC CATALOG — COLOR FILTER FLOW
+#
+# Tests the color filter bar: tapping a color pill filters the grid, and
+# tapping the same pill again clears the filter to show all fabrics.
+#
+# WHY TEST COLOR FILTERING:
+# The filter bar exercises client-side derived state (useMemo for unique
+# colors and filtered fabrics). If the filter logic breaks, customers see
+# wrong results or an empty grid — a critical UX regression.
+#
+# HOW COLOR PILLS ARE IDENTIFIED:
+# Each Pressable pill has an accessibilityLabel like "Filter by black" (when
+# inactive) or "black filter active, tap to clear" (when active). Since the
+# Pressable groups its children, we match on the accessibility label, not
+# the inner text.
+#
+# PREREQUISITE:
+# - Test user exists in Supabase Auth (cspritivi@gmail.com / test123456)
+# - Seed data loaded (20 fabrics with various color_tags)
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# Authenticate
+- assertVisible: "Welcome Back"
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+- tapOn: "Sign In"
+
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "You are logged in!"
+    timeout: 10000
+
+# Navigate to Fabrics tab
+- tapOn: "Fabrics"
+
+# Wait for catalog to load
+- extendedWaitUntil:
+    visible:
+      text: "Black Wool Crepe.*"
+    timeout: 10000
+
+# Tap the "black" color filter pill.
+# The pill's accessibilityLabel is "Filter by black" when inactive.
+- tapOn: "Filter by black"
+
+# After filtering, "Black Wool Crepe" should still be visible (it has a "black" tag).
+- extendedWaitUntil:
+    visible:
+      text: "Black Wool Crepe.*"
+    timeout: 5000
+
+# Now clear the filter by tapping the active pill.
+# When active, the pill's accessibilityLabel changes to "black filter active, tap to clear".
+- tapOn: "black filter active, tap to clear"
+
+# After clearing, non-black fabrics should reappear.
+- extendedWaitUntil:
+    visible:
+      text: "Camel Wool Twill.*"
+    timeout: 5000
+
+# ---- CLEANUP: navigate home and log out so the next test starts fresh ----
+- tapOn: "Home"
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000

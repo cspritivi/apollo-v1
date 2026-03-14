@@ -1,0 +1,100 @@
+# ============================================================================
+# FABRIC CATALOG — SAVE FROM DETAIL MODAL FLOW
+#
+# Tests saving a fabric using the pill button inside the detail modal,
+# then unsaving it, and closing the modal.
+#
+# WHY TEST SAVE FROM MODAL SEPARATELY:
+# The detail modal uses a different save UI (a "Save Fabric +" / "Fabric Saved ✓"
+# pill) than the grid card (a circular +/✓ button). Both call onToggleSave but
+# render different components. A bug in the modal's save handler wouldn't be
+# caught by the card-level save test.
+#
+# HOW THE MODAL SAVE BUTTON IS IDENTIFIED:
+# The modal's save Pressable has the same accessibilityLabel pattern as the card:
+# "Save fabric" (unsaved) and "Unsave fabric" (saved). Inside the modal, this
+# is the only element with that label, so Maestro can find it unambiguously.
+#
+# PREREQUISITE:
+# - Test user exists in Supabase Auth (cspritivi@gmail.com / test123456)
+# - Seed data loaded
+# - The test fabric is NOT already saved
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# Authenticate
+- assertVisible: "Welcome Back"
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+- tapOn: "Sign In"
+
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "You are logged in!"
+    timeout: 10000
+
+# Navigate to Fabrics tab
+- tapOn: "Fabrics"
+
+# Wait for catalog to load
+- extendedWaitUntil:
+    visible:
+      text: "Black Wool Crepe.*"
+    timeout: 10000
+
+# Open the detail modal for a specific fabric
+- tapOn:
+    text: "Black Wool Crepe.*"
+
+# Wait for modal to appear
+- extendedWaitUntil:
+    visible:
+      text: "Fabric Details"
+    timeout: 5000
+
+# Verify the save pill shows "Save Fabric" (unsaved state).
+# The pill's Pressable has accessibilityLabel "Save fabric".
+- assertVisible: "Save fabric"
+
+# Tap the save pill to save this fabric
+- tapOn: "Save fabric"
+
+# After saving, the accessibilityLabel changes to "Unsave fabric"
+- extendedWaitUntil:
+    visible:
+      text: "Unsave fabric"
+    timeout: 5000
+
+# Unsave it to restore clean state
+- tapOn: "Unsave fabric"
+
+# Verify it reverts
+- extendedWaitUntil:
+    visible:
+      text: "Save fabric"
+    timeout: 5000
+
+# Close the modal
+- tapOn: "Close fabric details"
+
+# Confirm we're back on the catalog grid
+- extendedWaitUntil:
+    visible:
+      text: "Black Wool Crepe.*"
+    timeout: 5000
+
+# ---- CLEANUP: navigate home and log out so the next test starts fresh ----
+- tapOn: "Home"
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000
