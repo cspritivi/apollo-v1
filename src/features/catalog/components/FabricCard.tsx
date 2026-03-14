@@ -143,6 +143,14 @@ export default function FabricCard({
           }}
           accessibilityRole="button"
           accessibilityLabel={isSaved ? "Unsave fabric" : "Save fabric"}
+          // testID bypasses iOS accessibility grouping — the parent Pressable's
+          // accessible={true} swallows child accessibilityLabels, but testID
+          // remains visible to Maestro's id: selector regardless of grouping.
+          // The testID changes with save state so Maestro can target "save" vs
+          // "unsave" buttons specifically. When multiple cards exist, Maestro
+          // taps the first match — which is fine for E2E tests that just need
+          // to verify the toggle works.
+          testID={isSaved ? "unsave-fabric-button" : "save-fabric-button"}
           hitSlop={8} // Extends the tappable area by 8px in all directions,
           // making the small button easier to hit on mobile.
         >
