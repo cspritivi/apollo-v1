@@ -297,6 +297,24 @@ export interface Alteration {
   completed_at: string | null; // Timestamp when status changed to COMPLETED
 }
 
+/**
+ * Saved/bookmarked fabric — junction table linking a user to a fabric.
+ *
+ * ARCHITECTURAL DECISION: This is a junction table (Option A) rather than
+ * an array column on profiles or a polymorphic bookmarks table.
+ * See supabase/saved_fabrics.sql for the full rationale.
+ *
+ * The UI only needs to know which fabric IDs are saved (for toggle state),
+ * so the primary use of this type is extracting fabric_id into a Set for
+ * O(1) "is this saved?" lookups in the catalog grid.
+ */
+export interface SavedFabric {
+  id: string;
+  user_id: string; // FK to profiles.id (matches auth.uid())
+  fabric_id: string; // FK to fabrics.id
+  created_at: string;
+}
+
 // ============================================================================
 // UTILITY TYPES
 // ============================================================================

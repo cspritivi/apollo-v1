@@ -1,24 +1,40 @@
 import { View, Text, Pressable, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
 import { useSignOut } from "../../src/features/auth/hooks";
 
 /**
- * Home screen — placeholder with sign-out button for testing the auth flow.
- * This will eventually become the main dashboard / catalog entry point.
+ * Home screen — main dashboard for authenticated customers.
+ *
+ * Provides navigation to key features (saved fabrics, etc.) and sign-out.
+ * This will expand as more features are built (order tracking, measurements).
  */
 export default function HomeScreen() {
   const { mutate: logout, isPending } = useSignOut();
+  const router = useRouter();
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Home</Text>
       <Text style={styles.subtitle}>You are logged in!</Text>
 
+      {/* WHY router.push (NOT router.navigate):
+          push() adds the saved-fabrics screen to the navigation stack,
+          so the user gets a back button to return here. navigate() would
+          replace the current screen if it already exists in the stack,
+          which could cause unexpected behavior with tab navigation. */}
       <Pressable
-        style={[styles.button, isPending && styles.buttonDisabled]}
+        style={styles.navButton}
+        onPress={() => router.push("/saved-fabrics")}
+      >
+        <Text style={styles.navButtonText}>Saved Fabrics</Text>
+      </Pressable>
+
+      <Pressable
+        style={[styles.signOutButton, isPending && styles.buttonDisabled]}
         onPress={() => logout()}
         disabled={isPending}
       >
-        <Text style={styles.buttonText}>
+        <Text style={styles.signOutButtonText}>
           {isPending ? "Signing out..." : "Sign Out"}
         </Text>
       </Pressable>
@@ -44,16 +60,32 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     marginBottom: 32,
   },
-  button: {
+  navButton: {
+    backgroundColor: "#4f46e5",
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 8,
+    marginBottom: 12,
+    minWidth: 200,
+    alignItems: "center",
+  },
+  navButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  signOutButton: {
     backgroundColor: "#ef4444",
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 8,
+    minWidth: 200,
+    alignItems: "center",
   },
   buttonDisabled: {
     opacity: 0.6,
   },
-  buttonText: {
+  signOutButtonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",

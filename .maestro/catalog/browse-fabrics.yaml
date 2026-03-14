@@ -1,0 +1,71 @@
+# ============================================================================
+# FABRIC CATALOG — BROWSE FLOW
+#
+# Tests the complete fabric browsing experience: user logs in, navigates to
+# the Fabrics tab, sees the catalog grid, and verifies fabric data renders.
+#
+# WHY START FROM LOGIN:
+# Maestro tests run against the full app. Since the catalog is behind the
+# auth gate, we must authenticate first. This also validates that the
+# tab navigation works correctly after login.
+#
+# WHY tabBarAccessibilityLabel ON TABS:
+# React Navigation builds compound accessibility labels for tab buttons
+# (e.g., "Fabrics, tab, 2 of 2"). We override with tabBarAccessibilityLabel
+# so Maestro can tap tabs by their simple label text.
+#
+# WHY REGEX FOR FABRIC CARDS:
+# FabricCard's Pressable has accessibilityLabel="Name, $XX.XX/m" which
+# groups all children into one accessible element on iOS. We use regex
+# matching (e.g., "Black Wool Crepe.*") so Maestro can find the card by
+# its name prefix without knowing the exact price.
+#
+# PREREQUISITE:
+# - Test user exists in Supabase Auth (cspritivi@gmail.com / test123456)
+# - Seed data loaded (20 fabrics via seed_fabrics.sql)
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# Authenticate first (same as auth tests — catalog is behind auth gate)
+- assertVisible: "Welcome Back"
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+- tapOn: "Sign In"
+
+# Dismiss iOS keychain prompt if it appears
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+# Wait for auth to complete and home screen to load
+- extendedWaitUntil:
+    visible:
+      text: "You are logged in!"
+    timeout: 10000
+
+# Navigate to the Fabrics tab
+- tapOn: "Fabrics"
+
+# The catalog should load and display fabric cards from our seed data.
+# Fabric cards have accessibilityLabel="Name, $price/m" so we use regex
+# to match the name portion without hardcoding the price.
+- extendedWaitUntil:
+    visible:
+      text: "Black Wool Crepe.*"
+    timeout: 10000
+
+# Verify at least one more fabric is visible (confirms grid renders multiple items)
+- assertVisible:
+    text: "Camel Wool Twill.*"
+
+# ---- CLEANUP: navigate home and log out so the next test starts fresh ----
+- tapOn: "Home"
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000

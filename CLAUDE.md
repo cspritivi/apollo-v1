@@ -67,8 +67,15 @@ This is a deliberate architectural decision worth explaining in interviews.
 
 ## Data Model Overview
 
-These are the core entities. Full schema lives in Supabase. TypeScript types
-live in `/src/types`.
+These are the core entities. Full SQL schema lives in `/supabase` (reference
+copies — not managed by the Supabase CLI). TypeScript types live in `/src/types`.
+
+SQL files in `/supabase` (run in this order):
+1. `init_schema.sql` — All tables, indexes, `updated_at` trigger
+2. `new_auths.sql` — Auto-create profile on auth signup trigger
+3. `rls_policies.sql` — Row Level Security for all tables
+4. `measurement_history.sql` — Audit trail table + trigger for measurements
+5. `seed_fabrics.sql` — Synthetic fabric catalog data (20 entries)
 
 ### `profiles`
 Customer account linked to Supabase Auth. Stores name, contact, and preferences.
@@ -102,6 +109,11 @@ The core transaction entity. Captures:
 - Measurement snapshot at time of order
 - Current status (see Order Lifecycle below)
 - Status history (array of {status, timestamp, note})
+
+### `measurement_history`
+Automatic audit trail for measurements. A trigger snapshots the old row
+into this table before every update to `measurements`. Customers can view
+their own history (via RLS); only the trigger and service role can write.
 
 ### `alterations`
 Post-delivery alteration requests. Linked to a parent order. Has its own
@@ -273,16 +285,76 @@ automated changelog generation. Interviewers recognise this pattern.
 
 ## Current Status
 
-[ ] Project initialized
-[ ] Supabase project created and schema defined
-[ ] Auth flow implemented
-[ ] Fabric catalog screen
+[x] Project initialized
+[x] Supabase project created and schema defined
+[x] Auth flow implemented
+[x] Fabric catalog screen (data layer + UI + Maestro tests)
 [ ] Product catalog + configurator
 [ ] Order placement flow
 [ ] Order tracking / lifecycle screen
 [ ] Alterations flow
 
 Update this checklist as features are completed.
+
+---
+
+## Maestro E2E Testing — Lessons Learned
+
+Tests live in `.maestro/` organized by feature (e.g., `.maestro/catalog/`,
+`.maestro/auth/`). App runs in Expo Go (`appId: host.exp.Exponent`).
+
+### iOS Accessibility Grouping (Critical)
+
+React Native's `Pressable`, `TouchableOpacity`, etc. set `accessible={true}`
+by default on iOS. This groups ALL child elements into one atomic accessible
+node. Consequences for Maestro:
+
+- **Child `<Text>` nodes become invisible** to Maestro's text matcher. If a
+  `Pressable` contains `<Text>Name</Text>` and `<Text>$45.00</Text>`, Maestro
+  cannot find "Name" as a standalone element.
+- **The grouped element's text** is either the explicit `accessibilityLabel`
+  (if set) or the concatenation of all child text content.
+- **Solution for assertions:** Use regex in Maestro to match the beginning
+  of the accessibility label: `text: "Black Wool Crepe.*"` matches
+  `"Black Wool Crepe, $45.00/m"`.
+- **Solution for targeting specific elements:** Add `testID` to child elements
+  and use Maestro's `id:` selector. `testID` works even inside grouped
+  accessible parents.
+- **Never use `accessible={false}`** just to make tests pass — it breaks
+  screen reader UX for real users. Adapt test selectors instead.
+
+### React Navigation Tab Bars
+
+React Navigation wraps tab labels with platform-specific accessibility
+metadata (e.g., `"Fabrics, tab, 2 of 2"` on iOS). Plain text matching
+for `"Fabrics"` will fail.
+
+- **Fix:** Set `tabBarAccessibilityLabel: "Fabrics"` on the tab screen
+  options to override the compound label with a clean string.
+- `tabBarTestID` does NOT work reliably in Expo Go for Maestro's `id:`
+  selector. Use `tabBarAccessibilityLabel` + text matching instead.
+
+### Test Isolation
+
+Each Maestro test must leave the app in a clean state for the next test.
+Every test should end with:
+```yaml
+# Navigate home and log out
+- tapOn: "Home"
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000
+```
+
+This ensures the next test starts from the login screen with no active session.
+
+### Test File Conventions
+- File names: `kebab-case.yaml` (e.g., `browse-fabrics.yaml`)
+- Each test authenticates from scratch (login → action → logout)
+- Use `extendedWaitUntil` with timeouts for async operations (auth, data loading)
+- Use `optional: true` for dismissing system prompts (e.g., iOS keychain)
 
 ---
 
@@ -293,3 +365,10 @@ Update this checklist as features are completed.
 - Push notifications for order status changes: not yet scoped.
 - Admin panel: currently using Supabase dashboard. Reassess if catalog
   management becomes complex.
+- **Fabric color filtering is client-side.** The catalog screen fetches all
+  available fabrics and filters in memory via `useMemo`. This works fine for
+  ~20 fabrics but must move to server-side filtering (the `colorTag` param
+  in `fetchFabrics` / Postgres `@>` containment) once the catalog grows to
+  100+ items. The API and hook infrastructure already support this — the
+  change is just passing `colorTag` to `useFabrics` instead of filtering
+  the result in the component.

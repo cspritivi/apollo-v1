@@ -39,3 +39,9 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Local fabric images for Supabase Storage upload (not needed in repo)
+/fabric_images
+
+# One-time admin scripts that may contain or reference service role keys
+/scripts

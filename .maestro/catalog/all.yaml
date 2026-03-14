@@ -1,0 +1,9 @@
+appId: host.exp.Exponent
+---
+- runFlow: browse-fabrics.yaml
+- runFlow: fabric-detail-modal.yaml
+- runFlow: pull-to-refresh.yaml
+- runFlow: color-filter.yaml
+- runFlow: save-fabric.yaml
+- runFlow: save-from-modal.yaml
+- runFlow: saved-fabrics-screen.yaml
