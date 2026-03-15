@@ -261,6 +261,11 @@ automated changelog generation. Interviewers recognise this pattern.
 
 ## What Claude Should Always Do
 
+- **Follow TDD (Test-Driven Development) for all new features.** Write failing
+  tests first, then implement the minimum code to make them pass, then refactor.
+  This applies to stores, hooks, utilities, and any testable logic. Tests live
+  co-located with the feature in a `__tests__/` directory (e.g.,
+  `src/stores/__tests__/configuratorStore.test.ts`).
 - Add comments explaining *why*, not just *what*, for every non-trivial decision
 - Follow the feature-based folder structure without exception
 - Use the TypeScript types in `/src/types` rather than defining inline types

@@ -57,7 +57,7 @@ Full-screen step-by-step flow after tapping a product:
 | 2 | Upload option images to Supabase Storage | Manual / script | [ ] In progress — images being generated via ChatGPT |
 | 3 | Products data layer — API functions + React Query hooks | `src/features/catalog/api.ts`, `hooks.ts` | [x] Done |
 | 4 | Products tab + list screen — ProductCard component, add tab | `app/(app)/products.tsx`, `ProductCard.tsx`, `_layout.tsx` | [x] Done |
-| 5 | Configurator Zustand store — selections across steps | `src/stores/configuratorStore.ts` | [ ] Next up |
+| 5 | Configurator Zustand store — selections across steps | `src/stores/configuratorStore.ts` | [x] Done (store + tests written, Jest config needs fix) |
 | 6 | Configurator screen — step-by-step wizard shell | `app/(app)/configurator.tsx` | [ ] Placeholder created |
 | 7 | Fabric selection step — reuse fabric grid inside configurator | `src/features/configurator/components/FabricSelectionStep.tsx` | [ ] |
 | 8 | Option selection step — generic component for any option group | `src/features/configurator/components/OptionStep.tsx`, `OptionCard.tsx` | [ ] |
@@ -83,10 +83,11 @@ Full-screen step-by-step flow after tapping a product:
 
 ---
 
-## Configurator Zustand Store (`src/stores/configuratorStore.ts`)
+## Configurator Zustand Store (`src/stores/configuratorStore.ts`) — IMPLEMENTED
 
 ```ts
 {
+  // State
   product: Product | null,
   fabric: Fabric | null,
   selectedOptions: Record<string, ProductOption>,  // e.g. { "collar_style": {...} }
@@ -94,13 +95,24 @@ Full-screen step-by-step flow after tapping a product:
   customerNotes: string,
 
   // Actions
-  setProduct, setFabric, selectOption, nextStep, prevStep, reset
+  setProduct, setFabric, selectOption, nextStep, prevStep, goToStep, setCustomerNotes, reset,
+
+  // Computed helpers
+  totalSteps(),        // 1 (fabric) + option_groups.length + 1 (review), or 0 if no product
+  isReviewStep(),      // true when currentStep === totalSteps - 1
+  currentOptionGroup() // maps step index to option_group name, null for fabric/review steps
 }
 ```
 
 Why Zustand: The configurator spans multiple steps/components. Passing selections
 through navigation params would be fragile. Zustand gives every step component
 direct access to the shared configuration state.
+
+Key behaviors (defined by tests):
+- `setProduct` resets all other state (fabric, options, step, notes) — prevents stale cross-product state
+- `nextStep`/`prevStep`/`goToStep` all clamp to valid range [0, totalSteps-1]
+- `nextStep` is a no-op if no product is set (can't calculate bounds)
+- Step mapping: step 0 = fabric, steps 1–N = option groups, step N+1 = review
 
 ---
 
@@ -141,8 +153,19 @@ Each option group has 2-4 options, each with an image.
 - **Tab layout updated** — Products tab added between Fabrics and Home. Configurator registered as hidden screen (`href: null`)
 - **Configurator placeholder** — Reads `productId` param, ready for full implementation
 
+## What Was Built (Session 2 — 2026-03-15)
+
+### Completed
+- **Jest test setup** — installed `jest-expo`, `jest`, `@types/jest`. Added `test` and `test:watch` scripts to `package.json`. Jest config with `jest-expo` preset added.
+- **Configurator store tests (TDD Red phase)** — 22 tests written in `src/stores/__tests__/configuratorStore.test.ts` covering: initial state, setProduct (with reset side effect), setFabric, selectOption (replace semantics), nextStep/prevStep/goToStep (with clamping), setCustomerNotes, reset, and computed helpers (totalSteps, isReviewStep, currentOptionGroup).
+- **Configurator store implementation (TDD Green phase)** — `src/stores/configuratorStore.ts` written with all actions and computed helpers matching the test spec. Uses extracted `initialState` constant and `clampStep`/`calculateTotalSteps` helpers.
+- **CLAUDE.md updated** — TDD is now mandatory for all future features.
+
+### Blocker: Jest Config
+- Tests fail with `jest-expo` runtime scoping error: `"You are trying to import a file outside of the scope of the test code"`. Likely a `transformIgnorePatterns` or preset config issue. **Must fix this before proceeding** to confirm all 22 tests pass (Green phase).
+
 ### Next Session
+- Fix Jest config to get store tests passing (Green phase)
 - Generate remaining images and upload to Supabase Storage
 - Write `seed_products.sql` with real image URLs
-- Build Zustand configurator store (step 5)
 - Build configurator UI: progress bar, fabric step, option step, review summary (steps 6–10)
