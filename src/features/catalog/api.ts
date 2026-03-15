@@ -1,8 +1,8 @@
 import { supabase } from "../../lib/supabase";
-import { Fabric, SavedFabric } from "../../types";
+import { Fabric, Product, ProductOption, SavedFabric } from "../../types";
 
 /**
- * Catalog API — all Supabase queries for fabric browsing live here.
+ * Catalog API — all Supabase queries for fabric and product browsing live here.
  *
  * WHY A SEPARATE API FILE (SAME PATTERN AS AUTH):
  * Components never call Supabase directly. This keeps the data layer
@@ -169,4 +169,92 @@ export async function unsaveFabric(
     .eq("fabric_id", fabricId);
 
   if (error) throw error;
+}
+
+// ============================================================================
+// PRODUCTS
+//
+// Products follow the same query patterns as fabrics: fetch all (for the list
+// screen), fetch by ID (for the configurator), and a filter-based approach.
+//
+// Product options are fetched separately because a product only stores the
+// *names* of its option groups (e.g., ["collar_style", "cuff_style"]) as a
+// text[] column. The actual options live in the product_options table, keyed
+// by option_group. This separation means adding new options to an existing
+// group doesn't require updating the product row.
+// ============================================================================
+
+/**
+ * Fetch all available products for the product catalog screen.
+ *
+ * WHY availableOnly DEFAULTS TO true:
+ * Unlike fabrics (where the caller controls the filter), products are
+ * only shown to customers when available. The tailor manages availability
+ * via the Supabase dashboard. We still accept a parameter for flexibility
+ * (e.g., an admin view could pass false) but default to customer-facing.
+ */
+export async function fetchProducts(availableOnly = true): Promise<Product[]> {
+  let query = supabase
+    .from("products")
+    .select("*")
+    .order("name", { ascending: true });
+
+  if (availableOnly) {
+    query = query.eq("available", true);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw error;
+  return data as Product[];
+}
+
+/**
+ * Fetch a single product by ID.
+ *
+ * Used by the configurator to load the full product details (including
+ * option_groups list) for the selected product.
+ */
+export async function fetchProductById(id: string): Promise<Product> {
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) throw error;
+  return data as Product;
+}
+
+/**
+ * Fetch product options for a given set of option groups.
+ *
+ * WHY optionGroups IS AN ARRAY (NOT A SINGLE GROUP):
+ * A product like "Dress Shirt" has 5 option groups. Fetching them one by
+ * one would require 5 separate requests. Instead, we fetch all options
+ * whose option_group is in the product's option_groups array in a single
+ * query using Postgres's IN operator (Supabase's .in() method).
+ *
+ * The caller (configurator) passes the product's option_groups array
+ * directly: fetchProductOptions(product.option_groups).
+ *
+ * WHY ORDER BY option_group THEN name:
+ * Ordering by option_group clusters options by group, making it trivial
+ * to split the flat array into per-group arrays in the hook layer using
+ * a simple reduce. Ordering by name within each group gives a stable,
+ * predictable display order for the option cards.
+ */
+export async function fetchProductOptions(
+  optionGroups: string[],
+): Promise<ProductOption[]> {
+  const { data, error } = await supabase
+    .from("product_options")
+    .select("*")
+    .in("option_group", optionGroups)
+    .eq("available", true)
+    .order("option_group", { ascending: true })
+    .order("name", { ascending: true });
+
+  if (error) throw error;
+  return data as ProductOption[];
 }

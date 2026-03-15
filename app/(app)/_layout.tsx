@@ -63,6 +63,14 @@ export default function AppLayout() {
           tabBarAccessibilityLabel: "Fabrics",
         }}
       />
+      <Tabs.Screen
+        name="products"
+        options={{
+          title: "Products",
+          tabBarLabel: "Products",
+          tabBarAccessibilityLabel: "Products",
+        }}
+      />
       {/* Saved fabrics is navigated to from the Home screen, not a tab.
           Setting href: null hides it from the tab bar while keeping it
           inside the (app) route group for auth protection. This is Expo
@@ -72,6 +80,16 @@ export default function AppLayout() {
         name="saved-fabrics"
         options={{
           title: "Saved Fabrics",
+          href: null,
+        }}
+      />
+      {/* Configurator is a full-screen flow pushed from the products tab,
+          not a tab itself. href: null hides it from the tab bar. The user
+          enters via router.push("/configurator") with a productId param. */}
+      <Tabs.Screen
+        name="configurator"
+        options={{
+          title: "Configure",
           href: null,
         }}
       />

@@ -372,3 +372,47 @@ This ensures the next test starts from the login screen with no active session.
   100+ items. The API and hook infrastructure already support this — the
   change is just passing `colorTag` to `useFabrics` instead of filtering
   the result in the component.
+
+---
+
+## Future Features & Improvements
+
+A running list of ideas and planned enhancements. These are not currently
+in scope but should inform architectural decisions — avoid building things
+that would make these harder to add later.
+
+- **Curated style recommendations on product selection.** When a customer
+  selects a product (e.g., Suit), show a menu of pre-configured "recipes"
+  before they enter the full configurator. Sections could include:
+  - *Classic Styles* — timeless combinations (e.g., navy suit, spread collar, two-button)
+  - *New Arrivals* — recently added fabric + style combos
+  - *In Season* — styles curated for the current season (summer linens, winter wools)
+  - *Event Based* — wedding suits, business formal, casual weekend
+  - *Tailor's Picks* — staff favourites or bestsellers
+
+  The customer can pick a preset as a starting point and then customize
+  individual options in the configurator, or skip presets and build from
+  scratch. This would require a `style_presets` table linking a product to
+  a set of pre-selected options + fabric + display metadata (name, image,
+  tags/categories).
+
+- **Dynamic product catalog layout.** The products screen currently uses a
+  uniform 2-column grid (same as fabrics), but the final design should be
+  more editorial and dynamic — like a curated storefront, not a spreadsheet.
+  Examples: a hero card for suits spanning full width, a row of shirt
+  variations in a horizontal scroll, a "New Styles" section with different
+  card sizes. Think of how apps like ASOS, Zara, or Nike mix card sizes,
+  carousels, and section headers to create a browsing experience that
+  guides the customer rather than just listing items. This requires a
+  section-based data model (not just a flat product list) and a more
+  flexible layout component (e.g., SectionList with mixed render items).
+
+- **Fabric–product compatibility.** Not all fabrics are suitable for every
+  product type (e.g., a heavy wool tweed shouldn't be offered for a summer
+  shirt). Currently all fabrics are shown for all products. The future fix
+  is a `product_fabrics` junction table that maps which fabrics are valid
+  for which products. The configurator's fabric selection step would then
+  filter by `WHERE fabric_id IN (SELECT fabric_id FROM product_fabrics
+  WHERE product_id = $1)`. The UI stays the same — it just shows fewer
+  fabrics. This is safe to defer because the query change is minimal and
+  doesn't require any architectural rework.
