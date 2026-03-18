@@ -1,0 +1,146 @@
+# ============================================================================
+# CONFIGURATOR — BACK NAVIGATION & SELECTION PERSISTENCE
+#
+# Tests that the Back button navigates to the previous step and that
+# selections persist when navigating back and forth between steps.
+#
+# WHY THIS MATTERS:
+# The Zustand store holds selections across all steps. If a step re-renders
+# after navigating away and back, the previous selection should still be
+# displayed (highlighted card, "Selected: X" subtitle). This test catches
+# regressions where step components lose their controlled selection state.
+#
+# PRODUCT UNDER TEST: Trousers (different product to cover all three)
+#
+# PREREQUISITE:
+# - Test user exists in Supabase Auth
+# - Seed data loaded
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# ---- AUTHENTICATE ----
+- assertVisible: "Welcome Back"
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+- tapOn: "Sign In"
+
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "You are logged in!"
+    timeout: 10000
+
+# ---- NAVIGATE TO CONFIGURATOR WITH TROUSERS ----
+- tapOn: "Products"
+
+- extendedWaitUntil:
+    visible:
+      text: "Trousers.*"
+    timeout: 10000
+
+- tapOn:
+    text: "Trousers.*"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose Fabric"
+    timeout: 10000
+
+# ---- SELECT FABRIC AND ADVANCE ----
+- tapOn:
+    text: "Black Wool Crepe.*"
+
+- assertVisible:
+    text: "Selected: Black Wool Crepe"
+
+- tapOn: "Next"
+
+# ---- STEP 1: FIT STYLE ----
+- extendedWaitUntil:
+    visible:
+      text: "Choose Fit Style"
+    timeout: 5000
+
+- tapOn:
+    text: "Slim Fit.*"
+
+- assertVisible:
+    text: "Selected: Slim Fit"
+
+- tapOn: "Next"
+
+# ---- STEP 2: PLEAT STYLE ----
+- extendedWaitUntil:
+    visible:
+      text: "Choose Pleat Style"
+    timeout: 5000
+
+- tapOn:
+    text: "Flat Front.*"
+
+- assertVisible:
+    text: "Selected: Flat Front"
+
+# ---- GO BACK TO FIT STYLE ----
+- tapOn: "Go to previous step"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose Fit Style"
+    timeout: 5000
+
+# Verify the Slim Fit selection persisted after navigating away and back
+- assertVisible:
+    text: "Selected: Slim Fit"
+
+# ---- GO BACK TO FABRIC ----
+- tapOn: "Go to previous step"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose Fabric"
+    timeout: 5000
+
+# Verify the fabric selection persisted
+- assertVisible:
+    text: "Selected: Black Wool Crepe"
+
+# ---- GO FORWARD AGAIN — selections should still be there ----
+- tapOn: "Next"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose Fit Style"
+    timeout: 5000
+
+- assertVisible:
+    text: "Selected: Slim Fit"
+
+# ---- CLEANUP ----
+- tapOn: "Go to previous step"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose Fabric"
+    timeout: 5000
+
+- tapOn: "Cancel configuration"
+
+- extendedWaitUntil:
+    visible:
+      text: "Trousers.*"
+    timeout: 5000
+
+- tapOn: "Home"
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000

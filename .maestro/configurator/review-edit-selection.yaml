@@ -1,0 +1,196 @@
+# ============================================================================
+# CONFIGURATOR — REVIEW SCREEN TAP-TO-EDIT
+#
+# Tests that tapping a selection row on the review screen jumps back to the
+# corresponding configurator step, allowing the customer to change their
+# choice and return to review.
+#
+# WHY THIS MATTERS:
+# The review screen is the final checkpoint before order placement. Customers
+# need to be able to quickly fix a wrong selection without navigating back
+# step-by-step. The tap-to-edit interaction (via onGoToStep) is a key UX
+# feature — each row has a chevron (›) hinting at tappability.
+#
+# PRODUCT UNDER TEST: Two-Piece Suit
+#
+# PREREQUISITE:
+# - Test user exists in Supabase Auth
+# - Seed data loaded
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# ---- AUTHENTICATE ----
+- assertVisible: "Welcome Back"
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+- tapOn: "Sign In"
+
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "You are logged in!"
+    timeout: 10000
+
+# ---- NAVIGATE TO CONFIGURATOR ----
+- tapOn: "Products"
+
+- extendedWaitUntil:
+    visible:
+      text: "Two-Piece Suit.*"
+    timeout: 10000
+
+- tapOn:
+    text: "Two-Piece Suit.*"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose Fabric"
+    timeout: 10000
+
+# ---- MAKE SELECTIONS QUICKLY (fabric + first two options) ----
+- tapOn:
+    text: "Black Wool Crepe.*"
+- tapOn: "Next"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose Lapel Style"
+    timeout: 5000
+- tapOn:
+    text: "Notch Lapel.*"
+- tapOn: "Next"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose Button Count"
+    timeout: 5000
+- tapOn:
+    text: "Two Button.*"
+- tapOn: "Next"
+
+# Skip remaining steps to get to review quickly
+- extendedWaitUntil:
+    visible:
+      text: "Choose Vent Style"
+    timeout: 5000
+- tapOn:
+    text: "Single Vent.*"
+- tapOn: "Next"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose Lining Style"
+    timeout: 5000
+- tapOn:
+    text: "Full Lining.*"
+- tapOn: "Next"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose Pocket Style"
+    timeout: 5000
+- tapOn:
+    text: "Flap Pocket.*"
+- tapOn: "Next"
+
+# ---- VERIFY REVIEW ----
+- extendedWaitUntil:
+    visible:
+      text: "Review Your Configuration"
+    timeout: 5000
+
+# Verify initial selections
+- assertVisible:
+    text: "Edit fabric selection: Black Wool Crepe"
+- assertVisible:
+    text: "Edit Lapel Style: Notch Lapel"
+
+# ---- TAP FABRIC ROW TO EDIT ----
+- tapOn:
+    text: "Edit fabric selection: Black Wool Crepe"
+
+# Should jump back to fabric step
+- extendedWaitUntil:
+    visible:
+      text: "Choose Fabric"
+    timeout: 5000
+
+# Change the fabric selection
+- tapOn:
+    text: "Camel Wool Twill.*"
+
+- assertVisible:
+    text: "Selected: Camel Wool Twill"
+
+# Navigate back to review via progress bar (step 7 = Review for suit)
+- tapOn:
+    text: "Step 7: Review.*"
+
+- extendedWaitUntil:
+    visible:
+      text: "Review Your Configuration"
+    timeout: 5000
+
+# Verify the fabric selection was updated
+- assertVisible:
+    text: "Edit fabric selection: Camel Wool Twill"
+
+# ---- TAP AN OPTION ROW TO EDIT ----
+- tapOn:
+    text: "Edit Lapel Style: Notch Lapel"
+
+# Should jump back to lapel style step
+- extendedWaitUntil:
+    visible:
+      text: "Choose Lapel Style"
+    timeout: 5000
+
+# Change to Peak Lapel
+- tapOn:
+    text: "Peak Lapel.*"
+
+- assertVisible:
+    text: "Selected: Peak Lapel"
+
+# Go back to review
+- tapOn:
+    text: "Step 7: Review.*"
+
+- extendedWaitUntil:
+    visible:
+      text: "Review Your Configuration"
+    timeout: 5000
+
+# Verify the option was updated
+- assertVisible:
+    text: "Edit Lapel Style: Peak Lapel"
+
+# ---- CLEANUP ----
+- tapOn:
+    text: "Step 1: Fabric.*"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose Fabric"
+    timeout: 5000
+
+- tapOn: "Cancel configuration"
+
+- extendedWaitUntil:
+    visible:
+      text: "Two-Piece Suit.*"
+    timeout: 5000
+
+- tapOn: "Home"
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000

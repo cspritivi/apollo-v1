@@ -261,6 +261,11 @@ automated changelog generation. Interviewers recognise this pattern.
 
 ## What Claude Should Always Do
 
+- **Follow TDD (Test-Driven Development) for all new features.** Write failing
+  tests first, then implement the minimum code to make them pass, then refactor.
+  This applies to stores, hooks, utilities, and any testable logic. Tests live
+  co-located with the feature in a `__tests__/` directory (e.g.,
+  `src/stores/__tests__/configuratorStore.test.ts`).
 - Add comments explaining *why*, not just *what*, for every non-trivial decision
 - Follow the feature-based folder structure without exception
 - Use the TypeScript types in `/src/types` rather than defining inline types
@@ -289,7 +294,8 @@ automated changelog generation. Interviewers recognise this pattern.
 [x] Supabase project created and schema defined
 [x] Auth flow implemented
 [x] Fabric catalog screen (data layer + UI + Maestro tests)
-[ ] Product catalog + configurator
+[x] Product catalog + configurator (data layer + UI + store with 30 tests)
+[ ] Configurator Maestro E2E tests
 [ ] Order placement flow
 [ ] Order tracking / lifecycle screen
 [ ] Alterations flow
@@ -372,3 +378,94 @@ This ensures the next test starts from the login screen with no active session.
   100+ items. The API and hook infrastructure already support this — the
   change is just passing `colorTag` to `useFabrics` instead of filtering
   the result in the component.
+
+---
+
+## Future Features & Improvements
+
+A running list of ideas and planned enhancements. These are not currently
+in scope but should inform architectural decisions — avoid building things
+that would make these harder to add later.
+
+- **Curated style recommendations on product selection.** When a customer
+  selects a product (e.g., Suit), show a menu of pre-configured "recipes"
+  before they enter the full configurator. Sections could include:
+  - *Classic Styles* — timeless combinations (e.g., navy suit, spread collar, two-button)
+  - *New Arrivals* — recently added fabric + style combos
+  - *In Season* — styles curated for the current season (summer linens, winter wools)
+  - *Event Based* — wedding suits, business formal, casual weekend
+  - *Tailor's Picks* — staff favourites or bestsellers
+
+  The customer can pick a preset as a starting point and then customize
+  individual options in the configurator, or skip presets and build from
+  scratch. This would require a `style_presets` table linking a product to
+  a set of pre-selected options + fabric + display metadata (name, image,
+  tags/categories).
+
+- **Dynamic product catalog layout.** The products screen currently uses a
+  uniform 2-column grid (same as fabrics), but the final design should be
+  more editorial and dynamic — like a curated storefront, not a spreadsheet.
+  Examples: a hero card for suits spanning full width, a row of shirt
+  variations in a horizontal scroll, a "New Styles" section with different
+  card sizes. Think of how apps like ASOS, Zara, or Nike mix card sizes,
+  carousels, and section headers to create a browsing experience that
+  guides the customer rather than just listing items. This requires a
+  section-based data model (not just a flat product list) and a more
+  flexible layout component (e.g., SectionList with mixed render items).
+
+- **Fabric save + detail in configurator.** The configurator's fabric
+  selection step currently uses a simplified card (tap to select). It
+  should also support saving/bookmarking fabrics and viewing the full
+  detail modal (FabricDetailModal). The challenge: FabricCard's `onPress`
+  opens the detail modal, but in the configurator `onPress` needs to
+  select the fabric. The cleanest approach is to add a "Select this
+  Fabric" button inside FabricDetailModal when used in configurator
+  context (pass a `mode` or `onSelect` prop). Then the card's `onPress`
+  opens the modal as usual, and the modal has both "Save" and "Select"
+  actions. The save hooks (useSaveFabric, useUnsaveFabric) already exist
+  and just need the user session wired in.
+
+- **Fabric–product compatibility.** Not all fabrics are suitable for every
+  product type (e.g., a heavy wool tweed shouldn't be offered for a summer
+  shirt). Currently all fabrics are shown for all products. The future fix
+  is a `product_fabrics` junction table that maps which fabrics are valid
+  for which products. The configurator's fabric selection step would then
+  filter by `WHERE fabric_id IN (SELECT fabric_id FROM product_fabrics
+  WHERE product_id = $1)`. The UI stays the same — it just shows fewer
+  fabrics. This is safe to defer because the query change is minimal and
+  doesn't require any architectural rework.
+
+- **Swipe navigation between configurator steps.** Replace the current
+  static step rendering with a horizontal swipeable view (e.g.,
+  `react-native-pager-view` or a FlatList with `pagingEnabled`). The
+  customer can swipe left/right to move between option steps, making
+  the configurator feel more fluid and native. The bottom progress bar
+  and Next/Back buttons remain as alternative navigation — swiping is
+  an addition, not a replacement.
+
+- **One-tap option selection + auto-advance.** Currently selecting an
+  option requires two taps: tap the option card, then tap Next. For a
+  faster flow, tapping an option should select it AND auto-advance to
+  the next step after a brief delay (~300ms, enough to show the
+  selection animation). A "selected" state still shows visually so the
+  customer sees their choice registered before the transition. This
+  does not apply to the fabric step (which has filters and more
+  browsing) or the review step — only to the option group steps where
+  the interaction is simply "pick one."
+
+- **Long-press / 3D Touch preview in configurator.** On the fabric
+  selection step, long-pressing a fabric card should show a peek preview
+  with full fabric details (description, color tags, price) — similar to
+  the FabricDetailModal but as a lightweight overlay. On option group
+  steps, long-pressing an option card should show the full description
+  text and a larger image. This gives customers quick access to details
+  without leaving the selection flow. Implementation options: React
+  Native's `onLongPress` with a custom modal/tooltip, or iOS-native
+  context menus via `react-native-context-menu-view` for a truly native
+  3D Touch / Haptic Touch feel.
+
+- **Maestro E2E tests for configurator.** Deferred because Maestro
+  doesn't work well on Windows. Write tests covering: product
+  selection → full configurator flow (fabric + all option steps +
+  review) → verify review shows correct selections → tap review items
+  to jump back and change. See `.maestro/` for existing patterns.

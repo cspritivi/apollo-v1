@@ -5,8 +5,11 @@ import {
   fetchSavedFabrics,
   saveFabric,
   unsaveFabric,
+  fetchProducts,
+  fetchProductById,
+  fetchProductOptions,
 } from "./api";
-import { SavedFabric } from "../../types";
+import { ProductOption, SavedFabric } from "../../types";
 
 /**
  * Catalog hooks — React Query wrappers for fabric data fetching.
@@ -224,5 +227,99 @@ export function useUnsaveFabric(userId: string) {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["saved_fabrics", userId] });
     },
+  });
+}
+
+// ============================================================================
+// PRODUCT HOOKS
+//
+// Same patterns as the fabric hooks above: useQuery for declarative data
+// loading, query keys that encode the parameters for proper cache separation,
+// and staleTime tuned for how often the data changes.
+// ============================================================================
+
+/**
+ * Hook to fetch all available products for the product catalog screen.
+ *
+ * WHY SAME staleTime AS FABRICS:
+ * Products change as rarely as fabrics (the tailor adds new products
+ * maybe once a month). 5 minutes keeps the catalog snappy on mobile
+ * while still picking up changes within a single browsing session.
+ */
+export function useProducts() {
+  return useQuery({
+    queryKey: ["products"],
+    queryFn: () => fetchProducts(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * Hook to fetch a single product by ID.
+ *
+ * Used by the configurator to load the selected product's details,
+ * including its option_groups array which determines the configurator steps.
+ *
+ * WHY enabled: !!id:
+ * Same guard as useFabric — prevents firing a query with undefined ID
+ * before the user has selected a product.
+ */
+export function useProduct(id: string | undefined) {
+  return useQuery({
+    queryKey: ["products", id],
+    queryFn: () => fetchProductById(id!),
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * Hook to fetch product options grouped by option_group.
+ *
+ * WHY productId (NOT optionGroups):
+ * The API now filters by product_id FK, which is the structurally correct
+ * way to scope options to a product. This eliminates the bug where shared
+ * option_group names (e.g., "pocket_style") would return options from all
+ * products. The hook still groups the results by option_group for the
+ * configurator UI.
+ *
+ * WHY GROUP IN THE HOOK (NOT THE API):
+ * The API returns a flat array of ProductOption sorted by option_group.
+ * The hook transforms this into a Record<string, ProductOption[]> (a map
+ * from group name to its options) because that's what the configurator
+ * UI needs — each step renders one group's options. Keeping the API flat
+ * and the hook grouped follows the pattern of "API returns raw data,
+ * hooks shape it for the UI."
+ *
+ * WHY THE select TRANSFORM:
+ * React Query's select option transforms the cached data without
+ * re-fetching. The raw flat array stays in the cache (efficient storage),
+ * and the grouped version is derived on read. If we grouped in the API,
+ * we'd lose the ability to use the flat array elsewhere.
+ */
+export function useProductOptions(productId: string | undefined) {
+  return useQuery({
+    queryKey: ["product_options", productId],
+    queryFn: () => fetchProductOptions(productId!),
+    enabled: !!productId,
+    staleTime: 5 * 60 * 1000,
+    /**
+     * Transform the flat array into a grouped map using reduce.
+     *
+     * Input:  [{ option_group: "collar_style", ... }, { option_group: "collar_style", ... }, { option_group: "cuff_style", ... }]
+     * Output: { "collar_style": [opt1, opt2], "cuff_style": [opt3] }
+     *
+     * WHY reduce (NOT a for loop or lodash.groupBy):
+     * reduce is the idiomatic functional approach for this transformation.
+     * It processes each item once (O(n)) and builds the result in a single
+     * pass. No external dependency needed for a one-liner grouping operation.
+     */
+    select: (data: ProductOption[]) =>
+      data.reduce<Record<string, ProductOption[]>>((groups, option) => {
+        const group = groups[option.option_group] ?? [];
+        group.push(option);
+        groups[option.option_group] = group;
+        return groups;
+      }, {}),
   });
 }

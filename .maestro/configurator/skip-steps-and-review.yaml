@@ -1,0 +1,139 @@
+# ============================================================================
+# CONFIGURATOR — SKIP STEPS & NON-LINEAR NAVIGATION
+#
+# Tests that customers can freely skip steps using Next and the progress bar,
+# then return to fill in missing selections before placing an order.
+#
+# WHY THIS MATTERS:
+# The configurator is intentionally non-linear — customers might want to see
+# the review first, or jump to a specific option they care about. The only
+# gate is "Place Order" on the review step, which requires all selections.
+# This test validates that skipping works and that the review correctly
+# reflects which steps are incomplete.
+#
+# PRODUCT UNDER TEST: Dress Shirt (5 option groups — different from the
+# happy-path test to ensure the configurator works for all products)
+#
+# PREREQUISITE:
+# - Test user exists in Supabase Auth
+# - Seed data loaded (products + product_options + fabrics)
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# ---- AUTHENTICATE ----
+- assertVisible: "Welcome Back"
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+- tapOn: "Sign In"
+
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "You are logged in!"
+    timeout: 10000
+
+# ---- NAVIGATE TO CONFIGURATOR WITH DRESS SHIRT ----
+- tapOn: "Products"
+
+- extendedWaitUntil:
+    visible:
+      text: "Dress Shirt.*"
+    timeout: 10000
+
+- tapOn:
+    text: "Dress Shirt.*"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose Fabric"
+    timeout: 10000
+
+# ---- SKIP FABRIC STEP — tap Next without selecting a fabric ----
+# Steps are freely navigable, so Next should advance even without a selection
+- tapOn: "Next"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose Collar Style"
+    timeout: 5000
+
+# ---- SKIP AHEAD TO STEP 4 VIA PROGRESS BAR ----
+# Jump directly to Pocket Style (step 5 in the progress bar for Dress Shirt)
+- tapOn:
+    text: "Step 5: Pocket Style.*"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose Pocket Style"
+    timeout: 5000
+
+# Make a selection on this step
+- tapOn:
+    text: "Chest Pocket.*"
+
+- assertVisible:
+    text: "Selected: Chest Pocket"
+
+# ---- JUMP TO REVIEW VIA PROGRESS BAR ----
+# Dress Shirt has 5 option groups, so Review is step 7
+- tapOn:
+    text: "Step 7: Review.*"
+
+- extendedWaitUntil:
+    visible:
+      text: "Review Your Configuration"
+    timeout: 5000
+
+# Verify the review shows incomplete selections
+# Fabric should show "No fabric selected" since we skipped it
+- assertVisible:
+    text: "Edit fabric selection"
+
+# Verify the one selection we did make is visible. "Chest Pocket" as
+# standalone text is invisible to Maestro — the Pressable groups children
+# into a single accessibility label. Use the grouped label instead, and
+# scroll since the option is below the fold.
+- scrollUntilVisible:
+    element:
+      text: "Edit Pocket Style: Chest Pocket"
+    direction: DOWN
+    timeout: 5000
+
+# ---- GO BACK AND FILL IN MISSING STEPS ----
+# Tap fabric row on review to jump back to fabric step
+- tapOn:
+    text: "Edit fabric selection.*"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose Fabric"
+    timeout: 5000
+
+# Now select a fabric — use a known seed fabric
+- tapOn:
+    text: "Black Wool Crepe.*"
+
+- assertVisible:
+    text: "Selected: Black Wool Crepe"
+
+# ---- CLEANUP ----
+- tapOn: "Cancel configuration"
+
+- extendedWaitUntil:
+    visible:
+      text: "Dress Shirt.*"
+    timeout: 5000
+
+- tapOn: "Home"
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000

@@ -1,0 +1,192 @@
+# ============================================================================
+# CONFIGURATOR — FULL HAPPY PATH FLOW
+#
+# Tests the complete configurator journey: login → Products tab → select a
+# product → step through every configurator step (fabric + all option groups)
+# → verify the review screen shows all selections → cleanup.
+#
+# WHY THIS IS THE MOST IMPORTANT TEST:
+# This exercises the entire configurator state machine end-to-end. If this
+# test passes, the core user journey works: data loading (React Query),
+# state management (Zustand store), step navigation, and review rendering.
+#
+# PRODUCT UNDER TEST: Two-Piece Suit
+# Option groups: lapel_style, button_count, vent_style, lining_style, pocket_style
+# This gives us 7 total steps: fabric + 5 option groups + review.
+#
+# PREREQUISITE:
+# - Test user exists in Supabase Auth (cspritivi@gmail.com / test123456)
+# - Seed data loaded (products + product_options + fabrics)
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# ---- AUTHENTICATE ----
+- assertVisible: "Welcome Back"
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+- tapOn: "Sign In"
+
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "You are logged in!"
+    timeout: 10000
+
+# ---- NAVIGATE TO PRODUCTS TAB ----
+- tapOn: "Products"
+
+# Wait for product cards to load from Supabase
+- extendedWaitUntil:
+    visible:
+      text: "Two-Piece Suit.*"
+    timeout: 10000
+
+# ---- TAP A PRODUCT TO ENTER CONFIGURATOR ----
+- tapOn:
+    text: "Two-Piece Suit.*"
+
+# Wait for configurator to load (fabric step is first)
+- extendedWaitUntil:
+    visible:
+      text: "Choose Fabric"
+    timeout: 10000
+
+# ---- STEP 0: FABRIC SELECTION ----
+- assertVisible: "Tap a fabric to select it"
+
+# Select a fabric — regex matches accessibilityLabel "Name, $price/m"
+- tapOn:
+    text: "Black Wool Crepe.*"
+
+# Verify subtitle updates to confirm the selection
+- assertVisible:
+    text: "Selected: Black Wool Crepe"
+
+- tapOn: "Next"
+
+# ---- STEP 1: LAPEL STYLE ----
+- extendedWaitUntil:
+    visible:
+      text: "Choose Lapel Style"
+    timeout: 5000
+
+- assertVisible: "Tap an option to select it"
+
+# Select Peak Lapel (+$50.00 price modifier)
+- tapOn:
+    text: "Peak Lapel.*"
+
+- assertVisible:
+    text: "Selected: Peak Lapel"
+
+- tapOn: "Next"
+
+# ---- STEP 2: BUTTON COUNT ----
+- extendedWaitUntil:
+    visible:
+      text: "Choose Button Count"
+    timeout: 5000
+
+- tapOn:
+    text: "Two Button.*"
+
+- tapOn: "Next"
+
+# ---- STEP 3: VENT STYLE ----
+- extendedWaitUntil:
+    visible:
+      text: "Choose Vent Style"
+    timeout: 5000
+
+- tapOn:
+    text: "Single Vent.*"
+
+- tapOn: "Next"
+
+# ---- STEP 4: LINING STYLE ----
+- extendedWaitUntil:
+    visible:
+      text: "Choose Lining Style"
+    timeout: 5000
+
+- tapOn:
+    text: "Full Lining.*"
+
+- tapOn: "Next"
+
+# ---- STEP 5: POCKET STYLE ----
+- extendedWaitUntil:
+    visible:
+      text: "Choose Pocket Style"
+    timeout: 5000
+
+- tapOn:
+    text: "Welt Pocket.*"
+
+- tapOn: "Next"
+
+# ---- REVIEW STEP ----
+- extendedWaitUntil:
+    visible:
+      text: "Review Your Configuration"
+    timeout: 5000
+
+- assertVisible: "Tap any selection to change it"
+
+# Verify product name
+- assertVisible: "Two-Piece Suit"
+
+# Verify selected fabric appears (via tappable row's accessibility label)
+- assertVisible:
+    text: "Edit fabric selection: Black Wool Crepe"
+
+# Verify a selected option appears
+- assertVisible:
+    text: "Edit Lapel Style: Peak Lapel"
+
+# Price Breakdown is below the fold — scroll to the bottommost element
+# so that both "Price Breakdown" and "Estimated Total" are in view
+- scrollUntilVisible:
+    element:
+      text: "Estimated Total"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible: "Price Breakdown"
+
+# Verify "Place Order" button is shown on the review step
+- assertVisible: "Place Order"
+
+# ---- CLEANUP ----
+# Jump back to fabric step (step 1 in progress bar) then Cancel out.
+# Cancel calls router.replace("/products") so we land on the Products tab.
+- tapOn:
+    text: "Step 1: Fabric.*"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose Fabric"
+    timeout: 5000
+
+- tapOn: "Cancel configuration"
+
+# Back on Products screen
+- extendedWaitUntil:
+    visible:
+      text: "Two-Piece Suit.*"
+    timeout: 5000
+
+# Navigate home and log out
+- tapOn: "Home"
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000
