@@ -63,7 +63,7 @@ Full-screen step-by-step flow after tapping a product:
 | 8 | Option selection step — generic component for any option group | `src/features/configurator/components/OptionStep.tsx`, `OptionCard.tsx` | [x] Done |
 | 9 | Progress bar — visual stepper | `src/features/configurator/components/ProgressBar.tsx` | [x] Done |
 | 10 | Review summary — visual recap with price breakdown | `src/features/configurator/components/ReviewSummary.tsx` | [x] Done |
-| 11 | Maestro E2E tests | `.maestro/configurator/` | [ ] |
+| 11 | Maestro E2E tests | `.maestro/configurator/` | [x] Done — 4 tests |
 
 ---
 

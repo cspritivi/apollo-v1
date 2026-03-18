@@ -1,0 +1,13 @@
+# ============================================================================
+# CONFIGURATOR — RUN ALL E2E TESTS
+#
+# Runs all configurator Maestro tests in sequence. Each test authenticates
+# and cleans up independently, so order doesn't matter — but running the
+# happy path first gives the fastest signal on whether the core flow works.
+# ============================================================================
+appId: host.exp.Exponent
+---
+- runFlow: full-configurator-flow.yaml
+- runFlow: skip-steps-and-review.yaml
+- runFlow: back-navigation.yaml
+- runFlow: review-edit-selection.yaml

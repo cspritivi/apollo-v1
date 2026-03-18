@@ -210,14 +210,14 @@ export default function ConfiguratorScreen() {
   // The "Next" button label changes on the review step to indicate
   // the next action will be placing the order (not implemented yet).
   const nextButtonLabel = isReviewStep ? "Place Order" : "Next";
-  // Disable Next if the current step has no selection (fabric or option).
-  // This prevents the customer from advancing without making a choice.
-  const isNextDisabled =
-    (currentStep === 0 && !fabric) ||
-    (!isReviewStep &&
-      currentStep > 0 &&
-      !!currentOptionGroup &&
-      !selectedOptions[currentOptionGroup]);
+  // Steps are freely navigable — customers can skip ahead and come back
+  // in any order. The only gate is on the review step: "Place Order" is
+  // disabled until every step has a selection (fabric + all option groups).
+  // This matches the progress bar's tap-to-jump behavior — no inconsistency
+  // between Next and the stepper.
+  const allOptionsSelected =
+    product?.option_groups?.every((group) => !!selectedOptions[group]) ?? false;
+  const isNextDisabled = isReviewStep && (!fabric || !allOptionsSelected);
 
   return (
     <View style={styles.container}>
@@ -231,7 +231,7 @@ export default function ConfiguratorScreen() {
             // First step shows "Cancel" to exit the configurator
             <Pressable
               style={styles.navButtonSecondary}
-              onPress={() => router.back()}
+              onPress={() => router.replace("/products")}
               accessibilityRole="button"
               accessibilityLabel="Cancel configuration"
             >
