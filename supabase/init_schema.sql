@@ -67,8 +67,16 @@
   -- 5. PRODUCT_OPTIONS
   -- Individual options within an option group (e.g., "Spread Collar" in collar_style).
   -- price_modifier allows premium options to add cost on top of the base price.
+  --
+  -- WHY product_id FK:
+  -- Multiple products can share the same option_group name (e.g., "pocket_style"
+  -- exists on suits, shirts, and trousers), but the actual options are different
+  -- for each product. The product_id FK lets the query filter options by product,
+  -- not just by group name. Without it, all pocket_style options across all
+  -- products would appear in every configurator.
   create table public.product_options (
     id uuid primary key default gen_random_uuid(),
+    product_id uuid not null references public.products(id) on delete cascade,
     option_group text not null,
     name text not null,
     description text,
@@ -141,8 +149,10 @@
   -- Filter products by availability
   create index idx_products_available on public.products(available);
 
-  -- Filter product options by group (configurator screen loads one group at a time)
-  create index idx_product_options_group on public.product_options(option_group);
+  -- Filter product options by product + group (configurator fetches all options
+  -- for a given product). Composite index covers both the full-product query
+  -- and any future single-group query efficiently.
+  create index idx_product_options_product_group on public.product_options(product_id, option_group);
 
   -- Lookup orders by customer (order history screen)
   create index idx_orders_profile_id on public.orders(profile_id);

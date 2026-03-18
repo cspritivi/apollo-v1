@@ -62,7 +62,7 @@ export default function ConfiguratorScreen() {
   // --- Server state: fetch product and its options from Supabase ---
   const { data: product, isLoading: productLoading } = useProduct(productId);
   const { data: groupedOptions, isLoading: optionsLoading } = useProductOptions(
-    product?.option_groups ?? [],
+    product?.id,
   );
 
   // --- Client state: read from Zustand store ---
@@ -125,6 +125,22 @@ export default function ConfiguratorScreen() {
     ];
   }, [product]);
 
+  // --- Build completed steps set for the progress bar ---
+  // A step is "completed" when the user has made a selection, not because
+  // they've navigated past it. The configurator is an unordered checklist:
+  // every step needs a selection, but the order doesn't matter.
+  // Step 0 = fabric, steps 1..N = option groups, last step (review) is
+  // never "completed" — it's the final action, not a selection.
+  const completedSteps = useMemo(() => {
+    const completed = new Set<number>();
+    if (!product) return completed;
+    if (fabric) completed.add(0);
+    product.option_groups.forEach((group, i) => {
+      if (selectedOptions[group]) completed.add(i + 1);
+    });
+    return completed;
+  }, [product, fabric, selectedOptions]);
+
   // --- Loading state ---
   if (productLoading || optionsLoading) {
     return (
@@ -168,6 +184,7 @@ export default function ConfiguratorScreen() {
           selectedOptions={selectedOptions}
           customerNotes={customerNotes}
           onChangeNotes={setCustomerNotes}
+          onGoToStep={goToStep}
         />
       );
     }
@@ -204,59 +221,64 @@ export default function ConfiguratorScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Progress bar at the top */}
-      <ProgressBar
-        currentStep={currentStep}
-        totalSteps={totalSteps}
-        stepLabels={stepLabels}
-        onGoToStep={goToStep}
-      />
-
       {/* Step content — fills the remaining space */}
       <View style={styles.stepContent}>{renderStep()}</View>
 
       {/* Navigation buttons — fixed at the bottom */}
-      <View style={styles.navBar}>
-        {isFirstStep ? (
-          // First step shows "Cancel" to exit the configurator
-          <Pressable
-            style={styles.navButtonSecondary}
-            onPress={() => router.back()}
-            accessibilityRole="button"
-            accessibilityLabel="Cancel configuration"
-          >
-            <Text style={styles.navButtonSecondaryText}>Cancel</Text>
-          </Pressable>
-        ) : (
-          <Pressable
-            style={styles.navButtonSecondary}
-            onPress={prevStep}
-            accessibilityRole="button"
-            accessibilityLabel="Go to previous step"
-          >
-            <Text style={styles.navButtonSecondaryText}>Back</Text>
-          </Pressable>
-        )}
+      <View style={styles.bottomBar}>
+        <View style={styles.navRow}>
+          {isFirstStep ? (
+            // First step shows "Cancel" to exit the configurator
+            <Pressable
+              style={styles.navButtonSecondary}
+              onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel configuration"
+            >
+              <Text style={styles.navButtonSecondaryText}>Cancel</Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              style={styles.navButtonSecondary}
+              onPress={prevStep}
+              accessibilityRole="button"
+              accessibilityLabel="Go to previous step"
+            >
+              <Text style={styles.navButtonSecondaryText}>Back</Text>
+            </Pressable>
+          )}
 
-        <Pressable
-          style={[
-            styles.navButtonPrimary,
-            isNextDisabled && styles.navButtonDisabled,
-          ]}
-          onPress={isReviewStep ? () => {} : nextStep}
-          disabled={isNextDisabled}
-          accessibilityRole="button"
-          accessibilityLabel={nextButtonLabel}
-        >
-          <Text
+          <Pressable
             style={[
-              styles.navButtonPrimaryText,
-              isNextDisabled && styles.navButtonDisabledText,
+              styles.navButtonPrimary,
+              isNextDisabled && styles.navButtonDisabled,
             ]}
+            onPress={isReviewStep ? () => {} : nextStep}
+            disabled={isNextDisabled}
+            accessibilityRole="button"
+            accessibilityLabel={nextButtonLabel}
           >
-            {nextButtonLabel}
-          </Text>
-        </Pressable>
+            <Text
+              style={[
+                styles.navButtonPrimaryText,
+                isNextDisabled && styles.navButtonDisabledText,
+              ]}
+            >
+              {nextButtonLabel}
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* Progress bar below nav buttons — positioned at the bottom for
+          easy thumb access. Tapping any step (including Review) lets the
+          customer jump directly without using Back/Next repeatedly. */}
+        <ProgressBar
+          currentStep={currentStep}
+          totalSteps={totalSteps}
+          stepLabels={stepLabels}
+          completedSteps={completedSteps}
+          onGoToStep={goToStep}
+        />
       </View>
     </View>
   );
@@ -297,20 +319,29 @@ const styles = StyleSheet.create({
   stepContent: {
     flex: 1,
   },
-  // Fixed bottom navigation bar for Next/Back buttons.
+  // Fixed bottom bar containing nav buttons + progress bar.
   // WHY FIXED AT BOTTOM (NOT INLINE WITH CONTENT):
   // The step content scrolls (fabric grid, option grid). If the buttons
   // scrolled with the content, the user would have to scroll to the bottom
   // every time they want to advance. Fixed bottom buttons are the standard
   // pattern for multi-step flows (checkout, onboarding, etc.).
-  navBar: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingBottom: 32, // Extra padding for iOS home indicator
+  //
+  // WHY PROGRESS BAR AT THE BOTTOM:
+  // Placing the progress bar below the nav buttons puts it in the natural
+  // thumb zone on mobile. The customer can tap any step (including Review)
+  // without reaching to the top of the screen. This also keeps the content
+  // area taller — no progress bar eating into the fabric/option grid space.
+  bottomBar: {
+    flexShrink: 0, // Never compress — always show full nav buttons + progress bar
     backgroundColor: "#fff",
     borderTopWidth: 1,
     borderTopColor: "#e5e7eb",
+  },
+  navRow: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
     gap: 12,
   },
   navButtonSecondary: {

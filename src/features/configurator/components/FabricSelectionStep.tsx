@@ -94,11 +94,24 @@ export default function FabricSelectionStep({
         onSelectColor={setSelectedColor}
       />
 
+      {/* WHY PAD WITH NULL:
+          FlatList with numColumns={2} and flex:1 cards causes the last item
+          to stretch full-width when the count is odd. Appending a null entry
+          lets us render an invisible spacer that occupies the empty cell,
+          keeping all real cards the same size. Same fix as the main catalog. */}
       <FlatList
-        data={filteredFabrics}
-        keyExtractor={(item) => item.id}
+        data={
+          filteredFabrics.length % 2 !== 0
+            ? [...filteredFabrics, null]
+            : filteredFabrics
+        }
+        keyExtractor={(item, index) => item?.id ?? `spacer-${index}`}
         numColumns={2}
         renderItem={({ item }) => {
+          if (!item) {
+            return <View style={{ flex: 1, margin: 6 }} />;
+          }
+
           const isSelected = selectedFabric?.id === item.id;
           const priceDisplay = `$${(item.price_per_meter / 100).toFixed(2)}/m`;
 
@@ -132,6 +145,7 @@ export default function FabricSelectionStep({
           );
         }}
         contentContainerStyle={styles.grid}
+        columnWrapperStyle={styles.columnWrapper}
         showsVerticalScrollIndicator={false}
       />
     </View>
@@ -173,6 +187,9 @@ const styles = StyleSheet.create({
   grid: {
     paddingHorizontal: 6,
     paddingBottom: 100,
+  },
+  columnWrapper: {
+    justifyContent: "space-between" as const,
   },
   card: {
     flex: 1,

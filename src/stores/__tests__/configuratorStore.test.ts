@@ -54,6 +54,7 @@ const mockFabric: Fabric = {
 
 const mockCollarOption: ProductOption = {
   id: "opt-1",
+  product_id: "prod-1",
   option_group: "collar_style",
   name: "Spread Collar",
   description: "A wide spread collar",
@@ -66,6 +67,7 @@ const mockCollarOption: ProductOption = {
 
 const mockCuffOption: ProductOption = {
   id: "opt-2",
+  product_id: "prod-1",
   option_group: "cuff_style",
   name: "French Cuff",
   description: "Double-folded cuff with cufflinks",
@@ -78,6 +80,7 @@ const mockCuffOption: ProductOption = {
 
 const mockPocketOption: ProductOption = {
   id: "opt-3",
+  product_id: "prod-1",
   option_group: "pocket_style",
   name: "Chest Pocket",
   description: "Single chest pocket",

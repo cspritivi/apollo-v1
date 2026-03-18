@@ -295,6 +295,7 @@ automated changelog generation. Interviewers recognise this pattern.
 [x] Auth flow implemented
 [x] Fabric catalog screen (data layer + UI + Maestro tests)
 [x] Product catalog + configurator (data layer + UI + store with 30 tests)
+[ ] Configurator Maestro E2E tests
 [ ] Order placement flow
 [ ] Order tracking / lifecycle screen
 [ ] Alterations flow
@@ -433,3 +434,38 @@ that would make these harder to add later.
   WHERE product_id = $1)`. The UI stays the same — it just shows fewer
   fabrics. This is safe to defer because the query change is minimal and
   doesn't require any architectural rework.
+
+- **Swipe navigation between configurator steps.** Replace the current
+  static step rendering with a horizontal swipeable view (e.g.,
+  `react-native-pager-view` or a FlatList with `pagingEnabled`). The
+  customer can swipe left/right to move between option steps, making
+  the configurator feel more fluid and native. The bottom progress bar
+  and Next/Back buttons remain as alternative navigation — swiping is
+  an addition, not a replacement.
+
+- **One-tap option selection + auto-advance.** Currently selecting an
+  option requires two taps: tap the option card, then tap Next. For a
+  faster flow, tapping an option should select it AND auto-advance to
+  the next step after a brief delay (~300ms, enough to show the
+  selection animation). A "selected" state still shows visually so the
+  customer sees their choice registered before the transition. This
+  does not apply to the fabric step (which has filters and more
+  browsing) or the review step — only to the option group steps where
+  the interaction is simply "pick one."
+
+- **Long-press / 3D Touch preview in configurator.** On the fabric
+  selection step, long-pressing a fabric card should show a peek preview
+  with full fabric details (description, color tags, price) — similar to
+  the FabricDetailModal but as a lightweight overlay. On option group
+  steps, long-pressing an option card should show the full description
+  text and a larger image. This gives customers quick access to details
+  without leaving the selection flow. Implementation options: React
+  Native's `onLongPress` with a custom modal/tooltip, or iOS-native
+  context menus via `react-native-context-menu-view` for a truly native
+  3D Touch / Haptic Touch feel.
+
+- **Maestro E2E tests for configurator.** Deferred because Maestro
+  doesn't work well on Windows. Write tests covering: product
+  selection → full configurator flow (fabric + all option steps +
+  review) → verify review shows correct selections → tap review items
+  to jump back and change. See `.maestro/` for existing patterns.

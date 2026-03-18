@@ -68,18 +68,28 @@ export default function OptionStep({
           : "Tap an option to select it"}
       </Text>
 
+      {/* WHY PAD WITH NULL:
+          FlatList with numColumns={2} and flex:1 cards causes the last item
+          to stretch full-width when the count is odd. Appending a null entry
+          lets us render an invisible spacer that occupies the empty cell,
+          keeping all real cards the same size. Same fix as the main catalog. */}
       <FlatList
-        data={options}
-        keyExtractor={(item) => item.id}
+        data={options.length % 2 !== 0 ? [...options, null] : options}
+        keyExtractor={(item, index) => item?.id ?? `spacer-${index}`}
         numColumns={2}
-        renderItem={({ item }) => (
-          <OptionCard
-            option={item}
-            isSelected={selectedOption?.id === item.id}
-            onSelect={onSelectOption}
-          />
-        )}
+        renderItem={({ item }) =>
+          item ? (
+            <OptionCard
+              option={item}
+              isSelected={selectedOption?.id === item.id}
+              onSelect={onSelectOption}
+            />
+          ) : (
+            <View style={{ flex: 1, margin: 6 }} />
+          )
+        }
         contentContainerStyle={styles.grid}
+        columnWrapperStyle={styles.columnWrapper}
         showsVerticalScrollIndicator={false}
       />
     </View>
@@ -108,5 +118,8 @@ const styles = StyleSheet.create({
   grid: {
     paddingHorizontal: 6,
     paddingBottom: 100, // Extra padding so last row isn't hidden behind nav buttons
+  },
+  columnWrapper: {
+    justifyContent: "space-between" as const,
   },
 });

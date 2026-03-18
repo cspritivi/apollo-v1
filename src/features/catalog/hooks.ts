@@ -276,6 +276,13 @@ export function useProduct(id: string | undefined) {
 /**
  * Hook to fetch product options grouped by option_group.
  *
+ * WHY productId (NOT optionGroups):
+ * The API now filters by product_id FK, which is the structurally correct
+ * way to scope options to a product. This eliminates the bug where shared
+ * option_group names (e.g., "pocket_style") would return options from all
+ * products. The hook still groups the results by option_group for the
+ * configurator UI.
+ *
  * WHY GROUP IN THE HOOK (NOT THE API):
  * The API returns a flat array of ProductOption sorted by option_group.
  * The hook transforms this into a Record<string, ProductOption[]> (a map
@@ -289,16 +296,12 @@ export function useProduct(id: string | undefined) {
  * re-fetching. The raw flat array stays in the cache (efficient storage),
  * and the grouped version is derived on read. If we grouped in the API,
  * we'd lose the ability to use the flat array elsewhere.
- *
- * WHY enabled: optionGroups.length > 0:
- * If the product hasn't loaded yet (option_groups is empty), skip the
- * query. Once the product loads and we have the groups, the query fires.
  */
-export function useProductOptions(optionGroups: string[]) {
+export function useProductOptions(productId: string | undefined) {
   return useQuery({
-    queryKey: ["product_options", optionGroups],
-    queryFn: () => fetchProductOptions(optionGroups),
-    enabled: optionGroups.length > 0,
+    queryKey: ["product_options", productId],
+    queryFn: () => fetchProductOptions(productId!),
+    enabled: !!productId,
     staleTime: 5 * 60 * 1000,
     /**
      * Transform the flat array into a grouped map using reduce.

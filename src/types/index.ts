@@ -161,6 +161,7 @@ export interface Product {
  */
 export interface ProductOption {
   id: string;
+  product_id: string; // FK to products.id — scopes options to a specific product
   option_group: string; // e.g., "collar_style", "lining_color"
   name: string; // e.g., "Spread Collar", "Navy Lining"
   description: string | null;

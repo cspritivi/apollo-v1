@@ -1,11 +1,20 @@
+import { useState, useRef } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 
 /**
  * ProgressBar — visual step indicator for the configurator wizard.
  *
  * Shows a row of numbered circles connected by lines. The current step
- * is highlighted in indigo, completed steps are filled, and future steps
- * are grey outlines. Each step is tappable to allow direct navigation.
+ * is highlighted in indigo, completed steps show a checkmark, and
+ * incomplete steps are grey outlines. Each step is tappable to allow
+ * direct navigation.
+ *
+ * WHY COMPLETION IS SELECTION-BASED (NOT POSITIONAL):
+ * The configurator steps are an unordered checklist — the customer needs
+ * to make a selection for each step, but the order doesn't matter. A step
+ * is "completed" when the user has made a selection (fabric chosen, option
+ * picked), not simply because they've navigated past it. This prevents
+ * misleading the user into thinking they've finished steps they skipped.
  *
  * WHY TAPPABLE STEPS (NOT JUST NEXT/PREV):
  * Power users who've been through the configurator before shouldn't have
@@ -26,6 +35,8 @@ interface ProgressBarProps {
   totalSteps: number;
   /** Labels for each step (e.g., ["Fabric", "Collar", "Cuff", ..., "Review"]) */
   stepLabels: string[];
+  /** Set of step indices that have a selection made (selection-based, not positional) */
+  completedSteps: Set<number>;
   onGoToStep: (step: number) => void;
 }
 
@@ -33,15 +44,29 @@ export default function ProgressBar({
   currentStep,
   totalSteps,
   stepLabels,
+  completedSteps,
   onGoToStep,
 }: ProgressBarProps) {
   if (totalSteps === 0) return null;
 
+  const currentLabel = stepLabels[currentStep] ?? "";
+
+  // Track the center X of each circle relative to the container.
+  // We store refs to circle Views and measure them against the container
+  // when onLayout fires. This gives pixel-perfect positioning regardless
+  // of how lines shift the circles within each stepWrapper.
+  const containerRef = useRef<View>(null);
+  const circleRefs = useRef<Record<number, View>>({});
+  const [circleCenters, setCircleCenters] = useState<Record<number, number>>(
+    {},
+  );
+  const measuredRef = useRef<Record<number, boolean>>({});
+
   return (
-    <View style={styles.container}>
+    <View style={styles.container} ref={containerRef}>
       <View style={styles.stepsRow}>
         {Array.from({ length: totalSteps }, (_, index) => {
-          const isCompleted = index < currentStep;
+          const isCompleted = completedSteps.has(index);
           const isCurrent = index === currentStep;
           const isLast = index === totalSteps - 1;
 
@@ -56,20 +81,54 @@ export default function ProgressBar({
                   hitSlop={4}
                 >
                   <View
+                    ref={(ref) => {
+                      if (ref) circleRefs.current[index] = ref;
+                    }}
+                    onLayout={() => {
+                      // Measure this circle's position relative to the
+                      // container. Only measure once per step to avoid loops.
+                      if (measuredRef.current[index]) return;
+                      const circle = circleRefs.current[index];
+                      if (!circle || !containerRef.current) return;
+                      circle.measureLayout(
+                        containerRef.current,
+                        (x, _y, width) => {
+                          measuredRef.current[index] = true;
+                          const center = x + width / 2;
+                          setCircleCenters((prev) => {
+                            if (prev[index] === center) return prev;
+                            return { ...prev, [index]: center };
+                          });
+                        },
+                        () => {},
+                      );
+                    }}
                     style={[
                       styles.circle,
                       isCompleted && styles.circleCompleted,
-                      isCurrent && styles.circleCurrent,
+                      isCurrent && !isCompleted && styles.circleCurrent,
+                      isCurrent && isCompleted && styles.circleCurrentCompleted,
                     ]}
                   >
-                    <Text
-                      style={[
-                        styles.circleText,
-                        (isCompleted || isCurrent) && styles.circleTextActive,
-                      ]}
-                    >
-                      {isCompleted ? "✓" : index + 1}
-                    </Text>
+                    {isCompleted ? (
+                      <Text
+                        style={[
+                          styles.checkmark,
+                          isCurrent && styles.checkmarkCurrent,
+                        ]}
+                      >
+                        ✓
+                      </Text>
+                    ) : (
+                      <Text
+                        style={[
+                          styles.circleText,
+                          isCurrent && styles.circleTextActive,
+                        ]}
+                      >
+                        {index + 1}
+                      </Text>
+                    )}
                   </View>
                 </Pressable>
 
@@ -80,22 +139,25 @@ export default function ProgressBar({
                   />
                 )}
               </View>
-
-              {/* Step label below the circle */}
-              <Text
-                style={[
-                  styles.label,
-                  isCurrent && styles.labelCurrent,
-                  isCompleted && styles.labelCompleted,
-                ]}
-                numberOfLines={1}
-              >
-                {stepLabels[index] ?? ""}
-              </Text>
             </View>
           );
         })}
       </View>
+
+      {/* Current step label — absolutely positioned and centered under the
+          current circle. Uses a wide fixed-width Text (120px) offset so its
+          center aligns with the measured circle center X. textAlign centers
+          the text within that width. */}
+      {currentLabel !== "" && circleCenters[currentStep] !== undefined && (
+        <Text
+          style={[
+            styles.labelCurrent,
+            { left: circleCenters[currentStep] - 60 },
+          ]}
+        >
+          {currentLabel}
+        </Text>
+      )}
     </View>
   );
 }
@@ -103,10 +165,9 @@ export default function ProgressBar({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 4,
+    paddingBottom: 28, // Room for absolute label + equal spacing below it
     backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
   },
   stepsRow: {
     flexDirection: "row",
@@ -132,13 +193,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  // Completed (not current): light indigo fill with indigo border + checkmark.
+  // Uses the app's indigo palette rather than a separate green to stay
+  // visually cohesive. The checkmark alone signals completion.
   circleCompleted: {
-    backgroundColor: "#4f46e5",
+    backgroundColor: "#eef2ff", // Indigo-50
     borderColor: "#4f46e5",
   },
+  // Current step (no selection yet): indigo border, light tint.
   circleCurrent: {
     borderColor: "#4f46e5",
-    backgroundColor: "#eef2ff", // Indigo-50 — light tint for current step
+    backgroundColor: "#eef2ff", // Indigo-50
+  },
+  // Current step AND completed: solid indigo fill to emphasise "you're here
+  // and this step is done". The white checkmark on indigo bg is the strongest
+  // visual signal in the bar.
+  circleCurrentCompleted: {
+    borderColor: "#4f46e5",
+    backgroundColor: "#4f46e5",
   },
   circleText: {
     fontSize: 12,
@@ -147,6 +219,15 @@ const styles = StyleSheet.create({
   },
   circleTextActive: {
     color: "#4f46e5",
+  },
+  checkmark: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#4f46e5",
+  },
+  // White checkmark when the current step is completed (solid indigo bg).
+  checkmarkCurrent: {
+    color: "#fff",
   },
   // Connecting line stretches to fill the space between circles.
   // flex: 1 makes it expand within the stepRow.
@@ -159,17 +240,13 @@ const styles = StyleSheet.create({
   lineCompleted: {
     backgroundColor: "#4f46e5",
   },
-  label: {
-    fontSize: 10,
-    color: "#9ca3af",
-    marginTop: 4,
-    textAlign: "center",
-  },
   labelCurrent: {
-    color: "#4f46e5",
+    position: "absolute",
+    bottom: 10,
+    width: 120,
+    textAlign: "center",
+    fontSize: 10,
     fontWeight: "600",
-  },
-  labelCompleted: {
-    color: "#6b7280",
+    color: "#4f46e5",
   },
 });

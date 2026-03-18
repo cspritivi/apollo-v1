@@ -227,16 +227,13 @@ export async function fetchProductById(id: string): Promise<Product> {
 }
 
 /**
- * Fetch product options for a given set of option groups.
+ * Fetch product options for a specific product.
  *
- * WHY optionGroups IS AN ARRAY (NOT A SINGLE GROUP):
- * A product like "Dress Shirt" has 5 option groups. Fetching them one by
- * one would require 5 separate requests. Instead, we fetch all options
- * whose option_group is in the product's option_groups array in a single
- * query using Postgres's IN operator (Supabase's .in() method).
- *
- * The caller (configurator) passes the product's option_groups array
- * directly: fetchProductOptions(product.option_groups).
+ * WHY FILTER BY productId (NOT JUST optionGroups):
+ * Multiple products can share the same option_group name (e.g.,
+ * "pocket_style" exists on suits, shirts, and trousers). Filtering by
+ * option_group alone would return all pocket options across all products.
+ * The product_id FK ensures we only get options belonging to this product.
  *
  * WHY ORDER BY option_group THEN name:
  * Ordering by option_group clusters options by group, making it trivial
@@ -245,12 +242,12 @@ export async function fetchProductById(id: string): Promise<Product> {
  * predictable display order for the option cards.
  */
 export async function fetchProductOptions(
-  optionGroups: string[],
+  productId: string,
 ): Promise<ProductOption[]> {
   const { data, error } = await supabase
     .from("product_options")
     .select("*")
-    .in("option_group", optionGroups)
+    .eq("product_id", productId)
     .eq("available", true)
     .order("option_group", { ascending: true })
     .order("name", { ascending: true });

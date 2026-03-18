@@ -4,6 +4,7 @@ import {
   Image,
   ScrollView,
   TextInput,
+  Pressable,
   StyleSheet,
 } from "react-native";
 import { Product, Fabric, ProductOption } from "../../../types";
@@ -28,6 +29,13 @@ import { formatOptionGroupTitle } from "./OptionStep";
  * focus on cost instead of preference. A single breakdown at the end lets
  * them configure freely, then evaluate the total. This is a common pattern
  * in e-commerce configurators (Tesla, Nike By You, Indochino).
+ *
+ * WHY TAPPABLE SELECTIONS:
+ * Each selected item (fabric, option) is tappable — tapping jumps back to
+ * the corresponding configurator step via onGoToStep. This lets customers
+ * quickly change a choice from the review without navigating back step by
+ * step. The "Edit" label and chevron hint at the interaction. Step mapping:
+ * fabric = step 0, option_groups[i] = step i+1.
  */
 
 interface ReviewSummaryProps {
@@ -36,6 +44,8 @@ interface ReviewSummaryProps {
   selectedOptions: Record<string, ProductOption>;
   customerNotes: string;
   onChangeNotes: (notes: string) => void;
+  /** Jump to a configurator step (0 = fabric, 1..N = option groups) */
+  onGoToStep: (step: number) => void;
 }
 
 export default function ReviewSummary({
@@ -44,6 +54,7 @@ export default function ReviewSummary({
   selectedOptions,
   customerNotes,
   onChangeNotes,
+  onGoToStep,
 }: ReviewSummaryProps) {
   // Calculate total price: base + fabric + option modifiers
   const basePriceCents = product.base_price;
@@ -69,13 +80,11 @@ export default function ReviewSummary({
       showsVerticalScrollIndicator={false}
     >
       <Text style={styles.title}>Review Your Configuration</Text>
-      <Text style={styles.subtitle}>
-        Confirm your choices before proceeding
-      </Text>
+      <Text style={styles.subtitle}>Tap any selection to change it</Text>
 
-      {/* Product summary */}
+      {/* Product summary — not tappable (can't change which product you're configuring) */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Product</Text>
+        <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Product</Text>
         <View style={styles.itemRow}>
           {product.image_url ? (
             <Image
@@ -97,9 +106,17 @@ export default function ReviewSummary({
         </View>
       </View>
 
-      {/* Fabric summary */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Fabric</Text>
+      {/* Fabric summary — tappable to jump back to fabric step (step 0) */}
+      <Pressable
+        style={styles.section}
+        onPress={() => onGoToStep(0)}
+        accessibilityRole="button"
+        accessibilityLabel={`Edit fabric selection${fabric ? `: ${fabric.name}` : ""}`}
+      >
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Fabric</Text>
+          <Text style={styles.chevron}>›</Text>
+        </View>
         {fabric ? (
           <View style={styles.itemRow}>
             <Image
@@ -117,18 +134,30 @@ export default function ReviewSummary({
         ) : (
           <Text style={styles.notSelected}>No fabric selected</Text>
         )}
-      </View>
+      </Pressable>
 
-      {/* Selected options — one row per option group */}
+      {/* Selected options — one tappable row per option group.
+          Each option maps to step index i+1 (step 0 is fabric). */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Options</Text>
-        {product.option_groups.map((group) => {
+        <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Options</Text>
+        {product.option_groups.map((group, index) => {
           const selected = selectedOptions[group];
+          // Option groups map to steps 1..N (step 0 is fabric).
+          const stepIndex = index + 1;
           return (
-            <View key={group} style={styles.optionRow}>
-              <Text style={styles.optionGroupLabel}>
-                {formatOptionGroupTitle(group)}
-              </Text>
+            <Pressable
+              key={group}
+              style={styles.optionRow}
+              onPress={() => onGoToStep(stepIndex)}
+              accessibilityRole="button"
+              accessibilityLabel={`Edit ${formatOptionGroupTitle(group)}${selected ? `: ${selected.name}` : ""}`}
+            >
+              <View style={styles.optionRowHeader}>
+                <Text style={styles.optionGroupLabel}>
+                  {formatOptionGroupTitle(group)}
+                </Text>
+                <Text style={styles.chevron}>›</Text>
+              </View>
               {selected ? (
                 <View style={styles.itemRow}>
                   {selected.image_url ? (
@@ -159,14 +188,16 @@ export default function ReviewSummary({
               ) : (
                 <Text style={styles.notSelected}>Not selected</Text>
               )}
-            </View>
+            </Pressable>
           );
         })}
       </View>
 
       {/* Customer notes */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Notes for Tailor</Text>
+        <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>
+          Notes for Tailor
+        </Text>
         <TextInput
           style={styles.notesInput}
           value={customerNotes}
@@ -182,7 +213,9 @@ export default function ReviewSummary({
 
       {/* Price breakdown */}
       <View style={[styles.section, styles.priceSection]}>
-        <Text style={styles.sectionTitle}>Price Breakdown</Text>
+        <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>
+          Price Breakdown
+        </Text>
 
         <View style={styles.priceRow}>
           <Text style={styles.priceLabel}>Base ({product.name})</Text>
@@ -254,11 +287,21 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
     color: "#111827",
-    marginBottom: 12,
+  },
+  chevron: {
+    fontSize: 20,
+    color: "#9ca3af",
+    fontWeight: "600",
   },
   itemRow: {
     flexDirection: "row",
@@ -308,13 +351,18 @@ const styles = StyleSheet.create({
   optionRow: {
     marginBottom: 12,
   },
+  optionRowHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
   optionGroupLabel: {
     fontSize: 12,
     fontWeight: "600",
     color: "#6b7280",
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginBottom: 6,
   },
   optionName: {
     fontSize: 14,

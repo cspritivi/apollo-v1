@@ -181,6 +181,39 @@ Each option group has 2-4 options, each with an image.
 - **IA.MD updated** — added Open-Closed Principle interview answer for generic OptionStep.
 - **CLAUDE.md updated** — added fabric save+detail in configurator to Future Features.
 
+---
+
+## What Was Built (Session 4 — 2026-03-18)
+
+### Bug Fixes
+- **Odd-count grid stretching** — FlatList with `numColumns={2}` and `flex:1` cards causes the last card to stretch full-width when the item count is odd. Fixed in `OptionStep` and `FabricSelectionStep` by appending a null spacer (same pattern already used in the main catalog screens). Added `columnWrapperStyle` with `justifyContent: "space-between"`.
+- **ProgressBar completion is now selection-based, not positional** — Previously, steps were marked "completed" (solid purple) just because the user navigated past them. Now, a step only shows a checkmark when the user has actually made a selection for it. The configurator screen computes a `completedSteps` Set from the Zustand store (fabric set → step 0 done, option selected → that step done) and passes it to the ProgressBar. Visual states: current+completed = solid indigo + white checkmark, completed = light indigo + indigo checkmark, current = light indigo + step number, upcoming = grey outline.
+- **Product options scoped by product_id FK** — `pocket_style` options were showing all products' pocket options because `product_options` had no FK to `products`. Added `product_id uuid NOT NULL REFERENCES products(id)` to the schema. Updated seed SQL to use a CTE that captures product UUIDs on insert. API now filters by `product_id` instead of `.in("option_group", ...)`. Hook simplified to `useProductOptions(productId)`. Migration SQL provided for live database backfill.
+
+### Files Changed
+- `src/features/configurator/components/OptionStep.tsx` — null-spacer fix
+- `src/features/configurator/components/FabricSelectionStep.tsx` — null-spacer fix
+- `src/features/configurator/components/ProgressBar.tsx` — `completedSteps` prop, selection-based completion
+- `app/(app)/configurator.tsx` — computes `completedSteps`, passes `product?.id` to hook
+- `src/features/catalog/api.ts` — `fetchProductOptions(productId)` replaces option_groups filter
+- `src/features/catalog/hooks.ts` — `useProductOptions(productId)` simplified
+- `src/types/index.ts` — `product_id` added to `ProductOption`
+- `supabase/init_schema.sql` — `product_id` FK + composite index
+- `supabase/seed_products.sql` — CTE-based inserts with product_id
+- `supabase/migrations/add_product_id_to_options.sql` — live DB migration
+- `src/stores/__tests__/configuratorStore.test.ts` — `product_id` added to mock fixtures
+
+### UX Improvements
+- **Review page tappable selections** — Fabric and each option group row on the ReviewSummary are now `Pressable`. Tapping jumps back to the corresponding configurator step (fabric = step 0, option groups = steps 1..N) via `onGoToStep`. Each row shows a subtle grey chevron `›` to hint at tappability. The subtitle reads "Tap any selection to change it" instead of repeating "Edit" on every row.
+- **ProgressBar moved to bottom** — Relocated from the top of the screen to below the Next/Back buttons. Puts all navigation in the thumb zone. The customer can tap any step (including Review) without reaching to the top of the screen.
+- **ProgressBar label cleanup** — Labels are only shown for the current step (not all steps). The label is absolutely positioned and centered under the current circle using `measureLayout` for pixel-perfect alignment. Long names like "Waistband Style" display without truncation.
+
+### Files Changed (continued)
+- `src/features/configurator/components/ReviewSummary.tsx` — tappable fabric/option rows, `onGoToStep` prop, chevron indicators
+- `src/features/configurator/components/ProgressBar.tsx` — moved to bottom, label only on current step, `measureLayout`-based centering
+- `app/(app)/configurator.tsx` — bottom bar layout (navRow + ProgressBar), passes `goToStep` to ReviewSummary
+- `CLAUDE.md` — added swipe navigation, one-tap auto-advance, 3D Touch preview, and Maestro E2E to Future Features
+
 ### Next Session
 - Maestro E2E tests for configurator flow (step 11)
 - Order placement flow (next major feature)
