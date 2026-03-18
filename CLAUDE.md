@@ -294,7 +294,7 @@ automated changelog generation. Interviewers recognise this pattern.
 [x] Supabase project created and schema defined
 [x] Auth flow implemented
 [x] Fabric catalog screen (data layer + UI + Maestro tests)
-[ ] Product catalog + configurator
+[x] Product catalog + configurator (data layer + UI + store with 30 tests)
 [ ] Order placement flow
 [ ] Order tracking / lifecycle screen
 [ ] Alterations flow
@@ -411,6 +411,18 @@ that would make these harder to add later.
   guides the customer rather than just listing items. This requires a
   section-based data model (not just a flat product list) and a more
   flexible layout component (e.g., SectionList with mixed render items).
+
+- **Fabric save + detail in configurator.** The configurator's fabric
+  selection step currently uses a simplified card (tap to select). It
+  should also support saving/bookmarking fabrics and viewing the full
+  detail modal (FabricDetailModal). The challenge: FabricCard's `onPress`
+  opens the detail modal, but in the configurator `onPress` needs to
+  select the fabric. The cleanest approach is to add a "Select this
+  Fabric" button inside FabricDetailModal when used in configurator
+  context (pass a `mode` or `onSelect` prop). Then the card's `onPress`
+  opens the modal as usual, and the modal has both "Save" and "Select"
+  actions. The save hooks (useSaveFabric, useUnsaveFabric) already exist
+  and just need the user session wired in.
 
 - **Fabric–product compatibility.** Not all fabrics are suitable for every
   product type (e.g., a heavy wool tweed shouldn't be offered for a summer

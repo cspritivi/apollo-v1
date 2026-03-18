@@ -53,16 +53,16 @@ Full-screen step-by-step flow after tapping a product:
 
 | # | Step | Files | Status |
 |---|---|---|---|
-| 1 | Seed data — 3 products + ~38 product_options with image URLs | `supabase/seed_products.sql` | [ ] Blocked on image upload |
-| 2 | Upload option images to Supabase Storage | Manual / script | [ ] In progress — images being generated via ChatGPT |
+| 1 | Seed data — 3 products + 42 product_options with image URLs | `supabase/seed_products.sql` | [x] Done |
+| 2 | Upload option images to Supabase Storage | `scripts/upload-product-images.ts` | [x] Done — 45 images uploaded |
 | 3 | Products data layer — API functions + React Query hooks | `src/features/catalog/api.ts`, `hooks.ts` | [x] Done |
 | 4 | Products tab + list screen — ProductCard component, add tab | `app/(app)/products.tsx`, `ProductCard.tsx`, `_layout.tsx` | [x] Done |
-| 5 | Configurator Zustand store — selections across steps | `src/stores/configuratorStore.ts` | [x] Done (store + tests written, Jest config needs fix) |
-| 6 | Configurator screen — step-by-step wizard shell | `app/(app)/configurator.tsx` | [ ] Placeholder created |
-| 7 | Fabric selection step — reuse fabric grid inside configurator | `src/features/configurator/components/FabricSelectionStep.tsx` | [ ] |
-| 8 | Option selection step — generic component for any option group | `src/features/configurator/components/OptionStep.tsx`, `OptionCard.tsx` | [ ] |
-| 9 | Progress bar — visual stepper | `src/features/configurator/components/ProgressBar.tsx` | [ ] |
-| 10 | Review summary — visual recap with price breakdown | `src/features/configurator/components/ReviewSummary.tsx` | [ ] |
+| 5 | Configurator Zustand store — selections across steps | `src/stores/configuratorStore.ts` | [x] Done (store + 30 tests passing) |
+| 6 | Configurator screen — step-by-step wizard shell | `app/(app)/configurator.tsx` | [x] Done |
+| 7 | Fabric selection step — reuse fabric grid inside configurator | `src/features/configurator/components/FabricSelectionStep.tsx` | [x] Done |
+| 8 | Option selection step — generic component for any option group | `src/features/configurator/components/OptionStep.tsx`, `OptionCard.tsx` | [x] Done |
+| 9 | Progress bar — visual stepper | `src/features/configurator/components/ProgressBar.tsx` | [x] Done |
+| 10 | Review summary — visual recap with price breakdown | `src/features/configurator/components/ReviewSummary.tsx` | [x] Done |
 | 11 | Maestro E2E tests | `.maestro/configurator/` | [ ] |
 
 ---
@@ -161,11 +161,26 @@ Each option group has 2-4 options, each with an image.
 - **Configurator store implementation (TDD Green phase)** — `src/stores/configuratorStore.ts` written with all actions and computed helpers matching the test spec. Uses extracted `initialState` constant and `clampStep`/`calculateTotalSteps` helpers.
 - **CLAUDE.md updated** — TDD is now mandatory for all future features.
 
-### Blocker: Jest Config
-- Tests fail with `jest-expo` runtime scoping error: `"You are trying to import a file outside of the scope of the test code"`. Likely a `transformIgnorePatterns` or preset config issue. **Must fix this before proceeding** to confirm all 22 tests pass (Green phase).
+### Blocker (resolved session 3)
+- Tests failed with `jest-expo` runtime scoping error. Fixed in session 3 by switching to Jest `projects` config.
+
+---
+
+## What Was Built (Session 3 — 2026-03-18)
+
+### Completed
+- **Jest config fixed** — switched from single `jest-expo` preset to Jest `projects` config. Pure logic tests (stores, hooks, lib) use `ts-jest` + Node environment. Component tests use `jest-expo`. All 30 store tests now pass.
+- **Seed data** — `supabase/seed_products.sql` with 3 products (Two-Piece Suit, Dress Shirt, Trousers) and 42 product options across 15 option groups, with descriptions and price modifiers.
+- **Image upload script** — `scripts/upload-product-images.ts` following same pattern as fabric upload script. Explicit file-to-database mapping. All 45 images uploaded to `product-images` Supabase Storage bucket.
+- **ProgressBar** — tappable step indicator with numbered circles, connecting lines, step labels. Controlled component (no internal state).
+- **OptionCard** — large image + name + description + price modifier + selection badge. Reusable for any option group.
+- **OptionStep** — generic data-driven step for any option group. 2-column grid of OptionCards. Includes `formatOptionGroupTitle` utility.
+- **FabricSelectionStep** — reuses `useFabrics` hook + `ColorFilterBar`. Simplified card focused on selection (no save button — deferred to future improvement).
+- **ReviewSummary** — visual recap with product/fabric/option images, customer notes input, price breakdown.
+- **Configurator wizard shell** — thin orchestrator connecting route params → React Query hooks → Zustand store → step components. Handles loading/error states, step rendering, Next/Back/Cancel navigation. Next button disabled until selection is made.
+- **IA.MD updated** — added Open-Closed Principle interview answer for generic OptionStep.
+- **CLAUDE.md updated** — added fabric save+detail in configurator to Future Features.
 
 ### Next Session
-- Fix Jest config to get store tests passing (Green phase)
-- Generate remaining images and upload to Supabase Storage
-- Write `seed_products.sql` with real image URLs
-- Build configurator UI: progress bar, fabric step, option step, review summary (steps 6–10)
+- Maestro E2E tests for configurator flow (step 11)
+- Order placement flow (next major feature)
