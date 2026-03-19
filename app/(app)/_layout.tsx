@@ -1,4 +1,5 @@
 import { Tabs } from "expo-router";
+import { useCartStore } from "../../src/stores/cartStore";
 
 /**
  * App Group Layout — tab-based navigation for authenticated screens.
@@ -22,6 +23,9 @@ import { Tabs } from "expo-router";
  * you can restructure navigation without touching business logic.
  */
 export default function AppLayout() {
+  // Cart badge — shows item count on the Cart tab when > 0
+  const cartItemCount = useCartStore((s) => s.itemCount());
+
   return (
     <Tabs
       screenOptions={{
@@ -71,6 +75,16 @@ export default function AppLayout() {
           tabBarAccessibilityLabel: "Products",
         }}
       />
+      <Tabs.Screen
+        name="cart"
+        options={{
+          title: "Cart",
+          tabBarLabel: "Cart",
+          tabBarAccessibilityLabel: "Cart",
+          // Badge creates purchase urgency for items sitting in the cart
+          tabBarBadge: cartItemCount > 0 ? cartItemCount : undefined,
+        }}
+      />
       {/* Saved fabrics is navigated to from the Home screen, not a tab.
           Setting href: null hides it from the tab bar while keeping it
           inside the (app) route group for auth protection. This is Expo
@@ -90,6 +104,22 @@ export default function AppLayout() {
         name="configurator"
         options={{
           title: "Configure",
+          href: null,
+        }}
+      />
+      {/* Order success shown after checkout — hidden from tab bar */}
+      <Tabs.Screen
+        name="order-success"
+        options={{
+          title: "Order Placed",
+          href: null,
+        }}
+      />
+      {/* Full orders list accessed from Home → "View All Orders" */}
+      <Tabs.Screen
+        name="orders"
+        options={{
+          title: "My Orders",
           href: null,
         }}
       />

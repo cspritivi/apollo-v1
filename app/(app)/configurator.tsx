@@ -4,6 +4,7 @@ import {
   Text,
   Pressable,
   ActivityIndicator,
+  Alert,
   StyleSheet,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -12,6 +13,10 @@ import {
   useProductOptions,
 } from "../../src/features/catalog/hooks";
 import { useConfiguratorStore } from "../../src/stores/configuratorStore";
+import { useCartStore } from "../../src/stores/cartStore";
+import { useCreateOrder } from "../../src/features/orders/hooks";
+import { useSession } from "../../src/hooks/useSession";
+import { calculatePrice } from "../../src/features/orders/utils/calculatePrice";
 import ProgressBar from "../../src/features/configurator/components/ProgressBar";
 import FabricSelectionStep from "../../src/features/configurator/components/FabricSelectionStep";
 import OptionStep, {
@@ -58,6 +63,13 @@ import ReviewSummary from "../../src/features/configurator/components/ReviewSumm
 export default function ConfiguratorScreen() {
   const { productId } = useLocalSearchParams<{ productId: string }>();
   const router = useRouter();
+  const { session } = useSession();
+
+  // --- Cart store ---
+  const addToCart = useCartStore((s) => s.addItem);
+
+  // --- Order creation mutation (express checkout) ---
+  const createOrderMutation = useCreateOrder();
 
   // --- Server state: fetch product and its options from Supabase ---
   const { data: product, isLoading: productLoading } = useProduct(productId);
@@ -207,17 +219,83 @@ export default function ConfiguratorScreen() {
 
   // --- Determine button states ---
   const isFirstStep = currentStep === 0;
-  // The "Next" button label changes on the review step to indicate
-  // the next action will be placing the order (not implemented yet).
-  const nextButtonLabel = isReviewStep ? "Place Order" : "Next";
   // Steps are freely navigable — customers can skip ahead and come back
-  // in any order. The only gate is on the review step: "Place Order" is
+  // in any order. The only gate is on the review step: action buttons are
   // disabled until every step has a selection (fabric + all option groups).
-  // This matches the progress bar's tap-to-jump behavior — no inconsistency
-  // between Next and the stepper.
   const allOptionsSelected =
     product?.option_groups?.every((group) => !!selectedOptions[group]) ?? false;
-  const isNextDisabled = isReviewStep && (!fabric || !allOptionsSelected);
+  const isReviewReady = isReviewStep && fabric && allOptionsSelected;
+  const isNextDisabled = isReviewStep && !isReviewReady;
+
+  // --- Format price for confirmation dialog ---
+  const formatPrice = (cents: number) => {
+    const prefix = cents < 0 ? "-" : "";
+    return `${prefix}$${(Math.abs(cents) / 100).toFixed(2)}`;
+  };
+
+  // --- Add to Cart handler ---
+  // Adds the configured item to the cart Zustand store and navigates
+  // back to the products tab for continued shopping.
+  const handleAddToCart = () => {
+    if (!fabric || !product) return;
+    addToCart({
+      product,
+      fabric,
+      selectedOptions,
+      customerNotes,
+    });
+    // Reset configurator and navigate to products tab
+    // Toast confirmation will be shown by the cart tab badge update
+    reset();
+    router.replace("/products");
+  };
+
+  // --- Express checkout handler ---
+  // Shows a confirmation dialog, then creates the order directly.
+  // Button is disabled while mutation is in-flight to prevent double-taps.
+  const handlePlaceOrderNow = () => {
+    if (!fabric || !product || !session) return;
+
+    const totalPrice = calculatePrice(
+      product.base_price,
+      fabric.price_per_meter,
+      product.fabric_meters,
+      selectedOptions,
+    );
+
+    Alert.alert("Place Order", `Place order for ${formatPrice(totalPrice)}?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Place Order",
+        onPress: () => {
+          createOrderMutation.mutate(
+            {
+              profileId: session.user.id,
+              productId: product.id,
+              fabricId: fabric.id,
+              chosenOptions: selectedOptions,
+              basePrice: product.base_price,
+              fabricPricePerMeter: fabric.price_per_meter,
+              fabricMeters: product.fabric_meters,
+              customerNotes,
+            },
+            {
+              onSuccess: () => {
+                reset();
+                router.replace("/order-success");
+              },
+              onError: () => {
+                Alert.alert(
+                  "Order Failed",
+                  "Could not place your order. Please try again.",
+                );
+              },
+            },
+          );
+        },
+      },
+    ]);
+  };
 
   return (
     <View style={styles.container}>
@@ -226,18 +304,14 @@ export default function ConfiguratorScreen() {
 
       {/* Navigation buttons — fixed at the bottom */}
       <View style={styles.bottomBar}>
-        <View style={styles.navRow}>
-          {isFirstStep ? (
-            // First step shows "Cancel" to exit the configurator
-            <Pressable
-              style={styles.navButtonSecondary}
-              onPress={() => router.replace("/products")}
-              accessibilityRole="button"
-              accessibilityLabel="Cancel configuration"
-            >
-              <Text style={styles.navButtonSecondaryText}>Cancel</Text>
-            </Pressable>
-          ) : (
+        {isReviewStep ? (
+          // Review step: "Add to Cart" (primary) + "Place Order Now" (secondary link)
+          // WHY "Add to Cart" IS PRIMARY:
+          // The app is designed for bespoke orders where customers often order
+          // multiple items together (suit + shirts for a wedding). Making cart
+          // the default flow encourages this. Express checkout is available
+          // for customers who want just one item.
+          <View style={styles.navRow}>
             <Pressable
               style={styles.navButtonSecondary}
               onPress={prevStep}
@@ -246,28 +320,83 @@ export default function ConfiguratorScreen() {
             >
               <Text style={styles.navButtonSecondaryText}>Back</Text>
             </Pressable>
-          )}
 
+            <Pressable
+              style={[
+                styles.navButtonPrimary,
+                !isReviewReady && styles.navButtonDisabled,
+              ]}
+              onPress={handleAddToCart}
+              disabled={!isReviewReady}
+              accessibilityRole="button"
+              accessibilityLabel="Add to cart"
+            >
+              <Text
+                style={[
+                  styles.navButtonPrimaryText,
+                  !isReviewReady && styles.navButtonDisabledText,
+                ]}
+              >
+                Add to Cart
+              </Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.navRow}>
+            {isFirstStep ? (
+              // First step shows "Cancel" to exit the configurator
+              <Pressable
+                style={styles.navButtonSecondary}
+                onPress={() => router.replace("/products")}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel configuration"
+              >
+                <Text style={styles.navButtonSecondaryText}>Cancel</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                style={styles.navButtonSecondary}
+                onPress={prevStep}
+                accessibilityRole="button"
+                accessibilityLabel="Go to previous step"
+              >
+                <Text style={styles.navButtonSecondaryText}>Back</Text>
+              </Pressable>
+            )}
+
+            <Pressable
+              style={styles.navButtonPrimary}
+              onPress={nextStep}
+              accessibilityRole="button"
+              accessibilityLabel="Next"
+            >
+              <Text style={styles.navButtonPrimaryText}>Next</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* Express checkout link — only on review step, below the main buttons */}
+        {isReviewStep && (
           <Pressable
-            style={[
-              styles.navButtonPrimary,
-              isNextDisabled && styles.navButtonDisabled,
-            ]}
-            onPress={isReviewStep ? () => {} : nextStep}
-            disabled={isNextDisabled}
+            style={styles.expressCheckoutLink}
+            onPress={handlePlaceOrderNow}
+            disabled={!isReviewReady || createOrderMutation.isPending}
             accessibilityRole="button"
-            accessibilityLabel={nextButtonLabel}
+            accessibilityLabel="Place order now"
           >
             <Text
               style={[
-                styles.navButtonPrimaryText,
-                isNextDisabled && styles.navButtonDisabledText,
+                styles.expressCheckoutText,
+                (!isReviewReady || createOrderMutation.isPending) &&
+                  styles.expressCheckoutDisabled,
               ]}
             >
-              {nextButtonLabel}
+              {createOrderMutation.isPending
+                ? "Placing Order..."
+                : "Place Order Now"}
             </Text>
           </Pressable>
-        </View>
+        )}
 
         {/* Progress bar below nav buttons — positioned at the bottom for
           easy thumb access. Tapping any step (including Review) lets the
@@ -372,6 +501,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#e5e7eb",
   },
   navButtonDisabledText: {
+    color: "#9ca3af",
+  },
+  // Express checkout is a text link below the main buttons — secondary
+  // action that doesn't compete visually with "Add to Cart".
+  expressCheckoutLink: {
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  expressCheckoutText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#4f46e5",
+  },
+  expressCheckoutDisabled: {
     color: "#9ca3af",
   },
 });

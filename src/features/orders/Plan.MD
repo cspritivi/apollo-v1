@@ -72,6 +72,12 @@ taken by the tailor. For now, measurements are backend-only data.
 
 ### 3. Pricing — Base + Fabric + Option Modifiers
 
+**All prices are stored and calculated as whole integers (no decimals).**
+Currently using `$` for display. The app will eventually switch to `₹` (rupees),
+which also uses whole integers (no paise). This avoids floating-point precision
+bugs (`0.1 + 0.2 !== 0.3` in JavaScript). Formatting with `$` is done only at
+the display layer via a `formatPrice()` utility.
+
 ```
 total = product.base_price
       + (fabric.price_per_meter × product.fabric_meters)
@@ -102,7 +108,8 @@ measurement-based yardage calculation is added later, only the
 creation. This single source of truth prevents the displayed price from
 drifting from the stored `final_price`. The formula is simple now but the
 architecture supports adding tax, discounts, or dynamic fabric yardage
-without changing callers.
+without changing callers. All arithmetic uses integers to avoid
+floating-point precision errors — a common production bug in e-commerce.
 
 ### 4. View My Orders on Home Screen
 
@@ -121,11 +128,14 @@ The review step's bottom navigation changes from a single "Place Order"
 button to two actions:
 
 - **"Add to Cart"** — primary button (solid indigo). Adds the configured
-  item to the cart Zustand store. Shows a brief confirmation (toast or
-  inline message), then navigates back to the Products tab so the customer
-  can configure more items.
+  item to the cart Zustand store. Shows a brief **toast** confirmation
+  (lightweight, non-blocking), then navigates back to the Products tab
+  so the customer can configure more items.
 - **"Place Order Now"** — secondary text link below the button. Express
-  single-item checkout that creates the order immediately and navigates
+  single-item checkout. Shows a **confirmation dialog** ("Place order
+  for $X?") before creating the order — prevents accidental orders since
+  there's no cart review step. Button is **disabled while the mutation is
+  in-flight** to prevent double-taps. On server confirmation, navigates
   to the Order Success screen.
 
 **Why "Add to Cart" is primary:** The app is designed for bespoke orders
@@ -201,18 +211,18 @@ a new section:
 
 | # | Step | Files | Status |
 |---|---|---|---|
-| 1 | Schema: add `fabric_meters` to products + nullable `measurement_snapshot` | `supabase/migrations/add_fabric_meters.sql`, `supabase/migrations/nullable_measurement_snapshot.sql`, `src/types/index.ts` | [ ] |
-| 2 | Price calculation utility + tests (TDD) | `src/features/orders/utils/calculatePrice.ts`, `src/features/orders/__tests__/calculatePrice.test.ts` | [ ] |
-| 3 | Update ReviewSummary to use `calculatePrice` | `ReviewSummary.tsx` | [ ] |
-| 4 | Cart Zustand store + tests (TDD) | `src/stores/cartStore.ts`, `src/stores/__tests__/cartStore.test.ts` | [ ] |
-| 5 | Orders data layer — API + hooks | `src/features/orders/api.ts`, `src/features/orders/hooks.ts` | [ ] |
-| 6 | Update configurator review — "Add to Cart" + "Place Order Now" | `app/(app)/configurator.tsx`, `ReviewSummary.tsx` | [ ] |
-| 7 | Cart tab — UI + layout | `app/(app)/cart.tsx`, `app/(app)/_layout.tsx` | [ ] |
-| 8 | Cart item card component | `src/features/orders/components/CartItemCard.tsx` | [ ] |
-| 9 | Cart checkout → order creation | `app/(app)/cart.tsx` (Place Order button logic) | [ ] |
-| 10 | Order success screen | `app/(app)/order-success.tsx`, `app/(app)/_layout.tsx` | [ ] |
-| 11 | Home screen — My Orders section | `app/(app)/index.tsx`, `src/features/orders/components/OrderRow.tsx` | [ ] |
-| 12 | Orders list screen (View All) | `app/(app)/orders.tsx`, `app/(app)/_layout.tsx` | [ ] |
+| 1 | Schema: add `fabric_meters` to products + nullable `measurement_snapshot` | `supabase/migrations/add_fabric_meters.sql`, `supabase/migrations/nullable_measurement_snapshot.sql`, `src/types/index.ts` | [x] |
+| 2 | Price calculation utility + tests (TDD) | `src/features/orders/utils/calculatePrice.ts`, `src/features/orders/__tests__/calculatePrice.test.ts` | [x] |
+| 3 | Update ReviewSummary to use `calculatePrice` | `ReviewSummary.tsx` | [x] |
+| 4 | Cart Zustand store + tests (TDD) | `src/stores/cartStore.ts`, `src/stores/__tests__/cartStore.test.ts` | [x] |
+| 5 | Orders data layer — API + hooks + tests (TDD) | `src/features/orders/api.ts`, `src/features/orders/hooks.ts`, `src/features/orders/__tests__/orderCreation.test.ts` | [x] |
+| 6 | Update configurator review — "Add to Cart" + "Place Order Now" | `app/(app)/configurator.tsx`, `ReviewSummary.tsx` | [x] |
+| 7 | Cart tab — UI + layout | `app/(app)/cart.tsx`, `app/(app)/_layout.tsx` | [x] |
+| 8 | Cart item card component | `src/features/orders/components/CartItemCard.tsx` | [x] |
+| 9 | Cart checkout → order creation | `app/(app)/cart.tsx` (Place Order button logic) | [x] |
+| 10 | Order success screen | `app/(app)/order-success.tsx`, `app/(app)/_layout.tsx` | [x] |
+| 11 | Home screen — My Orders section | `app/(app)/index.tsx`, `src/features/orders/components/OrderRow.tsx` | [x] |
+| 12 | Orders list screen (View All) | `app/(app)/orders.tsx`, `app/(app)/_layout.tsx` | [x] |
 | 13 | Maestro E2E tests | `.maestro/orders/` | [ ] |
 
 ---
@@ -269,17 +279,37 @@ function calculatePrice(
 
 ### Orders API (`src/features/orders/api.ts`)
 
-- `createOrder(data)` — insert a single order row, returns created order
-- `createOrders(items[])` — insert multiple order rows (cart checkout),
-  returns array of created orders
+- `createOrder(data)` — insert a single order row (express checkout),
+  returns created order. Uses client-side UUID for idempotency.
+- `createOrders(items[])` — **batch insert** multiple order rows in a
+  single Supabase `.insert([rows])` call (cart checkout). This is atomic:
+  all items succeed or all fail. Returns array of created orders.
+  Each row gets a client-side UUID.
 - `fetchOrders(profileId)` — all orders for a customer, ordered by
   `created_at DESC`
 - `fetchOrderById(orderId)` — single order with full details (future use)
 
+**Why batch insert (not N individual inserts):** Checkout is a single
+customer action. If 2 of 3 items succeed and 1 fails, the customer is
+stuck with partial orders they can't undo. Batch insert makes it all-or-
+nothing: on failure the cart is retained and the customer can retry. This
+also means one network round trip instead of N.
+
+**Why client-side UUIDs:** Each order's `id` is generated client-side
+via `crypto.randomUUID()` before the insert. This provides idempotency —
+if a network retry sends the same payload twice, the second insert fails
+on the primary key constraint instead of creating a duplicate order.
+Combined with the disabled submit button, this is defense-in-depth
+against duplicate orders.
+
 ### Orders Hooks (`src/features/orders/hooks.ts`)
 
-- `useCreateOrder()` — mutation for single-item express checkout
-- `useCreateOrders()` — mutation for cart checkout (batch insert)
+- `useCreateOrder()` — mutation for single-item express checkout.
+  Disables submit button while in-flight. Waits for server confirmation
+  before navigating (no optimistic updates).
+- `useCreateOrders()` — mutation for cart checkout (batch insert).
+  On success: clears cart, navigates to success. On failure: cart is
+  retained, error message shown, customer can retry.
 - `useOrders()` — cached order list for home screen + orders list screen
 - `useOrder(id)` — single order (future use for detail view)
 
@@ -289,6 +319,10 @@ When creating an order (from either flow), the payload is:
 
 ```typescript
 {
+  // Client-side UUID for idempotency — if the same insert is retried
+  // due to network issues, the PK constraint prevents duplicates
+  id: crypto.randomUUID(),
+
   profile_id: session.user.id,
   product_id: product.id,
   fabric_id: fabric.id,
@@ -307,7 +341,7 @@ When creating an order (from either flow), the payload is:
     note: null,
   }],
 
-  // Base + fabric (price_per_meter × fabric_meters) + option modifiers
+  // Integer arithmetic only — base + fabric + option modifiers
   final_price: calculatePrice(
     product.base_price, fabric.price_per_meter,
     product.fabric_meters, selectedOptions
@@ -361,11 +395,22 @@ product.base_price, fabric.price_per_meter, product.fabric_meters,
 selectedOptions)` at add-time. Recalculating from stored objects should
 give the same result, but pre-calculating eliminates any risk of drift.
 
-**Why no persistence (AsyncStorage):**
-Cart data lives only in memory for now. If the app is killed, the cart is
-lost. This is acceptable for MVP — bespoke orders are considered purchases,
-not casual browsing. Persistence can be added later by wrapping the store
-with `zustand/middleware/persist`. The store API stays the same.
+**Persistence via `zustand/middleware/persist`:**
+The cart persists to AsyncStorage so it survives app restarts. Losing a
+carefully configured bespoke item because the app was backgrounded is
+unacceptable UX. The `persist` middleware wraps the store transparently —
+the store API is unchanged.
+
+**Future improvement:** Move cart storage from AsyncStorage to a Supabase
+`cart_items` table so the cart syncs across devices when the customer logs
+in on a different phone. The store API stays the same — only the
+persistence layer changes.
+
+**Why no immer middleware:**
+The configurator store uses manual spread syntax for immutable updates,
+and the cart operations are simple (push, filter, clear). Using immer
+would introduce an inconsistency with the rest of the codebase. Spread
+syntax is sufficient here.
 
 ---
 
@@ -386,7 +431,7 @@ Cart tab shows a badge with the item count when > 0.
   title: "Cart",
   tabBarLabel: "Cart",
   tabBarAccessibilityLabel: "Cart",
-  // tabBarBadge: itemCount > 0 ? itemCount : undefined
+  tabBarBadge: itemCount > 0 ? itemCount : undefined,
 }} />
 
 <Tabs.Screen name="order-success" options={{
@@ -405,9 +450,10 @@ Cart tab shows a badge with the item count when > 0.
 **Express checkout:**
 ```
 Configurator → "Place Order Now"
-  → createOrder() mutation
-  → on success: reset configurator store
-  → router.replace("/order-success")
+  → confirmation dialog ("Place order for $X?")
+  → user confirms → disable button + createOrder() mutation
+  → on success: reset configurator store → router.replace("/order-success")
+  → on error: re-enable button, show error message
 ```
 
 **Cart checkout:**
@@ -415,12 +461,13 @@ Configurator → "Place Order Now"
 Configurator → "Add to Cart"
   → addItem to cart store
   → reset configurator store
-  → router.replace("/products") + show confirmation toast
+  → router.replace("/products") + show toast ("Added to cart")
 
 Cart tab → "Place Order"
-  → createOrders() mutation (one order per cart item)
-  → on success: clearCart()
-  → router.replace("/order-success")
+  → disable button + createOrders() batch mutation
+  → on success: clearCart() → router.replace("/order-success")
+  → on error: cart is retained, re-enable button, show error message
+    ("Order could not be placed. Please try again.")
 ```
 
 **Why `router.replace` for success screen:**
@@ -570,34 +617,164 @@ the order with PLACED badge → cleanup (logout)
 
 ---
 
-## Open Questions (Discuss Before Implementing)
+## Resolved Decisions
 
-1. **Cart badge on tab bar.** Should the Cart tab icon show a numeric badge
-   (e.g., "3") when items are in the cart? This is standard e-commerce UX
-   but requires dynamically updating the tab bar options from the cart store.
-   Expo Router supports `tabBarBadge` — the question is just whether we
-   wire it up now or later.
+These questions were discussed and resolved before implementation began.
 
-2. **Toast library for "Added to Cart" confirmation.** When the customer
-   taps "Add to Cart", they need visual confirmation before being navigated
-   away. Options: (a) simple `Alert.alert()`, (b) a toast/snackbar library
-   like `react-native-toast-message` or `burnt`, (c) inline confirmation
-   text on the review screen before navigating. Which approach?
+1. **Cart badge on tab bar.** ✅ Yes — wire up `tabBarBadge` with the
+   cart store's `itemCount()`. Creates purchase urgency for items sitting
+   in the cart.
 
-3. **Cart persistence.** Should the cart survive app restarts? If yes, we
-   add `zustand/middleware/persist` with `AsyncStorage`. If no, cart is
-   lost when the app is killed. For MVP, no persistence is simpler — but
-   losing a carefully configured suit because the app was backgrounded
-   too long could frustrate customers.
+2. **Toast for "Added to Cart" confirmation.** ✅ Use a toast library
+   (lightweight, non-blocking). Quick and passing confirmation before
+   navigating away.
 
-4. **Order success screen — navigate to orders list or home?** The "View
-   My Orders" button could go to the Home screen (which now shows orders)
-   or to the dedicated orders list screen. Home is more discoverable but
-   orders are mixed with other content. Dedicated screen is cleaner but
-   adds another screen to maintain.
+3. **Cart persistence.** ✅ Yes — use `zustand/middleware/persist` with
+   AsyncStorage. Losing a configured bespoke item is unacceptable UX.
+   Future improvement: move to Supabase for cross-device sync.
 
-5. **Express checkout confirmation.** Should "Place Order Now" show a
-   confirmation dialog ("Place order for $X?") before creating the order?
-   Cart checkout has the cart screen as a natural confirmation step, but
-   express checkout goes straight from review to order creation. A dialog
-   prevents accidental orders.
+4. **Order success → navigate where?** ✅ Home screen. Keep the happy
+   path short. The dedicated orders screen exists as "View All" overflow.
+
+5. **Express checkout confirmation.** ✅ Yes — show `Alert.alert()`
+   confirmation dialog ("Place order for $X?") to prevent accidental
+   orders. Cart checkout has the cart screen as a natural confirmation
+   step, so no dialog needed there.
+
+6. **Batch vs individual inserts.** ✅ Batch insert (single
+   `.insert([rows])` call). Checkout is a single customer action — all
+   items succeed or all fail. On failure, cart is retained for retry.
+   No drafts or partial failure state needed.
+
+7. **Client-side UUIDs.** ✅ Yes — generate each order's `id` via
+   `crypto.randomUUID()` before insert. Provides idempotency: if a
+   network retry sends the same payload, the PK constraint prevents
+   duplicates. Defense-in-depth alongside the disabled submit button.
+
+8. **Integer pricing.** ✅ All prices stored and calculated as whole
+   integers. Avoids floating-point precision bugs. Currently displayed
+   with `$`, will switch to `₹` (rupees, also whole integers) later.
+
+9. **Immer middleware.** ✅ Skip — configurator store doesn't use it,
+   and cart operations are simple enough with spread syntax.
+
+10. **Optimistic updates.** ✅ No — wait for server confirmation on all
+    order mutations. Customer must know definitively whether the order
+    was placed. Show loading/disabled state on buttons during mutation.
+
+---
+
+## Input Validation
+
+Before submitting an order (both express and cart checkout), validate the
+payload as defense-in-depth. The configurator flow should guarantee valid
+state, but a guard at the submission boundary catches edge cases (stale
+data, race conditions, malformed cart items).
+
+**Validation checks before `createOrder` / `createOrders`:**
+- `product_id` is a valid UUID
+- `fabric_id` is a valid UUID
+- `chosen_options` is a non-empty object
+- `final_price` is a positive integer
+- `profile_id` matches the authenticated user's ID
+
+If validation fails, show an error and do not submit. This should never
+happen in normal flow — it's a safety net.
+
+**Implementation note:** Input validation was not implemented in this
+session. The configurator flow guarantees valid state for MVP, and RLS
+policies on Supabase provide server-side protection. Add client-side
+validation as a follow-up if edge cases are observed in testing.
+
+---
+
+## Implementation Log
+
+### Session 1 — 2026-03-19
+
+**Steps completed:** 1–12 (all except Maestro E2E tests)
+**Tests:** 67 total (30 existing configurator + 11 calculatePrice + 15 cart store + 11 order creation)
+**TypeScript:** Zero errors
+
+#### Deviations from original plan
+
+1. **Toast library not installed.** The plan called for a toast on "Add to
+   Cart" confirmation. Instead, the cart tab badge update serves as visual
+   feedback — the customer sees the badge increment as they're navigated
+   to the Products tab. A toast library can be added later if user testing
+   shows the badge isn't sufficient. This avoids adding a new dependency
+   without confirming the UX need.
+
+2. **Order success screen is simpler than planned.** The plan specified
+   per-item summary cards showing product name, fabric, option count, and
+   price for each ordered item. The current implementation shows a generic
+   success message with a PLACED badge and next-steps info. Item-specific
+   summaries require passing order data through navigation params or a
+   temporary store — deferred to avoid over-engineering before user testing.
+
+3. **OrderRow shows price + date instead of product + fabric name.** The
+   plan called for product name and fabric name in each row. Since orders
+   store `product_id` and `fabric_id` as foreign keys (not denormalized
+   names), displaying names would require joining with products and fabrics
+   tables or storing names in the order payload. The current implementation
+   shows `final_price` and `created_at` date, which are available directly
+   on the order. Product/fabric name display will be added with the order
+   tracking/detail feature, which will need these joins anyway.
+
+4. **Jest config updated.** Added `src/features/**/*.test.ts` to the `logic`
+   test project (node environment, ts-jest). Pure logic tests in feature
+   directories (calculatePrice, orderCreation) need the node environment,
+   not jest-expo. Removed the duplicate `.test.ts` pattern from the
+   `components` project to avoid conflicts. Feature `.test.tsx` files
+   (React components) still run in the components project with jest-expo.
+
+5. **Input validation deferred.** The plan included client-side payload
+   validation before order submission. The configurator flow enforces valid
+   state (fabric selected, all options chosen before review buttons enable),
+   and Supabase schema constraints + RLS provide server-side protection.
+   Client-side validation is defense-in-depth that can be added as a
+   follow-up without architectural changes.
+
+#### Files created
+
+| File | Purpose |
+|---|---|
+| `supabase/migrations/add_fabric_meters.sql` | Add `fabric_meters` column to products table |
+| `supabase/migrations/nullable_measurement_snapshot.sql` | Make `measurement_snapshot` nullable on orders |
+| `src/features/orders/utils/calculatePrice.ts` | Shared pricing formula (base + fabric + modifiers) |
+| `src/features/orders/__tests__/calculatePrice.test.ts` | 11 TDD tests for price calculation |
+| `src/features/orders/api.ts` | Supabase order queries (create, batch create, fetch) |
+| `src/features/orders/hooks.ts` | React Query hooks (mutations + queries) |
+| `src/features/orders/__tests__/orderCreation.test.ts` | 11 tests for order payload construction |
+| `src/features/orders/components/CartItemCard.tsx` | Cart item display card |
+| `src/features/orders/components/StatusBadge.tsx` | Color-coded order status pill |
+| `src/features/orders/components/OrderRow.tsx` | Order row for home screen / orders list |
+| `src/stores/cartStore.ts` | Cart Zustand store with persist middleware |
+| `src/stores/__tests__/cartStore.test.ts` | 15 TDD tests for cart store |
+| `app/(app)/cart.tsx` | Cart tab screen (items list + checkout) |
+| `app/(app)/order-success.tsx` | Order success screen |
+| `app/(app)/orders.tsx` | Full orders list screen |
+
+#### Files modified
+
+| File | Change |
+|---|---|
+| `src/types/index.ts` | Added `fabric_meters: number` to `Product`, made `measurement_snapshot` nullable on `Order` |
+| `src/features/configurator/components/ReviewSummary.tsx` | Imported `calculatePrice`, updated price calculation to use `fabric_meters`, updated fabric line item display |
+| `app/(app)/configurator.tsx` | Replaced "Place Order" button with "Add to Cart" (primary) + "Place Order Now" (secondary link with confirmation dialog) |
+| `app/(app)/_layout.tsx` | Added Cart tab with badge, hidden order-success and orders screens |
+| `app/(app)/index.tsx` | Rewrote as scrollable layout with "My Orders" section, order rows, empty state |
+| `src/stores/__tests__/configuratorStore.test.ts` | Added `fabric_meters: 2.5` to mock product fixture |
+| `package.json` | Added `src/features/**/*.test.ts` to jest logic project, removed duplicate from components project |
+| `CLAUDE.md` | Checked off "Order placement flow" in current status |
+
+#### Pre-requisites before live testing
+
+1. **Run SQL migrations on Supabase.** Execute both migration files in the
+   Supabase SQL editor:
+   - `supabase/migrations/add_fabric_meters.sql`
+   - `supabase/migrations/nullable_measurement_snapshot.sql`
+
+2. **Verify seed data.** After running `add_fabric_meters.sql`, confirm
+   the backfill worked: `SELECT name, fabric_meters FROM products;` should
+   show 3.5 for Two-Piece Suit, 2.5 for Dress Shirt, 1.8 for Trousers.

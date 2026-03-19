@@ -296,7 +296,7 @@ automated changelog generation. Interviewers recognise this pattern.
 [x] Fabric catalog screen (data layer + UI + Maestro tests)
 [x] Product catalog + configurator (data layer + UI + store with 30 tests)
 [ ] Configurator Maestro E2E tests
-[ ] Order placement flow
+[x] Order placement flow (cart + express checkout + home orders + 67 tests)
 [ ] Order tracking / lifecycle screen
 [ ] Alterations flow
 

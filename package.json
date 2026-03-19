@@ -18,7 +18,8 @@
         "testMatch": [
           "<rootDir>/src/stores/**/*.test.ts",
           "<rootDir>/src/lib/**/*.test.ts",
-          "<rootDir>/src/hooks/**/*.test.ts"
+          "<rootDir>/src/hooks/**/*.test.ts",
+          "<rootDir>/src/features/**/*.test.ts"
         ],
         "testEnvironment": "node",
         "transform": {
@@ -37,7 +38,6 @@
         "displayName": "components",
         "preset": "jest-expo",
         "testMatch": [
-          "<rootDir>/src/features/**/*.test.ts",
           "<rootDir>/src/features/**/*.test.tsx",
           "<rootDir>/app/**/*.test.tsx"
         ],
