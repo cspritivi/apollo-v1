@@ -223,7 +223,7 @@ a new section:
 | 10 | Order success screen | `app/(app)/order-success.tsx`, `app/(app)/_layout.tsx` | [x] |
 | 11 | Home screen — My Orders section | `app/(app)/index.tsx`, `src/features/orders/components/OrderRow.tsx` | [x] |
 | 12 | Orders list screen (View All) | `app/(app)/orders.tsx`, `app/(app)/_layout.tsx` | [x] |
-| 13 | Maestro E2E tests | `.maestro/orders/` | [ ] |
+| 13 | Maestro E2E tests | `.maestro/orders/` | [x] |
 
 ---
 

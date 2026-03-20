@@ -1,0 +1,174 @@
+# ============================================================================
+# ORDERS — HOME SCREEN MY ORDERS
+#
+# Tests that after placing an order, it appears on the Home screen in the
+# "My Orders" section with a "Placed" status badge.
+#
+# WHY THIS TEST EXISTS:
+# The Home screen is the customer's main dashboard. "My Orders" is the
+# primary way customers track their order status at a glance. If the
+# orders section doesn't load or display correctly, the customer has no
+# visibility into their order after placing it.
+#
+# FLOW:
+# Login → Products → configure Two-Piece Suit → "Place Order Now"
+# → confirm dialog → Order Success → "View My Orders"
+# → Home screen → verify "My Orders" section shows order with "Placed"
+# badge → cleanup (logout)
+#
+# PREREQUISITE:
+# - Test user exists in Supabase Auth (cspritivi@gmail.com / test123456)
+# - Seed data loaded (products + product_options + fabrics)
+# - SQL migrations run (fabric_meters, nullable measurement_snapshot)
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# ---- AUTHENTICATE ----
+- assertVisible: "Welcome Back"
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+- tapOn: "Sign In"
+
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "Home"
+    timeout: 10000
+
+# ---- CONFIGURE AND PLACE ORDER (EXPRESS CHECKOUT) ----
+- tapOn: "Products"
+
+- extendedWaitUntil:
+    visible:
+      text: "Two-Piece Suit.*"
+    timeout: 10000
+
+- tapOn:
+    text: "Two-Piece Suit.*"
+
+# Step 0: Fabric
+- extendedWaitUntil:
+    visible:
+      text: "Choose Fabric"
+    timeout: 10000
+
+- tapOn:
+    text: "Black Wool Crepe.*"
+
+- tapOn: "Next"
+
+# Step 1: Lapel Style
+- extendedWaitUntil:
+    visible:
+      text: "Choose Lapel Style"
+    timeout: 5000
+
+- tapOn:
+    text: "Peak Lapel.*"
+
+- tapOn: "Next"
+
+# Step 2: Button Count
+- extendedWaitUntil:
+    visible:
+      text: "Choose Button Count"
+    timeout: 5000
+
+- tapOn:
+    text: "Two Button.*"
+
+- tapOn: "Next"
+
+# Step 3: Vent Style
+- extendedWaitUntil:
+    visible:
+      text: "Choose Vent Style"
+    timeout: 5000
+
+- tapOn:
+    text: "Single Vent.*"
+
+- tapOn: "Next"
+
+# Step 4: Lining Style
+- extendedWaitUntil:
+    visible:
+      text: "Choose Lining Style"
+    timeout: 5000
+
+- tapOn:
+    text: "Full Lining.*"
+
+- tapOn: "Next"
+
+# Step 5: Pocket Style
+- extendedWaitUntil:
+    visible:
+      text: "Choose Pocket Style"
+    timeout: 5000
+
+- tapOn:
+    text: "Welt Pocket.*"
+
+- tapOn: "Next"
+
+# Review → Express Checkout
+- extendedWaitUntil:
+    visible:
+      text: "Review Your Configuration"
+    timeout: 5000
+
+- scrollUntilVisible:
+    element:
+      text: "Place Order Now"
+    direction: DOWN
+    timeout: 5000
+
+- tapOn: "Place order now"
+
+# Confirm the Alert dialog
+- extendedWaitUntil:
+    visible:
+      text: "Place Order"
+    timeout: 5000
+
+- tapOn:
+    text: "Place Order"
+    index: 1
+
+# ---- ORDER SUCCESS ----
+- extendedWaitUntil:
+    visible:
+      text: "Order Placed!"
+    timeout: 15000
+
+# Navigate to Home via "View My Orders"
+- tapOn: "View My Orders"
+
+# ---- VERIFY MY ORDERS ON HOME SCREEN ----
+- extendedWaitUntil:
+    visible:
+      text: "My Orders"
+    timeout: 10000
+
+# Verify at least one order row shows the "Placed" status badge.
+# StatusBadge renders "Placed" as the label for OrderStatus.PLACED.
+- assertVisible: "Placed"
+
+# Verify order row shows a price (dollar format from OrderRow)
+- assertVisible:
+    text: "\\$.*"
+
+# ---- CLEANUP ----
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000

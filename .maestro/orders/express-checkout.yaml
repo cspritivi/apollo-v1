@@ -1,0 +1,179 @@
+# ============================================================================
+# ORDERS — EXPRESS CHECKOUT (SINGLE ITEM)
+#
+# Tests the express checkout flow: configure a product → "Place Order Now"
+# → confirm in dialog → verify Order Success screen → navigate away.
+#
+# WHY THIS TEST EXISTS:
+# Express checkout bypasses the cart entirely — the order is created directly
+# from the configurator review screen via a confirmation dialog. This is the
+# shortest path to placing an order and must work independently of the cart.
+#
+# FLOW:
+# Login → Products → Two-Piece Suit → configure all steps → Review
+# → "Place Order Now" → confirm dialog → Order Success → "Continue Shopping"
+# → verify on Products tab → cleanup (logout)
+#
+# PREREQUISITE:
+# - Test user exists in Supabase Auth (cspritivi@gmail.com / test123456)
+# - Seed data loaded (products + product_options + fabrics)
+# - SQL migrations run (fabric_meters on products, nullable measurement_snapshot)
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# ---- AUTHENTICATE ----
+- assertVisible: "Welcome Back"
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+- tapOn: "Sign In"
+
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "Home"
+    timeout: 10000
+
+# ---- NAVIGATE TO PRODUCTS TAB ----
+- tapOn: "Products"
+
+- extendedWaitUntil:
+    visible:
+      text: "Two-Piece Suit.*"
+    timeout: 10000
+
+# ---- CONFIGURE A PRODUCT (Two-Piece Suit) ----
+- tapOn:
+    text: "Two-Piece Suit.*"
+
+# Step 0: Fabric
+- extendedWaitUntil:
+    visible:
+      text: "Choose Fabric"
+    timeout: 10000
+
+- tapOn:
+    text: "Black Wool Crepe.*"
+
+- tapOn: "Next"
+
+# Step 1: Lapel Style
+- extendedWaitUntil:
+    visible:
+      text: "Choose Lapel Style"
+    timeout: 5000
+
+- tapOn:
+    text: "Peak Lapel.*"
+
+- tapOn: "Next"
+
+# Step 2: Button Count
+- extendedWaitUntil:
+    visible:
+      text: "Choose Button Count"
+    timeout: 5000
+
+- tapOn:
+    text: "Two Button.*"
+
+- tapOn: "Next"
+
+# Step 3: Vent Style
+- extendedWaitUntil:
+    visible:
+      text: "Choose Vent Style"
+    timeout: 5000
+
+- tapOn:
+    text: "Single Vent.*"
+
+- tapOn: "Next"
+
+# Step 4: Lining Style
+- extendedWaitUntil:
+    visible:
+      text: "Choose Lining Style"
+    timeout: 5000
+
+- tapOn:
+    text: "Full Lining.*"
+
+- tapOn: "Next"
+
+# Step 5: Pocket Style
+- extendedWaitUntil:
+    visible:
+      text: "Choose Pocket Style"
+    timeout: 5000
+
+- tapOn:
+    text: "Welt Pocket.*"
+
+- tapOn: "Next"
+
+# ---- REVIEW STEP ----
+- extendedWaitUntil:
+    visible:
+      text: "Review Your Configuration"
+    timeout: 5000
+
+# Verify "Place Order Now" link is visible (scroll down if needed)
+- scrollUntilVisible:
+    element:
+      text: "Place Order Now"
+    direction: DOWN
+    timeout: 5000
+
+# ---- EXPRESS CHECKOUT ----
+# Tap the express checkout link — this shows a confirmation dialog
+- tapOn: "Place order now"
+
+# Confirm the Alert dialog — the confirm button text is "Place Order"
+- extendedWaitUntil:
+    visible:
+      text: "Place Order"
+    timeout: 5000
+
+- tapOn:
+    text: "Place Order"
+    index: 1
+
+# ---- VERIFY ORDER SUCCESS SCREEN ----
+- extendedWaitUntil:
+    visible:
+      text: "Order Placed!"
+    timeout: 15000
+
+# Verify the PLACED status badge is shown
+- assertVisible: "PLACED"
+
+# Verify next-steps info card is shown
+- assertVisible: "What's Next?"
+
+# Verify navigation buttons exist
+- assertVisible: "View My Orders"
+- assertVisible: "Continue Shopping"
+
+# ---- NAVIGATE AWAY ----
+# Tap "Continue Shopping" to land on Products tab
+- tapOn: "Continue Shopping"
+
+- extendedWaitUntil:
+    visible:
+      text: "Two-Piece Suit.*"
+    timeout: 10000
+
+# ---- CLEANUP ----
+- tapOn: "Home"
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000

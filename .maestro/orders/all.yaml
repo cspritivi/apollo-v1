@@ -1,0 +1,15 @@
+# ============================================================================
+# ORDERS — RUN ALL E2E TESTS
+#
+# Runs all order flow Maestro tests in sequence. Each test authenticates
+# and cleans up independently. Express checkout runs first for fastest
+# signal on the core path. Cart remove runs before cart checkout to avoid
+# leftover cart state interfering (though each test cleans up after itself).
+# ============================================================================
+appId: host.exp.Exponent
+---
+- runFlow: express-checkout.yaml
+- runFlow: add-to-cart.yaml
+- runFlow: cart-remove-item.yaml
+- runFlow: cart-checkout.yaml
+- runFlow: home-my-orders.yaml
