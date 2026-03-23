@@ -778,3 +778,60 @@ validation as a follow-up if edge cases are observed in testing.
 2. **Verify seed data.** After running `add_fabric_meters.sql`, confirm
    the backfill worked: `SELECT name, fabric_meters FROM products;` should
    show 3.5 for Two-Piece Suit, 2.5 for Dress Shirt, 1.8 for Trousers.
+
+### Session 2 — 2026-03-23
+
+**Focus:** Bug fix (order placement failing) + Maestro E2E test fixes
+**All 5 Maestro E2E tests passing.**
+
+#### Bug fix: Order creation failing with `22P02 invalid input syntax for type uuid`
+
+**Root cause:** `crypto.randomUUID()` is not available in React Native's
+JavaScript runtime. The fallback in `generateOrderId()` produced strings
+like `1774125745264-uxi9vyf` — not valid UUIDs. Postgres rejected the
+insert because the `orders.id` column is type `uuid`.
+
+**Fix:** Removed client-side `id` from the order payload entirely. Postgres
+generates UUIDs server-side via the `gen_random_uuid()` column default.
+The `generateOrderId()` helper was deleted as dead code.
+
+**Tradeoff:** Client-side UUIDs provided idempotency (duplicate retries hit
+the PK constraint). Without them, the only double-submit protection is the
+disabled button. Network-level retries could create duplicates. Tracked in
+GitHub issue #4 — fix is to install `expo-crypto` which provides
+`Crypto.randomUUID()` for React Native.
+
+**Debugging approach:** Added temporary `console.log` / `console.error`
+statements to `createOrder` and `createOrders` in `api.ts` to capture the
+exact payload sent and the Supabase error returned. The error message
+(`invalid input syntax for type uuid: "1774125745264-uxi9vyf"`) immediately
+identified the root cause. Debug logging was removed after the fix.
+
+#### Maestro test fix: `cart-checkout.yaml` failing at Dress Shirt option steps
+
+**Root cause (1 — step count):** The test assumed the Dress Shirt had 3–4
+option groups, but it has 5 (`collar_style`, `cuff_style`, `placket_style`,
+`pocket_style`, `back_pleat`). The test ran out of steps before reaching
+the Review screen.
+
+**Root cause (2 — option selection):** The test used `".*\$.*"` regex to
+tap option cards by matching price text. But `OptionCard` only renders a
+price label when `price_modifier !== 0`. Dress Shirt options all have
+`price_modifier: 0`, so no `$` text was visible — the tap silently failed
+(marked `optional: true`), and no option was selected.
+
+**Fix:**
+- Added `testID={`option-card-${index}`}` to `OptionCard` (passed from
+  `OptionStep`'s FlatList `renderItem`). Maestro can now tap cards
+  reliably by `id: "option-card-0"` regardless of displayed text.
+- Updated `cart-checkout.yaml` to explicitly step through all 5 Dress
+  Shirt option groups using `id: "option-card-0"` for selection.
+
+#### Files modified
+
+| File | Change |
+|---|---|
+| `src/features/orders/api.ts` | Removed `id` from order payload (let Postgres generate), deleted `generateOrderId()` helper |
+| `src/features/configurator/components/OptionCard.tsx` | Added `testID` prop, passed through to `Pressable` |
+| `src/features/configurator/components/OptionStep.tsx` | Pass `testID={`option-card-${index}`}` to `OptionCard` in FlatList renderItem |
+| `.maestro/orders/cart-checkout.yaml` | Fixed to 5 explicit option steps for Dress Shirt, use `id: "option-card-0"` instead of `$` price matching |

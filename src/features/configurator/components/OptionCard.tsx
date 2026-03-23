@@ -25,12 +25,14 @@ interface OptionCardProps {
   option: ProductOption;
   isSelected: boolean;
   onSelect: (option: ProductOption) => void;
+  testID?: string;
 }
 
 export default function OptionCard({
   option,
   isSelected,
   onSelect,
+  testID,
 }: OptionCardProps) {
   // Format price modifier for display.
   // Positive values show as "+$20.00", negative as "-$20.00", zero shows nothing.
@@ -46,6 +48,7 @@ export default function OptionCard({
       accessibilityRole="button"
       accessibilityState={{ selected: isSelected }}
       accessibilityLabel={`${option.name}${priceDisplay ? `, ${priceDisplay}` : ""}${isSelected ? ", selected" : ""}`}
+      testID={testID}
     >
       {/* Option image — the most important part of the card */}
       {option.image_url ? (

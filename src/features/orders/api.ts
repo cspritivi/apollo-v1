@@ -41,23 +41,15 @@ export interface CreateOrderInput {
 // ============================================================================
 
 /**
- * Generate a UUID for order IDs. Uses crypto.randomUUID when available,
- * falls back to a timestamp + random suffix.
- */
-function generateOrderId(): string {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-}
-
-/**
  * Build a complete order row from the input. This is shared between
  * single-item and batch order creation to ensure consistency.
  */
 function buildOrderRow(input: CreateOrderInput) {
   return {
-    id: generateOrderId(),
+    // No `id` — Postgres generates it via gen_random_uuid() default.
+    // Client-side UUID generation (crypto.randomUUID) isn't reliably
+    // available in React Native. The disabled submit button prevents
+    // double-taps; server-side UUID generation is sufficient for now.
     profile_id: input.profileId,
     product_id: input.productId,
     fabric_id: input.fabricId,

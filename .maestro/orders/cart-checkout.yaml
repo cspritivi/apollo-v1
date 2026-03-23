@@ -151,75 +151,61 @@ appId: host.exp.Exponent
 
 - tapOn: "Next"
 
-# Dress Shirt has different option groups than Suit — step through each.
-# We don't know the exact groups, so we select the first visible option
-# on each step and advance. The test validates the flow completes, not
-# the specific option names.
+# Dress Shirt has 5 option groups: collar_style, cuff_style, placket_style,
+# pocket_style, back_pleat. We select the first visible option on each step
+# and advance. The test validates the flow completes, not specific option names.
 
-# Step 1: First option group
+# Steps 1–5: Collar Style, Cuff Style, Placket Style, Pocket Style, Back Pleat.
+# Each step: wait for title, tap first option card by testID, advance.
+# Using testID instead of price text because options with $0 modifier
+# don't render a price label, making ".*\$.*" unreliable.
+
+# Step 1
 - extendedWaitUntil:
     visible:
       text: "Choose.*"
     timeout: 5000
-
-# Select the first option card by tapping "Tap an option to select it"
-# area — but actually we need to tap an option. Use a generic approach:
-# tap the first visible option (they all have ".*" pattern with price).
 - tapOn:
-    index: 0
     id: "option-card-0"
-    optional: true
-
-# Fallback: tap the first option by matching any text with a price modifier
-- tapOn:
-    text: ".*\\$.*"
-    index: 0
-    optional: true
-
 - tapOn: "Next"
 
-# Continue through remaining steps — each step: wait for title, tap first option, Next
+# Step 2
 - extendedWaitUntil:
     visible:
       text: "Choose.*"
     timeout: 5000
-
 - tapOn:
-    text: ".*\\$.*"
-    index: 0
-    optional: true
-
+    id: "option-card-0"
 - tapOn: "Next"
 
+# Step 3
 - extendedWaitUntil:
     visible:
       text: "Choose.*"
     timeout: 5000
-
 - tapOn:
-    text: ".*\\$.*"
-    index: 0
-    optional: true
-
+    id: "option-card-0"
 - tapOn: "Next"
 
-# Check if we're at Review or another option step
+# Step 4
 - extendedWaitUntil:
     visible:
-      text: "Review Your Configuration|Choose.*"
+      text: "Choose.*"
     timeout: 5000
-
-# If there are more option steps, keep advancing
 - tapOn:
-    text: ".*\\$.*"
-    index: 0
-    optional: true
+    id: "option-card-0"
+- tapOn: "Next"
 
+# Step 5
+- extendedWaitUntil:
+    visible:
+      text: "Choose.*"
+    timeout: 5000
 - tapOn:
-    text: "Next"
-    optional: true
+    id: "option-card-0"
+- tapOn: "Next"
 
-# We should now be at Review (or get there with one more Next)
+# Review
 - extendedWaitUntil:
     visible:
       text: "Review Your Configuration"
