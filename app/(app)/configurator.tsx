@@ -17,6 +17,7 @@ import { useCartStore } from "../../src/stores/cartStore";
 import { useCreateOrder } from "../../src/features/orders/hooks";
 import { useSession } from "../../src/hooks/useSession";
 import { calculatePrice } from "../../src/features/orders/utils/calculatePrice";
+import Toast from "react-native-toast-message";
 import ProgressBar from "../../src/features/configurator/components/ProgressBar";
 import FabricSelectionStep from "../../src/features/configurator/components/FabricSelectionStep";
 import OptionStep, {
@@ -245,9 +246,17 @@ export default function ConfiguratorScreen() {
       customerNotes,
     });
     // Reset configurator and navigate to products tab
-    // Toast confirmation will be shown by the cart tab badge update
     reset();
     router.replace("/products");
+
+    // Show a brief toast confirming the item was added — supplements the
+    // cart tab badge update with an explicit textual confirmation so the
+    // customer knows the action succeeded before the badge catches their eye.
+    Toast.show({
+      type: "success",
+      text1: "Added to cart",
+      visibilityTime: 2000,
+    });
   };
 
   // --- Express checkout handler ---

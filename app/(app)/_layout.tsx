@@ -1,4 +1,5 @@
 import { Tabs } from "expo-router";
+import Toast from "react-native-toast-message";
 import { useCartStore } from "../../src/stores/cartStore";
 
 /**
@@ -27,102 +28,108 @@ export default function AppLayout() {
   const cartItemCount = useCartStore((s) => s.itemCount());
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: true,
-        tabBarActiveTintColor: "#4f46e5", // Indigo — matches price accent color
-        tabBarInactiveTintColor: "#9ca3af",
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: "600",
-        },
-        headerTitleStyle: {
-          fontWeight: "700",
-        },
-      }}
-    >
-      {/**
-       * Tab order is defined by the order of <Tabs.Screen> declarations here,
-       * NOT by the file names. This gives us explicit control over tab ordering
-       * even though the screens are file-based.
-       */}
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarLabel: "Home",
-          // WHY tabBarAccessibilityLabel:
-          // React Navigation builds a compound accessibility label for tab buttons
-          // (e.g., "Home, tab, 1 of 2"). Maestro's text matcher can't find "Home"
-          // inside that string. Setting an explicit accessibilityLabel overrides
-          // the compound one, making the tab reliably tappable in E2E tests.
-          tabBarAccessibilityLabel: "Home",
+    <>
+      <Tabs
+        screenOptions={{
+          headerShown: true,
+          tabBarActiveTintColor: "#4f46e5", // Indigo — matches price accent color
+          tabBarInactiveTintColor: "#9ca3af",
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontWeight: "600",
+          },
+          headerTitleStyle: {
+            fontWeight: "700",
+          },
         }}
-      />
-      <Tabs.Screen
-        name="fabrics"
-        options={{
-          title: "Fabrics",
-          tabBarLabel: "Fabrics",
-          tabBarAccessibilityLabel: "Fabrics",
-        }}
-      />
-      <Tabs.Screen
-        name="products"
-        options={{
-          title: "Products",
-          tabBarLabel: "Products",
-          tabBarAccessibilityLabel: "Products",
-        }}
-      />
-      <Tabs.Screen
-        name="cart"
-        options={{
-          title: "Cart",
-          tabBarLabel: "Cart",
-          tabBarAccessibilityLabel: "Cart",
-          // Badge creates purchase urgency for items sitting in the cart
-          tabBarBadge: cartItemCount > 0 ? cartItemCount : undefined,
-        }}
-      />
-      {/* Saved fabrics is navigated to from the Home screen, not a tab.
+      >
+        {/**
+         * Tab order is defined by the order of <Tabs.Screen> declarations here,
+         * NOT by the file names. This gives us explicit control over tab ordering
+         * even though the screens are file-based.
+         */}
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: "Home",
+            tabBarLabel: "Home",
+            // WHY tabBarAccessibilityLabel:
+            // React Navigation builds a compound accessibility label for tab buttons
+            // (e.g., "Home, tab, 1 of 2"). Maestro's text matcher can't find "Home"
+            // inside that string. Setting an explicit accessibilityLabel overrides
+            // the compound one, making the tab reliably tappable in E2E tests.
+            tabBarAccessibilityLabel: "Home",
+          }}
+        />
+        <Tabs.Screen
+          name="fabrics"
+          options={{
+            title: "Fabrics",
+            tabBarLabel: "Fabrics",
+            tabBarAccessibilityLabel: "Fabrics",
+          }}
+        />
+        <Tabs.Screen
+          name="products"
+          options={{
+            title: "Products",
+            tabBarLabel: "Products",
+            tabBarAccessibilityLabel: "Products",
+          }}
+        />
+        <Tabs.Screen
+          name="cart"
+          options={{
+            title: "Cart",
+            tabBarLabel: "Cart",
+            tabBarAccessibilityLabel: "Cart",
+            // Badge creates purchase urgency for items sitting in the cart
+            tabBarBadge: cartItemCount > 0 ? cartItemCount : undefined,
+          }}
+        />
+        {/* Saved fabrics is navigated to from the Home screen, not a tab.
           Setting href: null hides it from the tab bar while keeping it
           inside the (app) route group for auth protection. This is Expo
           Router's way of having "non-tab" screens within a Tabs layout —
           the screen exists in the navigation stack but doesn't get a tab. */}
-      <Tabs.Screen
-        name="saved-fabrics"
-        options={{
-          title: "Saved Fabrics",
-          href: null,
-        }}
-      />
-      {/* Configurator is a full-screen flow pushed from the products tab,
+        <Tabs.Screen
+          name="saved-fabrics"
+          options={{
+            title: "Saved Fabrics",
+            href: null,
+          }}
+        />
+        {/* Configurator is a full-screen flow pushed from the products tab,
           not a tab itself. href: null hides it from the tab bar. The user
           enters via router.push("/configurator") with a productId param. */}
-      <Tabs.Screen
-        name="configurator"
-        options={{
-          title: "Configure",
-          href: null,
-        }}
-      />
-      {/* Order success shown after checkout — hidden from tab bar */}
-      <Tabs.Screen
-        name="order-success"
-        options={{
-          title: "Order Placed",
-          href: null,
-        }}
-      />
-      {/* Full orders list accessed from Home → "View All Orders" */}
-      <Tabs.Screen
-        name="orders"
-        options={{
-          title: "My Orders",
-          href: null,
-        }}
-      />
-    </Tabs>
+        <Tabs.Screen
+          name="configurator"
+          options={{
+            title: "Configure",
+            href: null,
+          }}
+        />
+        {/* Order success shown after checkout — hidden from tab bar */}
+        <Tabs.Screen
+          name="order-success"
+          options={{
+            title: "Order Placed",
+            href: null,
+          }}
+        />
+        {/* Full orders list accessed from Home → "View All Orders" */}
+        <Tabs.Screen
+          name="orders"
+          options={{
+            title: "My Orders",
+            href: null,
+          }}
+        />
+      </Tabs>
+      {/* Toast overlay — renders above all screens so toasts are visible
+        regardless of which tab/screen is active. Placed outside <Tabs>
+        so it isn't clipped by tab content boundaries. */}
+      <Toast />
+    </>
   );
 }

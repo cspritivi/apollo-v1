@@ -3,11 +3,14 @@
  *
  * These validate that the buildOrderRow helper (tested indirectly via the
  * exported API functions) produces correct payloads with:
- * - Client-side UUID for idempotency
  * - Correct status initialization
  * - Price matching calculatePrice output
  * - Null measurement_snapshot
  * - Customer notes pass-through
+ *
+ * NOTE: Client-side UUID generation was removed (see Plan.MD Session 2).
+ * Postgres generates order IDs server-side via gen_random_uuid(). The
+ * payload intentionally omits `id` so the DB default kicks in.
  *
  * We test the buildOrderRow logic by importing it indirectly — the API
  * functions are thin wrappers around Supabase calls, so we mock Supabase
@@ -82,13 +85,11 @@ describe("createOrder — payload construction", () => {
     mockInsert.mockReturnValue({ select: mockSelect });
   });
 
-  it("includes a client-side UUID as id", async () => {
+  it("does not include a client-side id (Postgres generates via gen_random_uuid)", async () => {
     await createOrder(baseInput);
 
     const insertedRow = mockInsert.mock.calls[0][0];
-    expect(insertedRow.id).toBeDefined();
-    expect(typeof insertedRow.id).toBe("string");
-    expect(insertedRow.id.length).toBeGreaterThan(0);
+    expect(insertedRow.id).toBeUndefined();
   });
 
   it("sets correct profile_id, product_id, fabric_id", async () => {
@@ -186,10 +187,11 @@ describe("createOrders — batch payload construction", () => {
     expect(rows).toHaveLength(2);
   });
 
-  it("gives each order a unique client-side UUID", async () => {
+  it("does not include client-side ids (Postgres generates them)", async () => {
     await createOrders([baseInput, baseInput]);
 
     const rows = mockInsert.mock.calls[0][0];
-    expect(rows[0].id).not.toBe(rows[1].id);
+    expect(rows[0].id).toBeUndefined();
+    expect(rows[1].id).toBeUndefined();
   });
 });
