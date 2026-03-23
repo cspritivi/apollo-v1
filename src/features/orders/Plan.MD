@@ -698,12 +698,9 @@ validation as a follow-up if edge cases are observed in testing.
 
 #### Deviations from original plan
 
-1. **Toast library not installed.** The plan called for a toast on "Add to
-   Cart" confirmation. Instead, the cart tab badge update serves as visual
-   feedback — the customer sees the badge increment as they're navigated
-   to the Products tab. A toast library can be added later if user testing
-   shows the badge isn't sufficient. This avoids adding a new dependency
-   without confirming the UX need.
+1. **~~Toast library not installed.~~** Resolved in Session 3 — added
+   `react-native-toast-message`. Shows "Added to cart" success toast
+   alongside the cart tab badge increment.
 
 2. **Order success screen is simpler than planned.** The plan specified
    per-item summary cards showing product name, fabric, option count, and
@@ -835,3 +832,41 @@ price label when `price_modifier !== 0`. Dress Shirt options all have
 | `src/features/configurator/components/OptionCard.tsx` | Added `testID` prop, passed through to `Pressable` |
 | `src/features/configurator/components/OptionStep.tsx` | Pass `testID={`option-card-${index}`}` to `OptionCard` in FlatList renderItem |
 | `.maestro/orders/cart-checkout.yaml` | Fixed to 5 explicit option steps for Dress Shirt, use `id: "option-card-0"` instead of `$` price matching |
+
+### Session 3 — 2026-03-23
+
+**Focus:** Add toast confirmation for add-to-cart, fix stale tests, issue triage
+
+#### Toast for "Add to Cart" confirmation
+
+**Original plan deviation (Session 1):** Toast library was skipped — the cart
+tab badge increment was deemed sufficient visual feedback.
+
+**Resolution:** Added `react-native-toast-message` (pure JS, Expo Go compatible).
+Shows a brief "Added to cart" success toast after the customer adds an item.
+`burnt` was tried first but requires native modules incompatible with Expo Go.
+
+**Setup:** `<Toast />` provider added to `app/(app)/_layout.tsx` outside the
+`<Tabs>` component so toasts render above all screens.
+
+#### Stale test fix: orderCreation tests expecting client-side UUIDs
+
+Two tests in `orderCreation.test.ts` still expected an `id` field on the order
+payload, but Session 2 removed client-side UUID generation. Updated tests to
+assert `id` is `undefined` (Postgres generates IDs server-side).
+
+#### GitHub issues created
+
+- **#5** — `feat: order tracking — detail screen, status timeline, product/fabric names`
+- **#6** — `feat: sync cart to Supabase for cross-device persistence`
+- **#7** — `chore: add client-side input validation before order submission` (low priority)
+
+#### Files modified
+
+| File | Change |
+|---|---|
+| `app/(app)/_layout.tsx` | Added `react-native-toast-message` Toast provider |
+| `app/(app)/configurator.tsx` | Added toast on add-to-cart (`Toast.show()`) |
+| `package.json` | Added `react-native-toast-message` dependency |
+| `src/features/orders/__tests__/orderCreation.test.ts` | Fixed 2 stale UUID tests to expect no `id` on payload |
+| `CLAUDE.md` | Checked off configurator Maestro E2E tests |
