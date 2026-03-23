@@ -8,6 +8,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { Product, Fabric, ProductOption } from "../../../types";
+import { calculatePrice } from "../../orders/utils/calculatePrice";
 import { formatOptionGroupTitle } from "./OptionStep";
 
 /**
@@ -56,17 +57,18 @@ export default function ReviewSummary({
   onChangeNotes,
   onGoToStep,
 }: ReviewSummaryProps) {
-  // Calculate total price: base + fabric + option modifiers
+  // Price calculation uses the shared calculatePrice utility — single source of
+  // truth for the pricing formula across ReviewSummary, cart, and order creation.
   const basePriceCents = product.base_price;
-  // Fabric price is per meter — the product would define how many meters
-  // are needed. For now we display it as a line item (price/m) without
-  // multiplying. TODO: multiply by product.fabric_meters when that column exists.
-  const fabricPriceCents = fabric ? fabric.price_per_meter : 0;
-  const optionModifiersCents = Object.values(selectedOptions).reduce(
-    (sum, opt) => sum + opt.price_modifier,
-    0,
+  const fabricPricePerMeter = fabric ? fabric.price_per_meter : 0;
+  // Fabric cost line item: price_per_meter × fabric_meters (e.g., $25/m × 2.5m)
+  const fabricCostCents = fabricPricePerMeter * product.fabric_meters;
+  const totalCents = calculatePrice(
+    basePriceCents,
+    fabricPricePerMeter,
+    product.fabric_meters,
+    selectedOptions,
   );
-  const totalCents = basePriceCents + fabricPriceCents + optionModifiersCents;
 
   const formatPrice = (cents: number) => {
     const prefix = cents < 0 ? "-" : "";
@@ -224,9 +226,11 @@ export default function ReviewSummary({
 
         {fabric && (
           <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>Fabric ({fabric.name})</Text>
+            <Text style={styles.priceLabel}>
+              Fabric ({fabric.name}, {product.fabric_meters}m)
+            </Text>
             <Text style={styles.priceValue}>
-              {formatPrice(fabricPriceCents)}/m
+              {formatPrice(fabricCostCents)}
             </Text>
           </View>
         )}

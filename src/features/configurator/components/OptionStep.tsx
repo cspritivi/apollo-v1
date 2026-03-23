@@ -77,12 +77,13 @@ export default function OptionStep({
         data={options.length % 2 !== 0 ? [...options, null] : options}
         keyExtractor={(item, index) => item?.id ?? `spacer-${index}`}
         numColumns={2}
-        renderItem={({ item }) =>
+        renderItem={({ item, index }) =>
           item ? (
             <OptionCard
               option={item}
               isSelected={selectedOption?.id === item.id}
               onSelect={onSelectOption}
+              testID={`option-card-${index}`}
             />
           ) : (
             <View style={{ flex: 1, margin: 6 }} />

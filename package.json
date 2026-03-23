@@ -18,7 +18,8 @@
         "testMatch": [
           "<rootDir>/src/stores/**/*.test.ts",
           "<rootDir>/src/lib/**/*.test.ts",
-          "<rootDir>/src/hooks/**/*.test.ts"
+          "<rootDir>/src/hooks/**/*.test.ts",
+          "<rootDir>/src/features/**/*.test.ts"
         ],
         "testEnvironment": "node",
         "transform": {
@@ -37,7 +38,6 @@
         "displayName": "components",
         "preset": "jest-expo",
         "testMatch": [
-          "<rootDir>/src/features/**/*.test.ts",
           "<rootDir>/src/features/**/*.test.tsx",
           "<rootDir>/app/**/*.test.tsx"
         ],
@@ -61,6 +61,7 @@
     "react-native": "0.81.5",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
+    "react-native-toast-message": "^2.3.3",
     "zustand": "^5.0.11"
   },
   "devDependencies": {

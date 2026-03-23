@@ -35,6 +35,7 @@ const mockProduct: Product = {
   base_price: 5000, // $50.00 in cents
   image_url: "https://example.com/shirt.jpg",
   option_groups: ["collar_style", "cuff_style", "pocket_style"],
+  fabric_meters: 2.5, // Dress shirt uses ~2.5m of fabric
   available: true,
   created_at: "2024-01-01T00:00:00Z",
   updated_at: "2024-01-01T00:00:00Z",

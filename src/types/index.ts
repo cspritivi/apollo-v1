@@ -144,6 +144,12 @@ export interface Product {
   base_price: number; // Stored in smallest currency unit
   image_url: string | null;
   option_groups: string[]; // e.g., ["collar_style", "cuff_style", "pocket_style"]
+  /**
+   * How many meters of fabric this product requires for pricing.
+   * Suit ~3.5m, shirt ~2.5m, trousers ~1.8m.
+   * Used in pricing formula: fabric.price_per_meter × product.fabric_meters.
+   */
+  fabric_meters: number;
   available: boolean;
   created_at: string;
   updated_at: string;
@@ -229,8 +235,12 @@ export interface Order {
   /**
    * Full snapshot of customer measurements at time of order placement.
    * This decouples the order from future measurement updates.
+   *
+   * Nullable because measurements are taken in-person by the tailor after
+   * the order is placed. The tailor attaches measurements via the dashboard
+   * when the customer visits the shop.
    */
-  measurement_snapshot: Measurement;
+  measurement_snapshot: Measurement | null;
 
   current_status: OrderStatus;
 
