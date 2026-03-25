@@ -1066,3 +1066,71 @@ ScrollView
 | `app/(app)/orders.tsx` | Wired `handleOrderPress` → `router.push` to OrderRow |
 | `IA.MD` | Added Presentational vs Container Components section |
 | `CLAUDE.md` | Checked off "Order tracking / lifecycle screen" |
+
+#### Remaining before PR merge
+
+Maestro E2E tests for order tracking. All code is complete and unit/component
+tests pass (87 total). The Maestro tests need to run on macOS (Maestro doesn't
+work on Windows). Pick up from here on the MacBook.
+
+**Tests to write:**
+
+##### `.maestro/orders/order-detail-from-home.yaml`
+
+Tests navigating to the order detail screen from the Home screen's "My Orders"
+section. This is the primary way customers will check order details.
+
+```
+Flow:
+Login → Products → configure Two-Piece Suit (same steps as express-checkout.yaml)
+→ Review → "Place Order Now" → confirm → Order Success → "View My Orders"
+→ Home screen → tap on the order row (it now has testID="order-row")
+→ verify Order Detail screen loads:
+  - product name "Two-Piece Suit" visible
+  - fabric name "Black Wool Crepe" visible
+  - "Placed" status badge visible
+  - "Order Timeline" section visible
+  - "Order Details" section visible
+  - at least one chosen option visible (e.g., "Peak Lapel")
+  - price visible (dollar format)
+  - order reference visible (8-char uppercase string)
+→ navigate back → verify Home screen
+→ cleanup (logout)
+```
+
+Key selectors:
+- Tap order row: `id: "order-row"` (testID on Pressable when onPress provided)
+- Product name: `text: "Two-Piece Suit"`
+- Fabric name: `text: "Black Wool Crepe"`
+- Status: `text: "Placed"`
+- Timeline header: `text: "Order Timeline"`
+- Details header: `text: "Order Details"`
+- Option value: `text: "Peak Lapel"` (from chosen_options snapshot)
+- Reference: `text: "Order ref:.*"` (regex, 8-char uppercase)
+
+##### `.maestro/orders/order-detail-from-list.yaml` (optional)
+
+Same as above but navigates via Orders list screen instead of Home. Only needed
+if we want coverage of the "View All Orders" → tap path. Lower priority since
+the OrderRow component + navigation wiring is identical — only the entry point
+differs. Can skip if Maestro test count is getting slow.
+
+##### Update `.maestro/orders/all.yaml`
+
+Add `order-detail-from-home.yaml` to the run list after `home-my-orders.yaml`:
+```yaml
+- runFlow: home-my-orders.yaml
+- runFlow: order-detail-from-home.yaml
+```
+
+##### Notes for writing the tests
+
+- The configure-suit flow is repeated across many tests. Consider extracting
+  a shared `configure-suit.yaml` sub-flow if Maestro supports `runFlow` mid-test.
+  If not, copy the steps from `express-checkout.yaml` lines 44–119.
+- The order detail screen title is "Order Details" (set in `_layout.tsx`).
+- Back navigation from order-detail: use the header back button. On iOS in
+  Expo Go, this is typically accessible via `tapOn` with the previous screen
+  title (e.g., "Home") or via `back` command if Maestro supports it.
+- The `fetchOrderById` query joins products/fabrics, so product and fabric
+  names will be visible on the detail screen (not just IDs).
