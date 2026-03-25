@@ -125,6 +125,15 @@ export default function AppLayout() {
             href: null,
           }}
         />
+        {/* Order detail screen — accessed by tapping an OrderRow from Home
+          or the orders list. Receives orderId via search params. */}
+        <Tabs.Screen
+          name="order-detail"
+          options={{
+            title: "Order Details",
+            href: null,
+          }}
+        />
       </Tabs>
       {/* Toast overlay — renders above all screens so toasts are visible
         regardless of which tab/screen is active. Placed outside <Tabs>

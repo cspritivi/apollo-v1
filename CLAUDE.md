@@ -297,7 +297,7 @@ automated changelog generation. Interviewers recognise this pattern.
 [x] Product catalog + configurator (data layer + UI + store with 30 tests)
 [x] Configurator Maestro E2E tests
 [x] Order placement flow (cart + express checkout + home orders + 67 tests)
-[ ] Order tracking / lifecycle screen
+[x] Order tracking / lifecycle screen
 [ ] Alterations flow
 
 Update this checklist as features are completed.

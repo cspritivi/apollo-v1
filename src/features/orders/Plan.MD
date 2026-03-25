@@ -894,11 +894,11 @@ enum, `VALID_ORDER_TRANSITIONS`) — this feature adds the UI.
 | 3 | Update `fetchOrderById` to join products/fabrics | `api.ts`, `hooks.ts` | [x] |
 | 4 | Export `STATUS_CONFIG` from StatusBadge | `components/StatusBadge.tsx` | [x] |
 | 5 | StatusTimeline component + tests (TDD) | `components/StatusTimeline.tsx`, `__tests__/StatusTimeline.test.tsx` | [x] |
-| 6 | Make OrderRow tappable + tests | `components/OrderRow.tsx`, `__tests__/OrderRow.test.tsx` | [ ] |
-| 7 | Register order-detail route in layout | `app/(app)/_layout.tsx` | [ ] |
-| 8 | Build order detail screen | `app/(app)/order-detail.tsx` | [ ] |
-| 9 | Wire navigation (Home + Orders list → detail) | `app/(app)/index.tsx`, `app/(app)/orders.tsx` | [ ] |
-| 10 | Update CLAUDE.md checklist | `CLAUDE.md` | [ ] |
+| 6 | Make OrderRow tappable + tests | `components/OrderRow.tsx`, `__tests__/OrderRow.test.tsx` | [x] |
+| 7 | Register order-detail route in layout | `app/(app)/_layout.tsx` | [x] |
+| 8 | Build order detail screen | `app/(app)/order-detail.tsx` | [x] |
+| 9 | Wire navigation (Home + Orders list → detail) | `app/(app)/index.tsx`, `app/(app)/orders.tsx` | [x] |
+| 10 | Update CLAUDE.md checklist | `CLAUDE.md` | [x] |
 
 ---
 
@@ -1018,10 +1018,51 @@ ScrollView
 | `package.json` | Jest 29, @testing-library/react-native, react-test-renderer, updated components jest config |
 | `IA.MD` | Added testing strategy section |
 
-#### Remaining (Steps 6–10)
+### Session 5 — 2026-03-25
 
-- Make OrderRow tappable with `onPress` prop + component tests
-- Register `order-detail` route in `_layout.tsx`
-- Build order detail screen (`app/(app)/order-detail.tsx`)
-- Wire navigation from Home + Orders list to detail screen
-- Update CLAUDE.md checklist
+**Focus:** Order tracking UI — tappable OrderRow, order detail screen, navigation wiring
+**Steps completed:** 6–10 (all remaining)
+**Tests:** 87 total (80 existing + 7 new OrderRow component tests)
+**TypeScript:** Zero errors
+
+#### What was built
+
+1. **Tappable OrderRow (TDD)** — added optional `onPress?: (order: Order) => void`
+   prop. When provided, wraps in `Pressable` with `testID="order-row"` and shows
+   a `›` chevron indicator. Without `onPress`, renders as a plain `View` (backward-
+   compatible). 7 component tests: 3 display (price, date, status badge) + 4
+   tappable behavior (callback, chevron show/hide, testID presence).
+
+2. **Order detail screen** — `app/(app)/order-detail.tsx`. Shows product name,
+   fabric name, status badge, order date, full `StatusTimeline`, chosen options
+   list (using `formatOptionGroupTitle`), total price, customer notes (conditional),
+   and truncated order reference ID. Loading and error states handled.
+
+3. **Route registered** — `order-detail` added to `_layout.tsx` with `href: null`
+   (hidden from tab bar, accessed via navigation).
+
+4. **Navigation wired** — both `index.tsx` (Home) and `orders.tsx` (Orders list)
+   pass `onPress={handleOrderPress}` to OrderRow. The handler calls
+   `router.push(/order-detail?orderId=${order.id})`. Navigation is wired at
+   the screen (container) level — OrderRow remains a presentational component.
+
+5. **IA.MD updated** — added "Presentational vs Container Components" section
+   explaining the pattern with OrderRow as the concrete example.
+
+#### Files created
+
+| File | Purpose |
+|---|---|
+| `src/features/orders/__tests__/OrderRow.test.tsx` | 7 component tests for OrderRow (display + tappable) |
+| `app/(app)/order-detail.tsx` | Order detail screen with timeline, options, price |
+
+#### Files modified
+
+| File | Change |
+|---|---|
+| `src/features/orders/components/OrderRow.tsx` | Added optional `onPress` prop, Pressable wrapper, chevron |
+| `app/(app)/_layout.tsx` | Registered `order-detail` hidden tab screen |
+| `app/(app)/index.tsx` | Wired `handleOrderPress` → `router.push` to OrderRow |
+| `app/(app)/orders.tsx` | Wired `handleOrderPress` → `router.push` to OrderRow |
+| `IA.MD` | Added Presentational vs Container Components section |
+| `CLAUDE.md` | Checked off "Order tracking / lifecycle screen" |
