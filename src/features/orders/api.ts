@@ -13,7 +13,7 @@
  */
 
 import { supabase } from "../../lib/supabase";
-import { Order, ProductOption } from "../../types";
+import { Order, OrderWithRelations, ProductOption } from "../../types";
 import { calculatePrice } from "./utils/calculatePrice";
 
 // ============================================================================
@@ -132,15 +132,22 @@ export async function fetchOrders(profileId: string): Promise<Order[]> {
 }
 
 /**
- * Fetch a single order by ID. Used for future order detail view.
+ * Fetch a single order by ID with product and fabric names.
+ *
+ * WHY JOIN INSTEAD OF SEPARATE QUERIES:
+ * The detail screen needs product name, fabric name, and all order fields.
+ * A single query with FK embedding is one network round trip instead of three,
+ * and avoids managing three separate loading/error states in the UI.
  */
-export async function fetchOrderById(orderId: string): Promise<Order> {
+export async function fetchOrderById(
+  orderId: string,
+): Promise<OrderWithRelations> {
   const { data, error } = await supabase
     .from("orders")
-    .select("*")
+    .select("*, products(name, image_url), fabrics(name, image_url)")
     .eq("id", orderId)
     .single();
 
   if (error) throw error;
-  return data as Order;
+  return data as OrderWithRelations;
 }

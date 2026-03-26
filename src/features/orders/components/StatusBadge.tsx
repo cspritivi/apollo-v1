@@ -10,8 +10,9 @@
 import { View, Text, StyleSheet } from "react-native";
 import { OrderStatus } from "../../../types";
 
-// Status → display label and color mapping
-const STATUS_CONFIG: Record<
+// Status → display label and color mapping.
+// Exported so StatusTimeline can reuse the same colors — single source of truth.
+export const STATUS_CONFIG: Record<
   OrderStatus,
   { label: string; bg: string; text: string }
 > = {

@@ -870,3 +870,263 @@ assert `id` is `undefined` (Postgres generates IDs server-side).
 | `package.json` | Added `react-native-toast-message` dependency |
 | `src/features/orders/__tests__/orderCreation.test.ts` | Fixed 2 stale UUID tests to expect no `id` on payload |
 | `CLAUDE.md` | Checked off configurator Maestro E2E tests |
+
+---
+---
+
+# Order Tracking / Lifecycle Screen — Implementation Plan
+
+## Context
+
+Customers can place orders but have no way to view order details or track
+status progression. `OrderRow` is not tappable. The data layer is already
+built (`fetchOrderById`, `useOrder`, `StatusHistoryEntry[]`, `OrderStatus`
+enum, `VALID_ORDER_TRANSITIONS`) — this feature adds the UI.
+
+---
+
+## Implementation Steps
+
+| # | Step | Files | Status |
+|---|---|---|---|
+| 1 | Date formatting utility + tests (TDD) | `utils/formatDate.ts`, `__tests__/formatDate.test.ts` | [x] |
+| 2 | Add `OrderWithRelations` type | `src/types/index.ts` | [x] |
+| 3 | Update `fetchOrderById` to join products/fabrics | `api.ts`, `hooks.ts` | [x] |
+| 4 | Export `STATUS_CONFIG` from StatusBadge | `components/StatusBadge.tsx` | [x] |
+| 5 | StatusTimeline component + tests (TDD) | `components/StatusTimeline.tsx`, `__tests__/StatusTimeline.test.tsx` | [x] |
+| 6 | Make OrderRow tappable + tests | `components/OrderRow.tsx`, `__tests__/OrderRow.test.tsx` | [x] |
+| 7 | Register order-detail route in layout | `app/(app)/_layout.tsx` | [x] |
+| 8 | Build order detail screen | `app/(app)/order-detail.tsx` | [x] |
+| 9 | Wire navigation (Home + Orders list → detail) | `app/(app)/index.tsx`, `app/(app)/orders.tsx` | [x] |
+| 10 | Update CLAUDE.md checklist | `CLAUDE.md` | [x] |
+
+---
+
+## Key Decisions
+
+### 1. Single Joined Query for Order Detail
+
+`fetchOrderById` now uses `.select("*, products(name, image_url), fabrics(name, image_url)")`
+to fetch order + product/fabric names in one query. This avoids three separate
+loading states and three potential error states. A new `OrderWithRelations`
+type extends `Order` with the joined data.
+
+### 2. Reverse Chronological Timeline
+
+The `StatusTimeline` component displays `status_history` entries newest-first.
+Customers see the latest update immediately without scrolling. The latest
+entry is highlighted with the status color and bold text; past entries are
+muted gray.
+
+### 3. Component-Level Testing with @testing-library/react-native
+
+Added Level 2 (component) testing to the testing pyramid. Required downgrading
+Jest from v30 to v29 due to Expo SDK 54 + Jest 30 incompatibility (`import.meta`
+in Expo's runtime). All 80 existing tests pass on Jest 29.
+
+### 4. Reusable STATUS_CONFIG
+
+Exported `STATUS_CONFIG` from `StatusBadge.tsx` so `StatusTimeline` shares the
+same color/label mapping — single source of truth for status presentation.
+
+### 5. OrderRow Tappable with Optional onPress
+
+`OrderRow` gets an optional `onPress` prop so it remains backward-compatible
+if used in a context where tapping isn't needed. Navigation to order detail
+is wired at the screen level, not inside the component.
+
+---
+
+## Order Detail Screen Layout
+
+```
+ScrollView
+├── Header: product name, fabric name, StatusBadge, order date
+├── Timeline Card: "Order Timeline" + <StatusTimeline />
+├── Details Card: chosen options list, final price, customer notes
+└── Reference: truncated order ID (first 8 chars)
+```
+
+- Uses `useOrder(orderId)` hook → returns `OrderWithRelations`
+- Chosen options: iterate `Object.entries(order.chosen_options)`,
+  display `formatOptionGroupTitle(key): option.name`
+  (reuses export from `configurator/components/OptionStep.tsx`)
+- Route: `app/(app)/order-detail.tsx` with `href: null` in layout
+- Params: `useLocalSearchParams<{ orderId: string }>()`
+
+---
+
+## Implementation Log
+
+### Session 4 — 2026-03-24
+
+**Focus:** Order tracking foundation — data layer, timeline component, testing infrastructure
+
+**Steps completed:** 1–5
+**Tests:** 80 total (73 existing + 7 new component tests)
+**TypeScript:** Zero errors
+
+#### What was built
+
+1. **`formatDate` / `formatDateTime` utilities** — extracted from inline
+   formatting in OrderRow. 6 unit tests.
+
+2. **`OrderWithRelations` type** — extends `Order` with `Pick<Product, "name" | "image_url">`
+   and `Pick<Fabric, "name" | "image_url">` for the joined Supabase query.
+
+3. **Updated `fetchOrderById`** — joins products/fabrics tables via PostgREST
+   FK embedding. Single query instead of three. `useOrder` hook return type
+   auto-updates via TypeScript inference.
+
+4. **Exported `STATUS_CONFIG`** from StatusBadge for reuse by StatusTimeline.
+
+5. **`StatusTimeline` component** — vertical timeline, reverse chronological
+   (newest first), highlighted latest entry, conditional note rendering.
+   7 component tests using `@testing-library/react-native`.
+
+#### Infrastructure changes
+
+- **Jest downgraded from v30 to v29.** Expo SDK 54's runtime uses `import.meta`
+  which Jest 30's stricter module isolation doesn't support. Jest 29 works
+  with `jest-expo` out of the box. All existing tests pass.
+
+- **Added `@testing-library/react-native` + `react-test-renderer`.**
+  Enables Level 2 (component) testing. The `components` Jest project
+  config uses `jest-expo` preset with `@testing-library` added to
+  `transformIgnorePatterns`.
+
+- **Added testing strategy section to `IA.MD`.** Explains the three-level
+  testing pyramid (unit → component → E2E) with tradeoffs and interview
+  talking points.
+
+#### Files created
+
+| File | Purpose |
+|---|---|
+| `src/features/orders/utils/formatDate.ts` | Shared date formatting (formatDate, formatDateTime) |
+| `src/features/orders/__tests__/formatDate.test.ts` | 6 unit tests for date formatting |
+| `src/features/orders/components/StatusTimeline.tsx` | Vertical status timeline component |
+| `src/features/orders/__tests__/StatusTimeline.test.tsx` | 7 component tests for timeline |
+
+#### Files modified
+
+| File | Change |
+|---|---|
+| `src/types/index.ts` | Added `OrderWithRelations` interface |
+| `src/features/orders/api.ts` | Updated `fetchOrderById` to join products/fabrics, imported `OrderWithRelations` |
+| `src/features/orders/components/StatusBadge.tsx` | Exported `STATUS_CONFIG` |
+| `package.json` | Jest 29, @testing-library/react-native, react-test-renderer, updated components jest config |
+| `IA.MD` | Added testing strategy section |
+
+### Session 5 — 2026-03-25
+
+**Focus:** Order tracking UI — tappable OrderRow, order detail screen, navigation wiring
+**Steps completed:** 6–10 (all remaining)
+**Tests:** 87 total (80 existing + 7 new OrderRow component tests)
+**TypeScript:** Zero errors
+
+#### What was built
+
+1. **Tappable OrderRow (TDD)** — added optional `onPress?: (order: Order) => void`
+   prop. When provided, wraps in `Pressable` with `testID="order-row"` and shows
+   a `›` chevron indicator. Without `onPress`, renders as a plain `View` (backward-
+   compatible). 7 component tests: 3 display (price, date, status badge) + 4
+   tappable behavior (callback, chevron show/hide, testID presence).
+
+2. **Order detail screen** — `app/(app)/order-detail.tsx`. Shows product name,
+   fabric name, status badge, order date, full `StatusTimeline`, chosen options
+   list (using `formatOptionGroupTitle`), total price, customer notes (conditional),
+   and truncated order reference ID. Loading and error states handled.
+
+3. **Route registered** — `order-detail` added to `_layout.tsx` with `href: null`
+   (hidden from tab bar, accessed via navigation).
+
+4. **Navigation wired** — both `index.tsx` (Home) and `orders.tsx` (Orders list)
+   pass `onPress={handleOrderPress}` to OrderRow. The handler calls
+   `router.push(/order-detail?orderId=${order.id})`. Navigation is wired at
+   the screen (container) level — OrderRow remains a presentational component.
+
+5. **IA.MD updated** — added "Presentational vs Container Components" section
+   explaining the pattern with OrderRow as the concrete example.
+
+#### Files created
+
+| File | Purpose |
+|---|---|
+| `src/features/orders/__tests__/OrderRow.test.tsx` | 7 component tests for OrderRow (display + tappable) |
+| `app/(app)/order-detail.tsx` | Order detail screen with timeline, options, price |
+
+#### Files modified
+
+| File | Change |
+|---|---|
+| `src/features/orders/components/OrderRow.tsx` | Added optional `onPress` prop, Pressable wrapper, chevron |
+| `app/(app)/_layout.tsx` | Registered `order-detail` hidden tab screen |
+| `app/(app)/index.tsx` | Wired `handleOrderPress` → `router.push` to OrderRow |
+| `app/(app)/orders.tsx` | Wired `handleOrderPress` → `router.push` to OrderRow |
+| `IA.MD` | Added Presentational vs Container Components section |
+| `CLAUDE.md` | Checked off "Order tracking / lifecycle screen" |
+
+### Session 6 — 2026-03-25
+
+**Focus:** Back navigation fix, Maestro E2E tests, dependency fix, IA.MD update
+**Steps completed:** Maestro E2E tests + back button + navigation workaround
+**Tests:** 87 unit/component + 7 Maestro E2E (2 new)
+**TypeScript:** Zero errors
+
+#### What was built
+
+1. **Back button for hidden tab screens.** Added shared `headerBackButton`
+   component in `_layout.tsx` with `router.back()` for `saved-fabrics` and
+   `orders` screens. Order-detail handles its own back button via
+   `useLayoutEffect` + `navigation.setOptions` because it needs the `from`
+   search param.
+
+2. **`from` param workaround for order-detail back navigation.** Hidden tab
+   screens don't maintain a proper back stack — `router.back()` from
+   order-detail skipped the orders list and went straight to Home. Fix:
+   the pushing screen passes `from=orders` or `from=/`, and order-detail
+   uses `router.navigate(from)` instead of `router.back()`. This is a
+   temporary workaround — GitHub issue #11 tracks the proper fix (nested
+   Stack navigators).
+
+3. **Maestro E2E test: `order-detail-from-home.yaml`.** Places an order via
+   express checkout, navigates to Home → taps order row → verifies detail
+   screen (product name, fabric name, status, timeline, options, price,
+   order ref) → taps back → verifies Home screen → cleanup.
+
+4. **Maestro E2E test: `order-detail-from-list.yaml`.** Same flow but
+   navigates via Home → "View All Orders" → orders list → taps order row →
+   verifies detail → taps back → verifies return to orders list (not Home,
+   which is the key assertion for the `from` param workaround) → cleanup.
+   Requires test user to have > 5 orders (accumulated from prior runs).
+
+5. **`react-native-toast-message` dependency installed.** The package was
+   imported in `_layout.tsx` but missing from `node_modules`, causing iOS
+   bundling to fail. Fixed on `main` before switching to feature branch.
+
+6. **IA.MD: "Why Tabs + Nested Stacks" section.** Documents the navigation
+   architecture problem, the workaround, the proper solution, and the
+   interview talking point.
+
+#### GitHub issues created
+
+- **#11** — `refactor: migrate from flat Tabs to Tabs + nested Stacks navigation`
+
+#### Files created
+
+| File | Purpose |
+|---|---|
+| `.maestro/orders/order-detail-from-home.yaml` | E2E test: Home → order row → detail → back |
+| `.maestro/orders/order-detail-from-list.yaml` | E2E test: Orders list → order row → detail → back |
+
+#### Files modified
+
+| File | Change |
+|---|---|
+| `app/(app)/_layout.tsx` | Added headerBackButton for saved-fabrics/orders, Toast import fix |
+| `app/(app)/order-detail.tsx` | Added `from` param + `useLayoutEffect` for back navigation |
+| `app/(app)/index.tsx` | Pass `from=/` to order-detail push |
+| `app/(app)/orders.tsx` | Pass `from=orders` to order-detail push |
+| `.maestro/orders/all.yaml` | Added order-detail-from-home and order-detail-from-list |
+| `IA.MD` | Added "Why Tabs + Nested Stacks" section |

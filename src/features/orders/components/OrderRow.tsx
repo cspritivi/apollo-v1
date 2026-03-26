@@ -1,20 +1,27 @@
 /**
  * OrderRow — displays a single order in the home screen or orders list.
  *
- * Shows product name, fabric name (from chosen_options snapshot or IDs),
- * status badge, and date placed. Tapping is a no-op for now — full order
- * detail view comes with the tracking feature.
+ * Shows price, status badge, and date placed. Supports an optional `onPress`
+ * prop for navigation to the order detail screen. When `onPress` is provided,
+ * the row wraps in a Pressable and shows a chevron indicator; otherwise it
+ * renders as a plain View for backward-compatibility.
+ *
+ * ARCHITECTURAL DECISION: Navigation is wired at the screen level via the
+ * onPress callback, not inside this component. This keeps OrderRow a pure
+ * presentational component that doesn't depend on the router.
  */
 
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Order, OrderStatus } from "../../../types";
 import StatusBadge from "./StatusBadge";
 
 interface OrderRowProps {
   order: Order;
+  /** Optional press handler — when provided, the row becomes tappable with a chevron. */
+  onPress?: (order: Order) => void;
 }
 
-export default function OrderRow({ order }: OrderRowProps) {
+export default function OrderRow({ order, onPress }: OrderRowProps) {
   // Format the order date as a readable string
   const dateStr = new Date(order.created_at).toLocaleDateString("en-US", {
     month: "short",
@@ -27,15 +34,33 @@ export default function OrderRow({ order }: OrderRowProps) {
     return `$${(cents / 100).toFixed(2)}`;
   };
 
-  return (
-    <View style={styles.row}>
+  const content = (
+    <>
       <View style={styles.info}>
         <Text style={styles.price}>{formatPrice(order.final_price)}</Text>
         <Text style={styles.date}>{dateStr}</Text>
       </View>
       <StatusBadge status={order.current_status as OrderStatus} />
-    </View>
+      {/* Chevron indicator signals the row is tappable — only shown when onPress is provided */}
+      {onPress && <Text style={styles.chevron}>›</Text>}
+    </>
   );
+
+  // Wrap in Pressable only when tappable — avoids unnecessary accessibility
+  // overhead and keeps the non-tappable version as a plain View
+  if (onPress) {
+    return (
+      <Pressable
+        testID="order-row"
+        style={styles.row}
+        onPress={() => onPress(order)}
+      >
+        {content}
+      </Pressable>
+    );
+  }
+
+  return <View style={styles.row}>{content}</View>;
 }
 
 const styles = StyleSheet.create({
@@ -60,5 +85,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#9ca3af",
     marginTop: 2,
+  },
+  chevron: {
+    fontSize: 20,
+    color: "#9ca3af",
+    marginLeft: 8,
   },
 });

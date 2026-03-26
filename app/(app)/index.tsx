@@ -11,13 +11,13 @@ import { useSignOut } from "../../src/features/auth/hooks";
 import { useSession } from "../../src/hooks/useSession";
 import { useOrders } from "../../src/features/orders/hooks";
 import OrderRow from "../../src/features/orders/components/OrderRow";
+import { Order } from "../../src/types";
 
 /**
  * Home screen — main dashboard for authenticated customers.
  *
- * Now includes a "My Orders" section showing recent orders with status badges.
- * This gives customers at-a-glance order tracking without a dedicated tracking
- * screen (deferred to next feature). Tapping an order is a no-op for now.
+ * Includes a "My Orders" section showing recent orders with status badges.
+ * Tapping an order navigates to the order detail screen.
  */
 
 /** Maximum orders to show on the home screen before "View All" link */
@@ -35,6 +35,11 @@ export default function HomeScreen() {
 
   const recentOrders = orders?.slice(0, HOME_ORDER_LIMIT) ?? [];
   const hasMoreOrders = (orders?.length ?? 0) > HOME_ORDER_LIMIT;
+
+  // Navigation wired at the screen level — OrderRow is presentational
+  const handleOrderPress = (order: Order) => {
+    router.push(`/order-detail?orderId=${order.id}&from=/`);
+  };
 
   return (
     <ScrollView
@@ -90,7 +95,11 @@ export default function HomeScreen() {
           // Order list
           <View style={styles.orderList}>
             {recentOrders.map((order) => (
-              <OrderRow key={order.id} order={order} />
+              <OrderRow
+                key={order.id}
+                order={order}
+                onPress={handleOrderPress}
+              />
             ))}
 
             {hasMoreOrders && (

@@ -265,6 +265,26 @@ export interface Order {
 }
 
 /**
+ * Order with joined product and fabric data from Supabase.
+ *
+ * Used by the order detail screen to display product/fabric names and images
+ * without firing separate queries. The join is done via Supabase's PostgREST
+ * foreign key embedding: select("*, products(name, image_url), fabrics(name, image_url)").
+ *
+ * WHY Pick INSTEAD OF FULL TYPES:
+ * The join only requests name and image_url — not the full Product/Fabric.
+ * Pick ensures the TS type matches exactly what the query returns.
+ *
+ * WHY PLURAL KEYS (products, fabrics):
+ * Supabase PostgREST returns joined data keyed by the referenced table name
+ * (plural), not the column name. So orders.product_id → "products" key.
+ */
+export interface OrderWithRelations extends Order {
+  products: Pick<Product, "name" | "image_url">;
+  fabrics: Pick<Fabric, "name" | "image_url">;
+}
+
+/**
  * Post-delivery alteration request.
  *
  * ARCHITECTURAL DECISION: Modeled as a separate table rather than reusing

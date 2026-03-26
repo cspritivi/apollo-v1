@@ -12,13 +12,21 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { useSession } from "../../src/hooks/useSession";
 import { useOrders } from "../../src/features/orders/hooks";
 import OrderRow from "../../src/features/orders/components/OrderRow";
+import { Order } from "../../src/types";
 
 export default function OrdersListScreen() {
   const { session } = useSession();
+  const router = useRouter();
   const { data: orders, isLoading } = useOrders(session?.user.id);
+
+  // Navigation wired at the screen level — OrderRow is presentational
+  const handleOrderPress = (order: Order) => {
+    router.push(`/order-detail?orderId=${order.id}&from=orders`);
+  };
 
   if (isLoading) {
     return (
@@ -40,7 +48,7 @@ export default function OrdersListScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.card}>
         {orders.map((order) => (
-          <OrderRow key={order.id} order={order} />
+          <OrderRow key={order.id} order={order} onPress={handleOrderPress} />
         ))}
       </View>
     </ScrollView>
