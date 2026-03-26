@@ -1067,70 +1067,66 @@ ScrollView
 | `IA.MD` | Added Presentational vs Container Components section |
 | `CLAUDE.md` | Checked off "Order tracking / lifecycle screen" |
 
-#### Remaining before PR merge
+### Session 6 — 2026-03-25
 
-Maestro E2E tests for order tracking. All code is complete and unit/component
-tests pass (87 total). The Maestro tests need to run on macOS (Maestro doesn't
-work on Windows). Pick up from here on the MacBook.
+**Focus:** Back navigation fix, Maestro E2E tests, dependency fix, IA.MD update
+**Steps completed:** Maestro E2E tests + back button + navigation workaround
+**Tests:** 87 unit/component + 7 Maestro E2E (2 new)
+**TypeScript:** Zero errors
 
-**Tests to write:**
+#### What was built
 
-##### `.maestro/orders/order-detail-from-home.yaml`
+1. **Back button for hidden tab screens.** Added shared `headerBackButton`
+   component in `_layout.tsx` with `router.back()` for `saved-fabrics` and
+   `orders` screens. Order-detail handles its own back button via
+   `useLayoutEffect` + `navigation.setOptions` because it needs the `from`
+   search param.
 
-Tests navigating to the order detail screen from the Home screen's "My Orders"
-section. This is the primary way customers will check order details.
+2. **`from` param workaround for order-detail back navigation.** Hidden tab
+   screens don't maintain a proper back stack — `router.back()` from
+   order-detail skipped the orders list and went straight to Home. Fix:
+   the pushing screen passes `from=orders` or `from=/`, and order-detail
+   uses `router.navigate(from)` instead of `router.back()`. This is a
+   temporary workaround — GitHub issue #11 tracks the proper fix (nested
+   Stack navigators).
 
-```
-Flow:
-Login → Products → configure Two-Piece Suit (same steps as express-checkout.yaml)
-→ Review → "Place Order Now" → confirm → Order Success → "View My Orders"
-→ Home screen → tap on the order row (it now has testID="order-row")
-→ verify Order Detail screen loads:
-  - product name "Two-Piece Suit" visible
-  - fabric name "Black Wool Crepe" visible
-  - "Placed" status badge visible
-  - "Order Timeline" section visible
-  - "Order Details" section visible
-  - at least one chosen option visible (e.g., "Peak Lapel")
-  - price visible (dollar format)
-  - order reference visible (8-char uppercase string)
-→ navigate back → verify Home screen
-→ cleanup (logout)
-```
+3. **Maestro E2E test: `order-detail-from-home.yaml`.** Places an order via
+   express checkout, navigates to Home → taps order row → verifies detail
+   screen (product name, fabric name, status, timeline, options, price,
+   order ref) → taps back → verifies Home screen → cleanup.
 
-Key selectors:
-- Tap order row: `id: "order-row"` (testID on Pressable when onPress provided)
-- Product name: `text: "Two-Piece Suit"`
-- Fabric name: `text: "Black Wool Crepe"`
-- Status: `text: "Placed"`
-- Timeline header: `text: "Order Timeline"`
-- Details header: `text: "Order Details"`
-- Option value: `text: "Peak Lapel"` (from chosen_options snapshot)
-- Reference: `text: "Order ref:.*"` (regex, 8-char uppercase)
+4. **Maestro E2E test: `order-detail-from-list.yaml`.** Same flow but
+   navigates via Home → "View All Orders" → orders list → taps order row →
+   verifies detail → taps back → verifies return to orders list (not Home,
+   which is the key assertion for the `from` param workaround) → cleanup.
+   Requires test user to have > 5 orders (accumulated from prior runs).
 
-##### `.maestro/orders/order-detail-from-list.yaml` (optional)
+5. **`react-native-toast-message` dependency installed.** The package was
+   imported in `_layout.tsx` but missing from `node_modules`, causing iOS
+   bundling to fail. Fixed on `main` before switching to feature branch.
 
-Same as above but navigates via Orders list screen instead of Home. Only needed
-if we want coverage of the "View All Orders" → tap path. Lower priority since
-the OrderRow component + navigation wiring is identical — only the entry point
-differs. Can skip if Maestro test count is getting slow.
+6. **IA.MD: "Why Tabs + Nested Stacks" section.** Documents the navigation
+   architecture problem, the workaround, the proper solution, and the
+   interview talking point.
 
-##### Update `.maestro/orders/all.yaml`
+#### GitHub issues created
 
-Add `order-detail-from-home.yaml` to the run list after `home-my-orders.yaml`:
-```yaml
-- runFlow: home-my-orders.yaml
-- runFlow: order-detail-from-home.yaml
-```
+- **#11** — `refactor: migrate from flat Tabs to Tabs + nested Stacks navigation`
 
-##### Notes for writing the tests
+#### Files created
 
-- The configure-suit flow is repeated across many tests. Consider extracting
-  a shared `configure-suit.yaml` sub-flow if Maestro supports `runFlow` mid-test.
-  If not, copy the steps from `express-checkout.yaml` lines 44–119.
-- The order detail screen title is "Order Details" (set in `_layout.tsx`).
-- Back navigation from order-detail: use the header back button. On iOS in
-  Expo Go, this is typically accessible via `tapOn` with the previous screen
-  title (e.g., "Home") or via `back` command if Maestro supports it.
-- The `fetchOrderById` query joins products/fabrics, so product and fabric
-  names will be visible on the detail screen (not just IDs).
+| File | Purpose |
+|---|---|
+| `.maestro/orders/order-detail-from-home.yaml` | E2E test: Home → order row → detail → back |
+| `.maestro/orders/order-detail-from-list.yaml` | E2E test: Orders list → order row → detail → back |
+
+#### Files modified
+
+| File | Change |
+|---|---|
+| `app/(app)/_layout.tsx` | Added headerBackButton for saved-fabrics/orders, Toast import fix |
+| `app/(app)/order-detail.tsx` | Added `from` param + `useLayoutEffect` for back navigation |
+| `app/(app)/index.tsx` | Pass `from=/` to order-detail push |
+| `app/(app)/orders.tsx` | Pass `from=orders` to order-detail push |
+| `.maestro/orders/all.yaml` | Added order-detail-from-home and order-detail-from-list |
+| `IA.MD` | Added "Why Tabs + Nested Stacks" section |

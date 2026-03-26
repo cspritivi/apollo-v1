@@ -17,8 +17,10 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  Pressable,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import { useLayoutEffect } from "react";
 import { useOrder } from "../../src/features/orders/hooks";
 import { OrderStatus } from "../../src/types";
 import StatusBadge from "../../src/features/orders/components/StatusBadge";
@@ -27,8 +29,42 @@ import { formatDate } from "../../src/features/orders/utils/formatDate";
 import { formatOptionGroupTitle } from "../../src/features/configurator/components/OptionStep";
 
 export default function OrderDetailScreen() {
-  const { orderId } = useLocalSearchParams<{ orderId: string }>();
+  const { orderId, from } = useLocalSearchParams<{
+    orderId: string;
+    from?: string;
+  }>();
   const { data: order, isLoading, error } = useOrder(orderId);
+  const navigation = useNavigation();
+  const router = useRouter();
+
+  /**
+   * WORKAROUND: Hidden tab screens don't maintain a proper back stack, so
+   * router.back() can skip intermediate screens (e.g., Home → Orders →
+   * Detail → back goes to Home, skipping Orders). We override headerLeft
+   * to navigate explicitly to the `from` screen. This will be replaced
+   * by nested Stack navigators — see GitHub issue.
+   */
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <Pressable
+          onPress={() => {
+            if (from) {
+              router.navigate(
+                from.startsWith("/") ? from : (`/${from}` as any),
+              );
+            } else {
+              router.back();
+            }
+          }}
+          hitSlop={8}
+          style={{ marginLeft: 8 }}
+        >
+          <Text style={{ fontSize: 16, color: "#4f46e5" }}>← Back</Text>
+        </Pressable>
+      ),
+    });
+  }, [navigation, router, from]);
 
   if (isLoading) {
     return (

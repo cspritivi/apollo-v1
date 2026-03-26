@@ -38,7 +38,7 @@ export default function HomeScreen() {
 
   // Navigation wired at the screen level — OrderRow is presentational
   const handleOrderPress = (order: Order) => {
-    router.push(`/order-detail?orderId=${order.id}`);
+    router.push(`/order-detail?orderId=${order.id}&from=/`);
   };
 
   return (

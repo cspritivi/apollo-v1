@@ -13,3 +13,5 @@ appId: host.exp.Exponent
 - runFlow: cart-remove-item.yaml
 - runFlow: cart-checkout.yaml
 - runFlow: home-my-orders.yaml
+- runFlow: order-detail-from-home.yaml
+- runFlow: order-detail-from-list.yaml

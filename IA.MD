@@ -261,3 +261,78 @@ returns alone but together they provide high confidence with fast feedback.
 > a component test won't catch an API contract change, and an E2E test
 > won't tell you which layer broke. Together they give us high confidence
 > with fast feedback loops."
+
+---
+
+## Why Tabs + Nested Stacks (Not Flat Hidden Tabs)
+
+### The Context
+
+As the app grew, we added screens that aren't top-level tabs but are navigated
+to via `router.push()` — order detail, orders list, saved fabrics, the
+configurator. Initially, these were registered as hidden tab siblings
+(`href: null` in the Tabs layout). This is Expo Router's simplest pattern for
+"non-tab screens inside a Tabs layout."
+
+### The Problem We Hit
+
+Hidden tab screens are siblings, not a stack. When a customer navigated
+Home → Orders → Order Detail → Back, `router.back()` skipped the Orders
+screen and went straight to Home. The Tabs navigator doesn't maintain a
+per-screen back stack — it only knows which tab was active before.
+
+We patched this with a `from` search param: the pushing screen passes its
+route name (`from=orders`), and the detail screen uses `router.navigate()`
+to go back explicitly. This works but it's fragile — every new pushed screen
+needs to thread this param, and it fights the framework instead of using it.
+
+### The Right Architecture: Tabs + Nested Stacks
+
+The standard React Native pattern is to nest a Stack navigator inside each
+tab that has push/pop flows:
+
+```
+app/(app)/
+  _layout.tsx              ← Tabs (Home, Fabrics, Products, Cart)
+  (home)/
+    _layout.tsx            ← Stack
+    index.tsx              ← Home screen
+    orders.tsx             ← pushed from Home
+    order-detail.tsx       ← pushed from Home or Orders
+    saved-fabrics.tsx      ← pushed from Home
+  fabrics.tsx              ← tab screen (no nested stack needed)
+  (products)/
+    _layout.tsx            ← Stack
+    index.tsx              ← Products list
+    configurator.tsx       ← pushed from Products
+  cart.tsx                 ← tab screen
+```
+
+Each tab's Stack is independent — navigating within the Home stack doesn't
+affect the Products tab's state. Back buttons work automatically because
+React Navigation's Stack navigator tracks push history. No `from` params,
+no manual `headerLeft` back buttons.
+
+### Why This Matters Beyond Navigation
+
+- **Each tab preserves its own navigation history.** Switching from Home
+  (deep in Orders → Detail) to Products and back returns you exactly
+  where you were in the Home stack. Flat hidden tabs lose this context.
+- **Scales without workarounds.** Adding the alterations detail screen
+  is just adding a file to the `(home)/` folder. No `from` param, no
+  manual back button wiring.
+- **Standard pattern.** Every major RN app (Airbnb, Instagram, Uber)
+  uses this architecture. Interviewers expect it and will notice if
+  you can explain the tradeoff vs flat tabs.
+
+### How to Say It
+
+> "We initially used flat hidden tabs for non-tab screens — it's quick to
+> set up but it broke back navigation because tab siblings don't form a
+> stack. Pressing back skipped intermediate screens. The fix is Tabs with
+> nested Stacks — each tab that has push/pop flows gets its own Stack
+> navigator. Back buttons work automatically, each tab preserves its own
+> navigation history, and adding new pushed screens is just creating a
+> file in the right folder. It's more files (one `_layout.tsx` per stack)
+> but the navigation behavior is correct by default instead of patched
+> with workarounds."

@@ -1,0 +1,226 @@
+# ============================================================================
+# ORDERS — ORDER DETAIL FROM ORDERS LIST SCREEN
+#
+# Tests navigating to the order detail screen from the full "My Orders" list.
+# The customer places an order, navigates to Home, taps "View All Orders"
+# to reach the orders list, then taps an order row to verify the detail screen.
+#
+# WHY THIS TEST EXISTS:
+# The orders list is a secondary entry point to order details (vs tapping
+# directly from Home). It uses the same OrderRow + onPress wiring but with
+# a different `from` param for back navigation. This test verifies the
+# full path works and the back button returns to the orders list (not Home).
+#
+# NOTE: "View All Orders" only appears when the customer has > 5 orders.
+# The test user accumulates orders across E2E runs, so this link should
+# be visible. If this test fails because the link isn't visible, run the
+# other order tests first to build up order history.
+#
+# FLOW:
+# Login → Products → configure Two-Piece Suit → "Place Order Now"
+# → confirm → Order Success → "View My Orders" → Home
+# → "View All Orders" → Orders list → tap order row → verify detail
+# → tap back → verify Orders list → cleanup (logout)
+#
+# PREREQUISITE:
+# - Test user exists in Supabase Auth (cspritivi@gmail.com / test123456)
+# - Seed data loaded (products + product_options + fabrics)
+# - Test user has > 5 orders (accumulated from prior E2E runs)
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# ---- AUTHENTICATE ----
+- assertVisible: "Welcome Back"
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+- tapOn: "Sign In"
+
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "Home"
+    timeout: 10000
+
+# ---- CONFIGURE AND PLACE ORDER (EXPRESS CHECKOUT) ----
+# Place an order so we guarantee at least one exists in the list
+- tapOn: "Products"
+
+- extendedWaitUntil:
+    visible:
+      text: "Two-Piece Suit.*"
+    timeout: 10000
+
+- tapOn:
+    text: "Two-Piece Suit.*"
+
+# Step 0: Fabric
+- extendedWaitUntil:
+    visible:
+      text: "Choose Fabric"
+    timeout: 10000
+
+- tapOn:
+    text: "Black Wool Crepe.*"
+
+- tapOn: "Next"
+
+# Step 1: Lapel Style
+- extendedWaitUntil:
+    visible:
+      text: "Choose Lapel Style"
+    timeout: 5000
+
+- tapOn:
+    text: "Peak Lapel.*"
+
+- tapOn: "Next"
+
+# Step 2: Button Count
+- extendedWaitUntil:
+    visible:
+      text: "Choose Button Count"
+    timeout: 5000
+
+- tapOn:
+    text: "Two Button.*"
+
+- tapOn: "Next"
+
+# Step 3: Vent Style
+- extendedWaitUntil:
+    visible:
+      text: "Choose Vent Style"
+    timeout: 5000
+
+- tapOn:
+    text: "Single Vent.*"
+
+- tapOn: "Next"
+
+# Step 4: Lining Style
+- extendedWaitUntil:
+    visible:
+      text: "Choose Lining Style"
+    timeout: 5000
+
+- tapOn:
+    text: "Full Lining.*"
+
+- tapOn: "Next"
+
+# Step 5: Pocket Style
+- extendedWaitUntil:
+    visible:
+      text: "Choose Pocket Style"
+    timeout: 5000
+
+- tapOn:
+    text: "Welt Pocket.*"
+
+- tapOn: "Next"
+
+# Review → Express Checkout
+- extendedWaitUntil:
+    visible:
+      text: "Review Your Configuration"
+    timeout: 5000
+
+- scrollUntilVisible:
+    element:
+      text: "Place Order Now"
+    direction: DOWN
+    timeout: 5000
+
+- tapOn: "Place order now"
+
+# Confirm the Alert dialog
+- extendedWaitUntil:
+    visible:
+      text: "Place Order"
+    timeout: 5000
+
+- tapOn:
+    text: "Place Order"
+    index: 1
+
+# ---- ORDER SUCCESS → HOME ----
+- extendedWaitUntil:
+    visible:
+      text: "Order Placed!"
+    timeout: 15000
+
+- tapOn: "View My Orders"
+
+- extendedWaitUntil:
+    visible:
+      text: "My Orders"
+    timeout: 10000
+
+# ---- NAVIGATE TO ORDERS LIST ----
+# Scroll down to find "View All Orders" link (visible when > 5 orders)
+- scrollUntilVisible:
+    element:
+      text: "View All Orders"
+    direction: DOWN
+    timeout: 5000
+
+- tapOn: "View All Orders"
+
+# ---- VERIFY ORDERS LIST SCREEN ----
+- extendedWaitUntil:
+    visible:
+      text: "My Orders"
+    timeout: 10000
+
+# Verify at least one order row is tappable
+- assertVisible:
+    id: "order-row"
+
+# ---- TAP ORDER ROW TO OPEN DETAIL ----
+- tapOn:
+    id: "order-row"
+
+# ---- VERIFY ORDER DETAIL SCREEN ----
+- extendedWaitUntil:
+    visible:
+      text: "Order Details"
+    timeout: 10000
+
+# Verify product name from the joined query
+- assertVisible: "Two-Piece Suit"
+
+# Verify status badge
+- assertVisible: "Placed"
+
+# Verify timeline and details sections
+- assertVisible: "Order Timeline"
+- assertVisible: "Order Details"
+
+# Verify price is displayed
+- assertVisible:
+    text: "\\$.*"
+
+# ---- NAVIGATE BACK TO ORDERS LIST ----
+- tapOn: "← Back"
+
+# Verify we're back on the orders list (not Home — this is the key assertion
+# for the `from=orders` workaround)
+- extendedWaitUntil:
+    visible:
+      id: "order-row"
+    timeout: 10000
+
+# ---- CLEANUP ----
+- tapOn: "Home"
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000

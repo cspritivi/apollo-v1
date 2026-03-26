@@ -1,4 +1,5 @@
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
+import { Pressable, Text } from "react-native";
 import Toast from "react-native-toast-message";
 import { useCartStore } from "../../src/stores/cartStore";
 
@@ -26,6 +27,23 @@ import { useCartStore } from "../../src/stores/cartStore";
 export default function AppLayout() {
   // Cart badge — shows item count on the Cart tab when > 0
   const cartItemCount = useCartStore((s) => s.itemCount());
+  const router = useRouter();
+
+  /**
+   * Shared header back button for hidden tab screens (href: null) that are
+   * navigated to via router.push(). Tabs layouts don't provide a back button
+   * by default — unlike Stack navigators — so we add one manually via
+   * headerLeft. Uses router.back() to pop to whatever screen pushed here.
+   */
+  const headerBackButton = () => (
+    <Pressable
+      onPress={() => router.back()}
+      hitSlop={8}
+      style={{ marginLeft: 8 }}
+    >
+      <Text style={{ fontSize: 16, color: "#4f46e5" }}>← Back</Text>
+    </Pressable>
+  );
 
   return (
     <>
@@ -97,6 +115,7 @@ export default function AppLayout() {
           options={{
             title: "Saved Fabrics",
             href: null,
+            headerLeft: headerBackButton,
           }}
         />
         {/* Configurator is a full-screen flow pushed from the products tab,
@@ -123,10 +142,14 @@ export default function AppLayout() {
           options={{
             title: "My Orders",
             href: null,
+            headerLeft: headerBackButton,
           }}
         />
         {/* Order detail screen — accessed by tapping an OrderRow from Home
-          or the orders list. Receives orderId via search params. */}
+          or the orders list. Receives orderId + from via search params.
+          WORKAROUND: Uses a custom back button that navigates to the `from`
+          screen because hidden tab screens don't maintain a proper back stack.
+          This will be replaced by nested Stack navigators — see GitHub issue. */}
         <Tabs.Screen
           name="order-detail"
           options={{
