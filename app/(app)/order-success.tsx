@@ -57,7 +57,7 @@ export default function OrderSuccessScreen() {
 
         <Pressable
           style={styles.secondaryButton}
-          onPress={() => router.replace("/products")}
+          onPress={() => router.navigate("/(products)" as any)}
           accessibilityRole="button"
           accessibilityLabel="Continue Shopping"
         >

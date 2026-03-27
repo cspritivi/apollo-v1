@@ -2,7 +2,8 @@
  * Orders List Screen — shows all orders for the customer.
  *
  * Accessed from the Home screen's "View All Orders" link when the customer
- * has more than 5 orders. Hidden from the tab bar (href: null in layout).
+ * has more than 5 orders. Pushed onto the Home stack — back button pops
+ * automatically back to the Home screen via React Navigation's stack behavior.
  */
 
 import {
@@ -13,10 +14,10 @@ import {
   StyleSheet,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useSession } from "../../src/hooks/useSession";
-import { useOrders } from "../../src/features/orders/hooks";
-import OrderRow from "../../src/features/orders/components/OrderRow";
-import { Order } from "../../src/types";
+import { useSession } from "../../../src/hooks/useSession";
+import { useOrders } from "../../../src/features/orders/hooks";
+import OrderRow from "../../../src/features/orders/components/OrderRow";
+import { Order } from "../../../src/types";
 
 export default function OrdersListScreen() {
   const { session } = useSession();
@@ -25,7 +26,7 @@ export default function OrdersListScreen() {
 
   // Navigation wired at the screen level — OrderRow is presentational
   const handleOrderPress = (order: Order) => {
-    router.push(`/order-detail?orderId=${order.id}&from=orders`);
+    router.push(`/order-detail?orderId=${order.id}`);
   };
 
   if (isLoading) {

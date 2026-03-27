@@ -196,7 +196,10 @@ appId: host.exp.Exponent
     timeout: 5000
 
 # ---- NAVIGATE BACK ----
-- tapOn: "← Back"
+# Tap the Stack header's back button (headerBackTitle: "Back" set in layout).
+# Note: Maestro's `- back` command doesn't reliably pop Stack screens on
+# iOS in Expo Go, so we tap the header button text directly.
+- tapOn: "Back"
 
 - extendedWaitUntil:
     visible:

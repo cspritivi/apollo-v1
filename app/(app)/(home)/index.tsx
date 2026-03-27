@@ -7,11 +7,11 @@ import {
   StyleSheet,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useSignOut } from "../../src/features/auth/hooks";
-import { useSession } from "../../src/hooks/useSession";
-import { useOrders } from "../../src/features/orders/hooks";
-import OrderRow from "../../src/features/orders/components/OrderRow";
-import { Order } from "../../src/types";
+import { useSignOut } from "../../../src/features/auth/hooks";
+import { useSession } from "../../../src/hooks/useSession";
+import { useOrders } from "../../../src/features/orders/hooks";
+import OrderRow from "../../../src/features/orders/components/OrderRow";
+import { Order } from "../../../src/types";
 
 /**
  * Home screen — main dashboard for authenticated customers.
@@ -38,7 +38,7 @@ export default function HomeScreen() {
 
   // Navigation wired at the screen level — OrderRow is presentational
   const handleOrderPress = (order: Order) => {
-    router.push(`/order-detail?orderId=${order.id}&from=/`);
+    router.push(`/order-detail?orderId=${order.id}`);
   };
 
   return (
@@ -86,7 +86,7 @@ export default function HomeScreen() {
             </Text>
             <Pressable
               style={styles.browseLink}
-              onPress={() => router.replace("/products")}
+              onPress={() => router.navigate("/(products)" as any)}
             >
               <Text style={styles.browseLinkText}>Browse Products</Text>
             </Pressable>
