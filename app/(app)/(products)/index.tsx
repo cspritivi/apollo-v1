@@ -7,9 +7,9 @@ import {
   StyleSheet,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useProducts } from "../../src/features/catalog/hooks";
-import ProductCard from "../../src/features/catalog/components/ProductCard";
-import { Product } from "../../src/types";
+import { useProducts } from "../../../src/features/catalog/hooks";
+import ProductCard from "../../../src/features/catalog/components/ProductCard";
+import { Product } from "../../../src/types";
 
 /**
  * Products catalog screen — browsable grid of available product types.

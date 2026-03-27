@@ -91,7 +91,7 @@ export default function CartScreen() {
         </Text>
         <Pressable
           style={styles.browseButton}
-          onPress={() => router.replace("/products")}
+          onPress={() => router.navigate("/(products)" as any)}
           accessibilityRole="button"
           accessibilityLabel="Browse Products"
         >

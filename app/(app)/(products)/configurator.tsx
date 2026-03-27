@@ -11,19 +11,19 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   useProduct,
   useProductOptions,
-} from "../../src/features/catalog/hooks";
-import { useConfiguratorStore } from "../../src/stores/configuratorStore";
-import { useCartStore } from "../../src/stores/cartStore";
-import { useCreateOrder } from "../../src/features/orders/hooks";
-import { useSession } from "../../src/hooks/useSession";
-import { calculatePrice } from "../../src/features/orders/utils/calculatePrice";
+} from "../../../src/features/catalog/hooks";
+import { useConfiguratorStore } from "../../../src/stores/configuratorStore";
+import { useCartStore } from "../../../src/stores/cartStore";
+import { useCreateOrder } from "../../../src/features/orders/hooks";
+import { useSession } from "../../../src/hooks/useSession";
+import { calculatePrice } from "../../../src/features/orders/utils/calculatePrice";
 import Toast from "react-native-toast-message";
-import ProgressBar from "../../src/features/configurator/components/ProgressBar";
-import FabricSelectionStep from "../../src/features/configurator/components/FabricSelectionStep";
+import ProgressBar from "../../../src/features/configurator/components/ProgressBar";
+import FabricSelectionStep from "../../../src/features/configurator/components/FabricSelectionStep";
 import OptionStep, {
   formatOptionGroupTitle,
-} from "../../src/features/configurator/components/OptionStep";
-import ReviewSummary from "../../src/features/configurator/components/ReviewSummary";
+} from "../../../src/features/configurator/components/OptionStep";
+import ReviewSummary from "../../../src/features/configurator/components/ReviewSummary";
 
 /**
  * Configurator Screen — the multi-step product configuration wizard.
@@ -247,7 +247,7 @@ export default function ConfiguratorScreen() {
     });
     // Reset configurator and navigate to products tab
     reset();
-    router.replace("/products");
+    router.back();
 
     // Show a brief toast confirming the item was added — supplements the
     // cart tab badge update with an explicit textual confirmation so the
@@ -356,7 +356,7 @@ export default function ConfiguratorScreen() {
               // First step shows "Cancel" to exit the configurator
               <Pressable
                 style={styles.navButtonSecondary}
-                onPress={() => router.replace("/products")}
+                onPress={() => router.back()}
                 accessibilityRole="button"
                 accessibilityLabel="Cancel configuration"
               >

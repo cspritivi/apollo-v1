@@ -1,0 +1,73 @@
+# ============================================================================
+# NAVIGATION — SAVED FABRICS BACK NAVIGATION
+#
+# Tests that the Stack back button from Saved Fabrics returns to the Home
+# screen. This verifies the nested Stack navigator in the Home tab works
+# correctly for the Saved Fabrics push/pop flow.
+#
+# WHY THIS TEST EXISTS:
+# Before the Tabs + nested Stacks refactor, Saved Fabrics was a hidden tab
+# screen (href: null) with a manual headerLeft back button. The manual back
+# button used router.back() which could skip screens in the flat tab layout.
+# With nested Stacks, the back button is provided by React Navigation and
+# correctly pops to the previous screen in the Home stack.
+#
+# FLOW:
+# Login → Home → "Saved Fabrics" button → verify Saved Fabrics screen
+# → back → verify Home screen → cleanup (logout)
+#
+# PREREQUISITE:
+# - Test user exists in Supabase Auth (cspritivi@gmail.com / test123456)
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# ---- AUTHENTICATE ----
+- assertVisible: "Welcome Back"
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+- tapOn: "Sign In"
+
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "Home"
+    timeout: 10000
+
+# ---- NAVIGATE TO SAVED FABRICS ----
+- tapOn: "Saved Fabrics"
+
+# Verify Saved Fabrics screen loaded — either the list or empty state
+- extendedWaitUntil:
+    visible:
+      text: "Saved Fabrics"
+    timeout: 5000
+
+# ---- NAVIGATE BACK TO HOME ----
+# Tap the Stack header's back button. We set headerBackTitle: "Back" in the
+# Stack layout so the label is consistent regardless of which screen pushed.
+# Note: Maestro's `- back` command (system back gesture) doesn't reliably
+# pop Stack screens on iOS in Expo Go — tap the header button directly.
+- tapOn: "Back"
+
+# Verify we're back on the Home screen by checking for content that only
+# exists on the Home dashboard (Sign Out button + Saved Fabrics nav button).
+- extendedWaitUntil:
+    visible:
+      text: "Sign Out"
+    timeout: 5000
+
+- assertVisible: "Saved Fabrics"
+
+# ---- CLEANUP ----
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000

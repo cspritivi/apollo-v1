@@ -5,10 +5,10 @@
  * Uses `useOrder(orderId)` which fetches the order with joined product/fabric
  * names in a single Supabase query (see fetchOrderById in api.ts).
  *
- * ARCHITECTURAL DECISION: This screen is a hidden tab (href: null) rather than
- * a Stack screen. It lives inside the (app) Tabs layout so it gets auth
- * protection for free, and the back button returns to the previous tab.
- * The orderId is passed via search params — Expo Router's useLocalSearchParams.
+ * NAVIGATION: This screen lives in the Home stack, pushed on top of either
+ * the Home dashboard or the Orders list. Back navigation works automatically
+ * via React Navigation's stack behavior — no manual headerLeft or `from`
+ * param needed.
  */
 
 import {
@@ -17,54 +17,20 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  Pressable,
 } from "react-native";
-import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
-import { useLayoutEffect } from "react";
-import { useOrder } from "../../src/features/orders/hooks";
-import { OrderStatus } from "../../src/types";
-import StatusBadge from "../../src/features/orders/components/StatusBadge";
-import StatusTimeline from "../../src/features/orders/components/StatusTimeline";
-import { formatDate } from "../../src/features/orders/utils/formatDate";
-import { formatOptionGroupTitle } from "../../src/features/configurator/components/OptionStep";
+import { useLocalSearchParams } from "expo-router";
+import { useOrder } from "../../../src/features/orders/hooks";
+import { OrderStatus } from "../../../src/types";
+import StatusBadge from "../../../src/features/orders/components/StatusBadge";
+import StatusTimeline from "../../../src/features/orders/components/StatusTimeline";
+import { formatDate } from "../../../src/features/orders/utils/formatDate";
+import { formatOptionGroupTitle } from "../../../src/features/configurator/components/OptionStep";
 
 export default function OrderDetailScreen() {
-  const { orderId, from } = useLocalSearchParams<{
+  const { orderId } = useLocalSearchParams<{
     orderId: string;
-    from?: string;
   }>();
   const { data: order, isLoading, error } = useOrder(orderId);
-  const navigation = useNavigation();
-  const router = useRouter();
-
-  /**
-   * WORKAROUND: Hidden tab screens don't maintain a proper back stack, so
-   * router.back() can skip intermediate screens (e.g., Home → Orders →
-   * Detail → back goes to Home, skipping Orders). We override headerLeft
-   * to navigate explicitly to the `from` screen. This will be replaced
-   * by nested Stack navigators — see GitHub issue.
-   */
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerLeft: () => (
-        <Pressable
-          onPress={() => {
-            if (from) {
-              router.navigate(
-                from.startsWith("/") ? from : (`/${from}` as any),
-              );
-            } else {
-              router.back();
-            }
-          }}
-          hitSlop={8}
-          style={{ marginLeft: 8 }}
-        >
-          <Text style={{ fontSize: 16, color: "#4f46e5" }}>← Back</Text>
-        </Pressable>
-      ),
-    });
-  }, [navigation, router, from]);
 
   if (isLoading) {
     return (

@@ -7,9 +7,9 @@
 #
 # WHY THIS TEST EXISTS:
 # The orders list is a secondary entry point to order details (vs tapping
-# directly from Home). It uses the same OrderRow + onPress wiring but with
-# a different `from` param for back navigation. This test verifies the
-# full path works and the back button returns to the orders list (not Home).
+# directly from Home). Both entry points push onto the same Home stack, so
+# back navigation works automatically via React Navigation. This test verifies
+# the full path works and the back button returns to the orders list (not Home).
 #
 # NOTE: "View All Orders" only appears when the customer has > 5 orders.
 # The test user accumulates orders across E2E runs, so this link should
@@ -208,10 +208,12 @@ appId: host.exp.Exponent
     text: "\\$.*"
 
 # ---- NAVIGATE BACK TO ORDERS LIST ----
-- tapOn: "← Back"
+# Tap the Stack header's back button (headerBackTitle: "Back" set in layout).
+# Back navigation correctly returns to the orders list because order-detail
+# was pushed on top of it in the Home stack.
+- tapOn: "Back"
 
-# Verify we're back on the orders list (not Home — this is the key assertion
-# for the `from=orders` workaround)
+# Verify we're back on the orders list (not Home — nested stacks fix this)
 - extendedWaitUntil:
     visible:
       id: "order-row"

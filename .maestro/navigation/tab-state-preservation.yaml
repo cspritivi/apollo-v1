@@ -1,0 +1,105 @@
+# ============================================================================
+# NAVIGATION — TAB STATE PRESERVATION WITH NESTED STACKS
+#
+# Tests that pushing a screen in one tab's Stack preserves that state when
+# switching to another tab and back. This is a key benefit of Tabs + nested
+# Stacks: each tab maintains its own independent navigation stack.
+#
+# WHY THIS TEST EXISTS:
+# With the previous flat Tabs layout (href: null for hidden screens), tab
+# switching could reset navigation state. With nested Stacks, each tab's
+# Stack is independent — switching away and back should preserve the pushed
+# screen. This is the standard behavior in production apps like Instagram
+# and Airbnb, and a strong interview talking point.
+#
+# FLOW:
+# Login → Home → Products tab → tap a product → verify Configurator
+# → switch to Fabrics tab → verify Fabrics screen
+# → switch back to Products tab → verify Configurator is still visible
+# → cancel configurator → cleanup (logout)
+#
+# PREREQUISITE:
+# - Test user exists in Supabase Auth (cspritivi@gmail.com / test123456)
+# - Seed data loaded (products + fabrics)
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# ---- AUTHENTICATE ----
+- assertVisible: "Welcome Back"
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+- tapOn: "Sign In"
+
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "Home"
+    timeout: 10000
+
+# ---- PUSH CONFIGURATOR IN PRODUCTS TAB ----
+- tapOn: "Products"
+
+- extendedWaitUntil:
+    visible:
+      text: "Two-Piece Suit.*"
+    timeout: 10000
+
+- tapOn:
+    text: "Two-Piece Suit.*"
+
+# Verify configurator loaded (fabric selection step)
+- extendedWaitUntil:
+    visible:
+      text: "Choose Fabric"
+    timeout: 10000
+
+# Select a fabric so we have visible state to verify on return
+- tapOn:
+    text: "Black Wool Crepe.*"
+
+- assertVisible:
+    text: "Selected: Black Wool Crepe"
+
+# ---- SWITCH TO FABRICS TAB ----
+- tapOn: "Fabrics"
+
+- extendedWaitUntil:
+    visible:
+      text: "Black Wool Crepe.*"
+    timeout: 10000
+
+# ---- SWITCH BACK TO PRODUCTS TAB ----
+# The configurator should still be visible with the fabric selection intact,
+# because the Products tab's Stack navigator preserves its state independently.
+- tapOn: "Products"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose Fabric"
+    timeout: 5000
+
+# Verify the fabric selection persisted across tab switches
+- assertVisible:
+    text: "Selected: Black Wool Crepe"
+
+# ---- CLEANUP: cancel configurator and log out ----
+- tapOn: "Cancel configuration"
+
+- extendedWaitUntil:
+    visible:
+      text: "Two-Piece Suit.*"
+    timeout: 5000
+
+- tapOn: "Home"
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000
