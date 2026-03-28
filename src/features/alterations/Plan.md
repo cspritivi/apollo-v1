@@ -49,9 +49,10 @@ Write the Supabase query functions and React Query hooks.
 - Navigation: order detail → alteration request screen
 
 **Tests:**
-- [ ] Form validation logic
-- [ ] CTA visibility based on order status
-- [ ] Form submission calls mutation correctly
+- [x] Form validation logic (description required, min 10 chars, trim whitespace)
+- [x] CTA visibility based on order status (DELIVERED only)
+- [x] Form submission calls onSubmit with correct data
+- [x] Pending state (loading text, disabled button)
 
 ### Phase 3: Alteration Tracking UI
 - `AlterationStatusBadge` component (reuse pattern from `StatusBadge`)
@@ -77,7 +78,7 @@ Write the Supabase query functions and React Query hooks.
 | Phase | Status | Notes |
 |-------|--------|-------|
 | Phase 1: Data Layer | ✅ Complete | 40 tests passing (27 api + 13 hooks) |
-| Phase 2: Request UI | 🔲 Not Started | Blocked by Phase 1 |
+| Phase 2: Request UI | ✅ Complete | 11 form tests + screen + CTA on order detail |
 | Phase 3: Tracking UI | 🔲 Not Started | Blocked by Phase 1 |
 | Phase 4: Integration | 🔲 Not Started | Blocked by Phase 2 & 3 |
 

@@ -37,6 +37,10 @@ export default function HomeLayout() {
       <Stack.Screen name="orders" options={{ title: "My Orders" }} />
       <Stack.Screen name="order-detail" options={{ title: "Order Details" }} />
       <Stack.Screen name="saved-fabrics" options={{ title: "Saved Fabrics" }} />
+      <Stack.Screen
+        name="alteration-request"
+        options={{ title: "Request Alteration" }}
+      />
     </Stack>
   );
 }
