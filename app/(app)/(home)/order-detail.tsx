@@ -21,7 +21,9 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useOrder } from "../../../src/features/orders/hooks";
-import { OrderStatus } from "../../../src/types";
+import { useAlterationsByOrder } from "../../../src/features/alterations/hooks";
+import AlterationRow from "../../../src/features/alterations/components/AlterationRow";
+import { OrderStatus, Alteration } from "../../../src/types";
 import StatusBadge from "../../../src/features/orders/components/StatusBadge";
 import StatusTimeline from "../../../src/features/orders/components/StatusTimeline";
 import { formatDate } from "../../../src/features/orders/utils/formatDate";
@@ -33,6 +35,10 @@ export default function OrderDetailScreen() {
   }>();
   const router = useRouter();
   const { data: order, isLoading, error } = useOrder(orderId);
+
+  // Fetch alterations for this order — shown as a list below the order details.
+  // This query runs in parallel with useOrder since they're independent.
+  const { data: alterations } = useAlterationsByOrder(orderId);
 
   if (isLoading) {
     return (
@@ -112,6 +118,27 @@ export default function OrderDetailScreen() {
           </View>
         )}
       </View>
+
+      {/* Alterations Card — shows all alteration requests for this order.
+          Only rendered when there are alterations to display. Each row navigates
+          to the alteration detail screen on tap. */}
+      {alterations && alterations.length > 0 && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Alterations</Text>
+          {alterations.map((alteration: Alteration) => (
+            <AlterationRow
+              key={alteration.id}
+              alteration={alteration}
+              onPress={(alt) =>
+                router.push({
+                  pathname: "/(app)/(home)/alteration-detail",
+                  params: { alterationId: alt.id },
+                })
+              }
+            />
+          ))}
+        </View>
+      )}
 
       {/* Request Alteration CTA — only shown for delivered orders.
           Once an order is delivered, the customer can request alterations

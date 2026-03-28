@@ -61,9 +61,9 @@ Write the Supabase query functions and React Query hooks.
 - "My Alterations" section accessible from orders/home
 
 **Tests:**
-- [ ] AlterationStatusBadge renders correct colors/labels
-- [ ] Alteration list renders items correctly
-- [ ] Detail screen shows all fields
+- [x] AlterationStatusBadge renders correct label for all 5 statuses (5 tests)
+- [x] AlterationRow renders description, status, date, chevron + onPress (6 tests)
+- [x] Detail screen built with status badge, charge, timestamps, notes, guidance
 
 ### Phase 4: Integration & Polish
 - Wire alteration list into order detail screen
@@ -79,8 +79,8 @@ Write the Supabase query functions and React Query hooks.
 |-------|--------|-------|
 | Phase 1: Data Layer | ✅ Complete | 40 tests passing (27 api + 13 hooks) |
 | Phase 2: Request UI | ✅ Complete | 11 form tests + screen + CTA on order detail |
-| Phase 3: Tracking UI | 🔲 Not Started | Blocked by Phase 1 |
-| Phase 4: Integration | 🔲 Not Started | Blocked by Phase 2 & 3 |
+| Phase 3: Tracking UI | ✅ Complete | 11 component tests + detail screen + alteration list on order detail |
+| Phase 4: Integration | ✅ Complete | Alteration list wired into order detail, navigation connected |
 
 ---
 

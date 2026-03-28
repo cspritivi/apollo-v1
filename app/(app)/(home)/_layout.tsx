@@ -41,6 +41,10 @@ export default function HomeLayout() {
         name="alteration-request"
         options={{ title: "Request Alteration" }}
       />
+      <Stack.Screen
+        name="alteration-detail"
+        options={{ title: "Alteration Details" }}
+      />
     </Stack>
   );
 }
