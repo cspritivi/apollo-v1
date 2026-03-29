@@ -327,6 +327,66 @@ no manual `headerLeft` back buttons.
 
 ### How to Say It
 
+---
+
+## Why `profile_id` Is Denormalized on the Alterations Table
+
+### The Context
+
+An alteration request is always linked to an order (`order_id` FK), and every
+order already has a `profile_id`. So technically, the customer who owns an
+alteration can always be derived via `alterations → orders → profile_id`.
+Despite this, we store `profile_id` directly on the `alterations` table as well.
+
+### Why We Denormalized
+
+**1. Simpler RLS policies.**
+Supabase Row Level Security evaluates per-row. With `profile_id` on the
+alterations table, the policy is a direct comparison:
+```sql
+CREATE POLICY "Users can read own alterations"
+  ON public.alterations FOR SELECT
+  USING (auth.uid() = profile_id);
+```
+Without it, the policy would need a subquery through orders:
+```sql
+USING (auth.uid() = (SELECT profile_id FROM orders WHERE id = order_id))
+```
+Subqueries in RLS policies are evaluated for every row scan. At scale, this
+adds measurable overhead — and more importantly, it's harder to reason about
+and audit.
+
+**2. Single-table "My Alterations" query.**
+The customer overview screen (`fetchAlterationsByProfile`) becomes a simple
+`WHERE profile_id = ?` instead of a join through orders. At this app's scale
+the join is negligible, but the simpler query is easier to read, test, and
+cache with React Query.
+
+**3. No real consistency risk.**
+The denormalization would be dangerous if `profile_id` on orders could change
+after creation — then the alteration's `profile_id` could become stale. But
+orders are immutable in this regard: a customer's order never transfers to a
+different profile. So the duplicated `profile_id` will always match the source.
+
+### The Tradeoff
+
+It's a second source of truth. If the data model ever allowed order ownership
+transfers (unlikely but possible), you'd need to update both tables. For this
+app, that scenario doesn't exist, so the simplicity benefits outweigh the
+duplication cost.
+
+### How to Say It
+
+> "We denormalized `profile_id` onto the alterations table even though it's
+> derivable through orders. This simplifies RLS policies from a subquery to
+> a direct comparison, and it makes the 'My Alterations' query a single-table
+> scan instead of a join. The tradeoff is data duplication, but since order
+> ownership is immutable — a customer's order never transfers to a different
+> profile — there's no consistency risk. It's a deliberate denormalization
+> for query simplicity, not an accidental one."
+
+---
+
 > "We initially used flat hidden tabs for non-tab screens — it's quick to
 > set up but it broke back navigation because tab siblings don't form a
 > stack. Pressing back skipped intermediate screens. The fix is Tabs with

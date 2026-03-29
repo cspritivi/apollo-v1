@@ -80,6 +80,7 @@ export default function AlterationRequestForm({
       {/* Description input — the core of the alteration request */}
       <Text style={styles.label}>What needs to be altered?</Text>
       <TextInput
+        testID="alteration-description-input"
         style={[styles.input, styles.textArea]}
         placeholder="Describe the alterations needed (e.g., take in waist by 1 inch)"
         value={description}
@@ -101,6 +102,7 @@ export default function AlterationRequestForm({
       {/* Notes input — optional additional context */}
       <Text style={styles.label}>Additional Notes (optional)</Text>
       <TextInput
+        testID="alteration-notes-input"
         style={[styles.input, styles.notesInput]}
         placeholder="Additional notes for the tailor"
         value={customerNotes}

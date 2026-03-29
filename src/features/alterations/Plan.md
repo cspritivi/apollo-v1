@@ -84,6 +84,13 @@ Write the Supabase query functions and React Query hooks.
 
 ---
 
+### Phase 5: Maestro E2E Tests
+- [x] `request-alteration.yaml` — full flow: find DELIVERED order → request alteration → verify it appears
+- [x] `alteration-detail.yaml` — navigate to alteration detail screen → verify content
+- [x] `all.yaml` — suite runner (request first, then detail)
+
+---
+
 ## Key Files (will be created)
 
 ```

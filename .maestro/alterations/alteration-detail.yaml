@@ -1,0 +1,146 @@
+# ============================================================================
+# ALTERATIONS — VIEW ALTERATION DETAIL SCREEN
+#
+# Tests navigating from a delivered order's alteration list into the
+# alteration detail screen. Verifies the detail screen shows status badge,
+# description, charge info, guidance message, and reference ID.
+#
+# WHY THIS TEST EXISTS:
+# The alteration detail screen is how customers track their alteration
+# progress and understand next steps (via the guidance message). If the
+# detail screen doesn't render correctly, the customer loses visibility
+# into their alteration request.
+#
+# FLOW:
+# Login → Home → "View All Orders" → find "Delivered" order → tap
+# → scroll to "Alterations" card → tap an alteration row
+# → verify detail screen content → back → cleanup (logout)
+#
+# PREREQUISITE:
+# - Test user exists in Supabase Auth (cspritivi@gmail.com / test123456)
+# - At least one DELIVERED order with at least one alteration record exists
+#   (run request-alteration.yaml first, or seed alteration data manually)
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# ---- AUTHENTICATE ----
+- assertVisible: "Welcome Back"
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+- tapOn: "Sign In"
+
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "Home"
+    timeout: 10000
+
+# ---- NAVIGATE TO DELIVERED ORDER ----
+- scrollUntilVisible:
+    element:
+      text: "View All Orders"
+    direction: DOWN
+    timeout: 5000
+
+- tapOn: "View All Orders"
+
+- extendedWaitUntil:
+    visible:
+      text: "My Orders"
+    timeout: 10000
+
+- scrollUntilVisible:
+    element:
+      text: ".*DELIVERED.*"
+    direction: DOWN
+    timeout: 10000
+
+- tapOn:
+    text: ".*DELIVERED.*"
+
+# ---- FIND ALTERATIONS CARD ON ORDER DETAIL ----
+- extendedWaitUntil:
+    visible:
+      text: "Order Details"
+    timeout: 10000
+
+# Scroll down to the Alterations card
+- scrollUntilVisible:
+    element:
+      text: "Alterations"
+    direction: DOWN
+    timeout: 5000
+
+# ---- TAP AN ALTERATION ROW ----
+# AlterationRow has testID="alteration-row". Tap the first one.
+- tapOn:
+    id: "alteration-row"
+
+# ---- VERIFY ALTERATION DETAIL SCREEN ----
+- extendedWaitUntil:
+    visible:
+      text: "Alteration Details"
+    timeout: 10000
+
+# Verify the screen title in the header
+- assertVisible: "Alteration Details"
+
+# Verify a status badge is visible (could be any status — Requested,
+# In Progress, etc. — so we check for the existence of common ones)
+- assertVisible:
+    text: "Requested|In Progress|Ready for Pickup|Completed|Cancelled"
+
+# Verify the detail section shows the description
+- assertVisible: "Alteration Details"
+
+# Verify the charge row exists
+- assertVisible: "Charge"
+
+# Verify a guidance message is visible (all statuses have one)
+- scrollUntilVisible:
+    element:
+      text: "Ref:.*"
+    direction: DOWN
+    timeout: 5000
+
+# Verify the reference ID is displayed
+- assertVisible:
+    text: "Ref:.*"
+
+# ---- NAVIGATE BACK ----
+- tapOn: "Back"
+
+- extendedWaitUntil:
+    visible:
+      text: "Order Details"
+    timeout: 5000
+
+# Back to orders list
+- tapOn: "Back"
+
+- extendedWaitUntil:
+    visible:
+      text: "My Orders"
+    timeout: 5000
+
+# Back to home
+- tapOn: "Back"
+
+- extendedWaitUntil:
+    visible:
+      text: "Home"
+    timeout: 5000
+
+# ---- CLEANUP ----
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000

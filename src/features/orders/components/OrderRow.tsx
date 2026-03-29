@@ -54,6 +54,10 @@ export default function OrderRow({ order, onPress }: OrderRowProps) {
         testID="order-row"
         style={styles.row}
         onPress={() => onPress(order)}
+        // Explicit accessibilityLabel so Maestro can find rows by status.
+        // iOS groups all child text into one opaque string — this gives us
+        // a predictable format: "$127.50, Delivered, Mar 28, 2026"
+        accessibilityLabel={`${formatPrice(order.final_price)}, ${order.current_status}, ${dateStr}`}
       >
         {content}
       </Pressable>

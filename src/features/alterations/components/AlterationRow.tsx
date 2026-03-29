@@ -28,6 +28,10 @@ export default function AlterationRow({
       testID="alteration-row"
       style={styles.row}
       onPress={() => onPress(alteration)}
+      // Explicit accessibilityLabel so Maestro can find rows by status.
+      // iOS groups Pressable children into one opaque string — this gives
+      // a predictable format for regex matching.
+      accessibilityLabel={`${alteration.description}, ${alteration.status}, ${formatDate(alteration.created_at)}`}
     >
       <View style={styles.info}>
         {/* Description truncated to one line — full text on detail screen */}
