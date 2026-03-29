@@ -285,6 +285,7 @@ automated changelog generation. Interviewers recognise this pattern.
 - Use `.then()` chains instead of `async/await`
 - Deviate from the folder structure without flagging it and explaining why
 - Duplicate state that already exists in a Zustand store or React Query cache
+- Add `Co-Authored-By` lines to git commit messages
 
 ---
 
