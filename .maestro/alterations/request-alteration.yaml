@@ -1,0 +1,177 @@
+# ============================================================================
+# ALTERATIONS — REQUEST AN ALTERATION ON A DELIVERED ORDER
+#
+# Tests the full alteration request flow: finding a delivered order, tapping
+# the "Request Alteration" CTA, filling out the form, submitting, and
+# verifying the new alteration appears on the order detail screen.
+#
+# WHY THIS TEST EXISTS:
+# The alteration request is a critical post-delivery workflow. A customer who
+# can't request alterations on a delivered order has no recourse for fit
+# issues. This test verifies the full path works end-to-end.
+#
+# FLOW:
+# Login → Home → "View All Orders" → scroll to find "Delivered" badge
+# → tap that order → verify "Request Alteration" button → tap it
+# → fill description (>10 chars) → submit → dismiss success alert
+# → verify alteration appears in "Alterations" card → cleanup (logout)
+#
+# PREREQUISITE:
+# - Test user exists in Supabase Auth (cspritivi@gmail.com / test123456)
+# - At least one order with current_status = 'DELIVERED' exists for this user
+# ============================================================================
+appId: host.exp.Exponent
+
+---
+
+# ---- AUTHENTICATE ----
+- assertVisible: "Welcome Back"
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+- tapOn: "Sign In"
+
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "Home"
+    timeout: 10000
+
+# ---- NAVIGATE TO ORDERS LIST ----
+# Use "View All Orders" to get the full list where we can scroll to find
+# a DELIVERED order. The home screen only shows 5 recent orders which may
+# not include the delivered one.
+- scrollUntilVisible:
+    element:
+      text: "View All Orders"
+    direction: DOWN
+    timeout: 5000
+
+- tapOn: "View All Orders"
+
+- extendedWaitUntil:
+    visible:
+      text: "My Orders"
+    timeout: 10000
+
+# ---- FIND AND TAP A DELIVERED ORDER ----
+# OrderRow sets an explicit accessibilityLabel: "$price, STATUS, date".
+# iOS groups Pressable children into one atomic node, so we match the
+# label with a regex containing "DELIVERED" (the raw enum value).
+- scrollUntilVisible:
+    element:
+      text: ".*DELIVERED.*"
+    direction: DOWN
+    timeout: 10000
+
+- tapOn:
+    text: ".*DELIVERED.*"
+
+# ---- VERIFY ORDER DETAIL SCREEN WITH CTA ----
+- extendedWaitUntil:
+    visible:
+      text: "Order Details"
+    timeout: 10000
+
+# The "Request Alteration" button should be visible because this is a
+# DELIVERED order. This is the key conditional rendering assertion.
+- scrollUntilVisible:
+    element:
+      text: "Request Alteration"
+    direction: DOWN
+    timeout: 5000
+
+- tapOn: "Request Alteration"
+
+# ---- FILL ALTERATION REQUEST FORM ----
+- extendedWaitUntil:
+    visible:
+      text: "What needs to be changed?"
+    timeout: 10000
+
+# First try submitting with too-short description to verify validation.
+# Use testID to reliably focus the input field.
+- tapOn:
+    id: "alteration-description-input"
+- inputText: "Short"
+- tapOn: "Submit Request"
+
+# Validation error should appear
+- assertVisible:
+    text: ".*at least 10 characters.*"
+
+# Tap the field again, erase "Short" (5 chars), then enter valid description
+- tapOn:
+    id: "alteration-description-input"
+- eraseText: 5
+- inputText: "Take in waist by 1 inch on both sides please"
+
+# Add optional notes
+- tapOn:
+    id: "alteration-notes-input"
+- inputText: "Maestro E2E test alteration"
+
+# Submit the request
+- tapOn: "Submit Request"
+
+# ---- VERIFY SUCCESS ----
+# The success alert should appear
+- extendedWaitUntil:
+    visible:
+      text: "Request Submitted"
+    timeout: 10000
+
+# Dismiss the alert — navigates back to order detail
+- tapOn: "OK"
+
+# ---- VERIFY ALTERATION APPEARS ON ORDER DETAIL ----
+# After navigating back, the order detail screen should now show an
+# "Alterations" card with the new alteration request.
+- extendedWaitUntil:
+    visible:
+      text: "Order Details"
+    timeout: 10000
+
+- scrollUntilVisible:
+    element:
+      text: "Alterations"
+    direction: DOWN
+    timeout: 5000
+
+# Verify the alteration description appears in the list
+- assertVisible:
+    text: "Take in waist by 1 inch.*"
+
+# Verify the new alteration row is visible. The accessibilityLabel uses
+# the raw enum value (REQUESTED), so we match with a regex.
+- scrollUntilVisible:
+    element:
+      text: ".*REQUESTED.*"
+    direction: DOWN
+    timeout: 5000
+
+# ---- CLEANUP ----
+# Navigate back to home and sign out
+- tapOn: "Back"
+
+- extendedWaitUntil:
+    visible:
+      text: "My Orders"
+    timeout: 5000
+
+- tapOn: "Back"
+
+- extendedWaitUntil:
+    visible:
+      text: "Home"
+    timeout: 5000
+
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000
