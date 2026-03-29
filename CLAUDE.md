@@ -298,9 +298,9 @@ automated changelog generation. Interviewers recognise this pattern.
 [x] Configurator Maestro E2E tests
 [x] Order placement flow (cart + express checkout + home orders + 67 tests)
 [x] Order tracking / lifecycle screen
-[ ] Alterations flow
+[x] Alterations flow (data layer + request UI + tracking UI + 62 tests + Maestro E2E)
 
-Update this checklist as features are completed.
+All core features complete. Update this checklist as new features are added.
 
 ---
 
