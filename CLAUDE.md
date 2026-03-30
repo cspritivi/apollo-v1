@@ -275,6 +275,14 @@ automated changelog generation. Interviewers recognise this pattern.
 - When implementing a state transition, reference the Order Lifecycle section
 - After generating any non-trivial code, add a brief inline comment
   explaining the architectural choice made
+- **Document interview-worthy decisions in `IA.md`.** Whenever an
+  implementation step, architectural decision, or technical tradeoff is
+  worth discussing in a software engineering interview, add a section for
+  it in `/IA.md` (Interview Artifacts). Each entry should include: the
+  decision made, why it was chosen over alternatives, the tradeoffs
+  involved, and what you would say if asked about it. This file is a
+  living record of portfolio-grade talking points built up as the app
+  evolves — not written after the fact.
 
 ## What Claude Should Never Do
 
@@ -367,11 +375,8 @@ This ensures the next test starts from the login screen with no active session.
 
 ## Open Decisions (revisit as project grows)
 
-- Payment processing: intentionally deferred. Will need research into
-  Stripe India vs US when the time comes.
-- Push notifications for order status changes: not yet scoped.
 - Admin panel: currently using Supabase dashboard. Reassess if catalog
-  management becomes complex.
+  management becomes complex. (#15)
 - **Fabric color filtering is client-side.** The catalog screen fetches all
   available fabrics and filters in memory via `useMemo`. This works fine for
   ~20 fabrics but must move to server-side filtering (the `colorTag` param
@@ -382,91 +387,244 @@ This ensures the next test starts from the login screen with no active session.
 
 ---
 
-## Future Features & Improvements
+## Engineering Roadmap
 
-A running list of ideas and planned enhancements. These are not currently
-in scope but should inform architectural decisions — avoid building things
-that would make these harder to add later.
+All features and infrastructure work are tracked as GitHub issues.
+This section provides the architectural context, implementation guidance,
+and priority order that Claude needs when working on any of these issues.
+Avoid building things that would make future items harder to add.
 
-- **Curated style recommendations on product selection.** When a customer
-  selects a product (e.g., Suit), show a menu of pre-configured "recipes"
-  before they enter the full configurator. Sections could include:
-  - *Classic Styles* — timeless combinations (e.g., navy suit, spread collar, two-button)
-  - *New Arrivals* — recently added fabric + style combos
-  - *In Season* — styles curated for the current season (summer linens, winter wools)
-  - *Event Based* — wedding suits, business formal, casual weekend
-  - *Tailor's Picks* — staff favourites or bestsellers
+### Infrastructure Prerequisites (do these first)
 
-  The customer can pick a preset as a starting point and then customize
-  individual options in the configurator, or skip presets and build from
-  scratch. This would require a `style_presets` table linking a product to
-  a set of pre-selected options + fabric + display metadata (name, image,
-  tags/categories).
+These unblock the majority of the feature roadmap.
 
-- **Dynamic product catalog layout.** The products screen currently uses a
-  uniform 2-column grid (same as fabrics), but the final design should be
-  more editorial and dynamic — like a curated storefront, not a spreadsheet.
-  Examples: a hero card for suits spanning full width, a row of shirt
-  variations in a horizontal scroll, a "New Styles" section with different
-  card sizes. Think of how apps like ASOS, Zara, or Nike mix card sizes,
-  carousels, and section headers to create a browsing experience that
-  guides the customer rather than just listing items. This requires a
-  section-based data model (not just a flat product list) and a more
-  flexible layout component (e.g., SectionList with mixed render items).
+1. **Move to EAS Build / Dev Client (#41)** — Expo Go cannot run custom
+   native modules (Stripe, Sentry), receive push notifications with custom
+   config, or produce production binaries. This is the single biggest blocker.
+   Use `expo-dev-client` for development builds that mirror production while
+   retaining fast refresh. EAS Build profiles: `development`, `preview`
+   (TestFlight/internal track), `production` (store submission).
 
-- **Fabric save + detail in configurator.** The configurator's fabric
-  selection step currently uses a simplified card (tap to select). It
-  should also support saving/bookmarking fabrics and viewing the full
-  detail modal (FabricDetailModal). The challenge: FabricCard's `onPress`
-  opens the detail modal, but in the configurator `onPress` needs to
-  select the fabric. The cleanest approach is to add a "Select this
-  Fabric" button inside FabricDetailModal when used in configurator
-  context (pass a `mode` or `onSelect` prop). Then the card's `onPress`
-  opens the modal as usual, and the modal has both "Save" and "Select"
-  actions. The save hooks (useSaveFabric, useUnsaveFabric) already exist
-  and just need the user session wired in.
+2. **CI/CD Pipeline — GitHub Actions + EAS Build (#35)** — 160+ tests exist
+   but no automated pipeline runs them on PRs. Pipeline: `tsc --noEmit` →
+   `jest --coverage` → `eslint` on every push/PR. EAS Build triggers preview
+   builds on merges to main. EAS Update for over-the-air JS bundle updates.
+   Free tier: 30 EAS builds/month.
 
-- **Fabric–product compatibility.** Not all fabrics are suitable for every
-  product type (e.g., a heavy wool tweed shouldn't be offered for a summer
-  shirt). Currently all fabrics are shown for all products. The future fix
-  is a `product_fabrics` junction table that maps which fabrics are valid
-  for which products. The configurator's fabric selection step would then
-  filter by `WHERE fabric_id IN (SELECT fabric_id FROM product_fabrics
-  WHERE product_id = $1)`. The UI stays the same — it just shows fewer
-  fabrics. This is safe to defer because the query change is minimal and
-  doesn't require any architectural rework.
+3. **Analytics (PostHog) + Crash Reporting (Sentry) (#36)** — No visibility
+   into customer behavior or crashes. Sentry (`@sentry/react-native`) for
+   crash reporting with source maps via EAS Build (free: 5K errors/month).
+   PostHog (open-source, 1M free events/month) for product analytics:
+   configurator completion rate, drop-off step, fabric popularity, order
+   conversion funnel. Requires EAS Build for native module integration.
 
-- **Swipe navigation between configurator steps.** Replace the current
-  static step rendering with a horizontal swipeable view (e.g.,
-  `react-native-pager-view` or a FlatList with `pagingEnabled`). The
-  customer can swipe left/right to move between option steps, making
-  the configurator feel more fluid and native. The bottom progress bar
-  and Next/Back buttons remain as alternative navigation — swiping is
-  an addition, not a replacement.
+### Suggested Priority Order
 
-- **One-tap option selection + auto-advance.** Currently selecting an
-  option requires two taps: tap the option card, then tap Next. For a
-  faster flow, tapping an option should select it AND auto-advance to
-  the next step after a brief delay (~300ms, enough to show the
-  selection animation). A "selected" state still shows visually so the
-  customer sees their choice registered before the transition. This
-  does not apply to the fabric step (which has filters and more
-  browsing) or the review step — only to the option group steps where
-  the interaction is simply "pick one."
+**Quick wins (build momentum):**
+1. Fit guarantee badge (#29) — pure UI, no backend
+2. Recently viewed (#30) — small Zustand store
+3. WhatsApp support (#27) — one component
+4. Tab icons (#18) — quick visual fix
 
-- **Long-press / 3D Touch preview in configurator.** On the fabric
-  selection step, long-pressing a fabric card should show a peek preview
-  with full fabric details (description, color tags, price) — similar to
-  the FabricDetailModal but as a lightweight overlay. On option group
-  steps, long-pressing an option card should show the full description
-  text and a larger image. This gives customers quick access to details
-  without leaving the selection flow. Implementation options: React
-  Native's `onLongPress` with a custom modal/tooltip, or iOS-native
-  context menus via `react-native-context-menu-view` for a truly native
-  3D Touch / Haptic Touch feel.
+**Navigation restructure:**
+5. Cart to header (#19) — navigation change
+6. Home/Profile restructure (#20) — bigger refactor, sets up the stage
 
-- **Maestro E2E tests for configurator.** Deferred because Maestro
-  doesn't work well on Windows. Write tests covering: product
-  selection → full configurator flow (fabric + all option steps +
-  review) → verify review shows correct selections → tap review items
-  to jump back and change. See `.maestro/` for existing patterns.
+**Core features:**
+7. Running price in configurator (#25) — schema change + UI
+8. Push notifications (#21) — requires EAS Build
+9. Guided measurements (#23) — important, larger effort
+10. Save full configurations (#22) — extends existing patterns
+
+**Medium effort:**
+11. Post-delivery fit check (#24)
+12. Appointment booking (#26)
+13. Fabric swatch ordering (#28)
+14. Customer reviews (#31)
+
+**High effort:**
+15. Wedding party / group orders (#32)
+16. 3D garment configurator (#17)
+17. Stripe payment integration (#33)
+18. XState order lifecycle (#34)
+19. i18n foundation (#38)
+20. Accessibility audit (#39)
+
+### Feature Implementation Context
+
+This context informs architectural decisions when working on these issues.
+Full implementation details live in the GitHub issue bodies.
+
+**Stripe Payment Integration (#33)**
+- Payment intents created server-side via Supabase Edge Functions (secret
+  key never on client). Client only sees `pk_...` and `client_secret`.
+- Deposit + balance model: pay 50% upfront, rest before delivery.
+- `stripe_payment_intent_id` stored on orders/alterations table for
+  reconciliation. Alteration charges create separate payment intents.
+- India-specific: UPI support via Stripe's India payment methods.
+- Requires EAS Build (#41). `@stripe/stripe-react-native` needs native modules.
+
+**XState for Order Lifecycle (#34)**
+- Formalize the order state machine (already in CLAUDE.md) with XState v5.
+- Invalid transitions become impossible (can't go PLACED → DELIVERED).
+- Guarded transitions: TRIAL_COMPLETE → ALTERATIONS only if `needsAlterations`.
+- Visualizable at stately.ai/viz. Model-based testing generates all valid paths.
+- `@xstate/react` provides `useMachine` hook. Works alongside Zustand
+  (XState for order flow, Zustand for cart/UI).
+
+**Offline Catalog Browsing (#37)**
+- React Query persistence via `@tanstack/query-async-storage-persister`.
+- Caches server responses to AsyncStorage, restores on restart.
+- Not full offline-first — orders still require connectivity.
+- Fabrics and products browsable offline from cache. Lightweight to implement.
+- WatermelonDB is overkill here — it's for apps where offline creation is core.
+
+**Internationalization (#38)**
+- `react-i18next` with namespace-based translation files (`en/catalog.json`,
+  `hi/catalog.json`). Multi-currency via `Intl.NumberFormat` (already in Hermes).
+- RTL support via React Native's `I18nManager` for Middle East markets.
+- Store language/currency preference in `profiles` table.
+- Even if launching in one language, centralizing strings now prevents
+  a painful retrofit later.
+
+**Accessibility Audit (#39)**
+- 44x44pt touch targets (iOS HIG) / 48x48dp (Material).
+- Color contrast 4.5:1 for text. Test indigo `#4f46e5` on white/gray.
+- `accessibilityRole`, `accessibilityLabel`, `accessibilityHint` on all
+  interactive elements. Fabric colors must have text labels (color-blind users).
+- Respect `useReducedMotion()` from Reanimated.
+- Test with Xcode Accessibility Inspector / VoiceOver (iOS), TalkBack (Android).
+
+**Deep Linking & Universal Links (#40)**
+- Expo Router gives automatic deep linking from file structure.
+- URL scheme: `tailor-app://order/123`. Universal links:
+  `https://app.yourtailor.com/order/123` (app or web fallback).
+- Needed for: push notification tap targets, group order invites, email
+  links, QR codes in-store, share flows.
+- Requires EAS Build + domain for hosting association files.
+
+**Performance: expo-image + FlashList (#42)**
+- `expo-image` (SDWebImage/Glide): blurhash placeholders, caching,
+  progressive loading. Replace all `<Image>` across fabric/product cards.
+- `@shopify/flash-list`: cell recycling like native list views. Drop-in
+  replacement for FlatList. Prevents stutter on 100+ item catalogs.
+
+### Supabase Edge Functions
+
+Several features (Stripe, push notifications, scheduled jobs) require
+server-side logic. Supabase Edge Functions are Deno-based serverless
+functions on Supabase infrastructure.
+
+```
+/supabase
+  /functions
+    /notify-order-status    # Webhook on status change → push notification
+      index.ts
+    /process-payment        # Stripe payment intent creation
+      index.ts
+```
+
+Deploy: `supabase functions deploy notify-order-status`
+
+Key use cases: order status webhooks, payment processing (server-side
+secret key), scheduled jobs via `pg_cron`, image processing on upload.
+
+### Future Features (not yet issues — inform architecture only)
+
+These are not in scope but should not be made harder to add later.
+
+- **Curated style recommendations on product selection.** Pre-configured
+  "recipes" (Classic Styles, New Arrivals, In Season, Event Based, Tailor's
+  Picks) shown before the full configurator. Customer picks a preset as a
+  starting point then customizes, or builds from scratch. Requires a
+  `style_presets` table linking product → pre-selected options + fabric +
+  display metadata.
+
+- **Dynamic product catalog layout.** Editorial, storefront-style layout
+  instead of uniform 2-column grid. Hero cards, horizontal scrolls, mixed
+  card sizes (like ASOS/Zara/Nike). Requires section-based data model and
+  flexible layout component (SectionList with mixed render items).
+
+- **Fabric save + detail in configurator.** Add "Select this Fabric" button
+  inside FabricDetailModal when in configurator context (pass `mode` or
+  `onSelect` prop). Card's `onPress` opens modal as usual, modal has both
+  "Save" and "Select" actions. Save hooks already exist.
+
+- **Fabric–product compatibility.** `product_fabrics` junction table mapping
+  valid fabrics per product. Configurator filters by
+  `WHERE fabric_id IN (SELECT ... WHERE product_id = $1)`. Safe to defer —
+  query change is minimal.
+
+- **Swipe navigation between configurator steps.** Horizontal swipeable view
+  (`react-native-pager-view` or FlatList with `pagingEnabled`). Progress bar
+  and Next/Back buttons remain as alternative navigation.
+
+- **One-tap option selection + auto-advance.** Tap option → select + auto-advance
+  after ~300ms delay. Only for option group steps (not fabric or review).
+
+- **Long-press / 3D Touch preview in configurator.** Peek preview via
+  `onLongPress` with custom modal/tooltip, or `react-native-context-menu-view`
+  for native 3D Touch / Haptic Touch feel.
+
+### Experimental / Research Topics
+
+Mention in interviews, keep an eye on. Not actionable yet.
+
+- **AI Body Measurement Estimation** — MediaPipe for body landmarks from
+  two photos (front + side). Accuracy within 1-2 inches — starting point,
+  not replacement for tape. `react-native-mediapipe` bridge exists.
+  Supabase `pgvector` for similar body type recommendations.
+
+- **AR Fabric Preview** — ViroReact (most established but maintenance
+  uncertain), expo-three/expo-gl (WebGL, no true AR), native ARKit/ARCore
+  modules. Practical: 3D configurator (#17) achieves 80% of value without
+  AR complexity. Be honest about the implementation gap in interviews.
+
+- **Supabase Realtime for Live Order Tracking** — Subscribe to Postgres
+  changes instead of polling. Customer opens order detail → status updates
+  live. Already available in Supabase, no Edge Functions needed. Worth
+  implementing alongside push notifications.
+
+- **Monorepo (when admin panel comes)** — Turborepo with `/apps/mobile`,
+  `/apps/admin`, `/packages/shared-types`, `/packages/supabase-client`.
+  Current `/src/types` is already extraction-ready. Don't set up until
+  there's a second app.
+
+- **Animations & Micro-interactions** — Reanimated 3 (UI thread worklets),
+  Moti (declarative API like Framer Motion), Lottie (After Effects JSON).
+  Ideas: configurator step transitions, card selection spring, order
+  timeline staggered reveal, cart badge bounce, branded pull-to-refresh.
+
+- **Customer Loyalty / Rewards** — Points per purchase, tiered membership,
+  referral bonuses, birthday perks. Schema: `loyalty_transactions` table
+  or `loyalty_points` column on `profiles`. Not needed now but schema
+  should not block it.
+
+- **Social Features & Sharing** — Share configuration link/image, wedding
+  party/group orders (#32), social media share, stylist-to-customer
+  configuration sharing.
+
+### Security Considerations
+
+- Every table must have `ALTER TABLE ... ENABLE ROW LEVEL SECURITY`.
+  Use `auth.uid()` in policies. `service_role` key bypasses RLS — never
+  expose to client. `.env.local` should only have the `anon` key.
+- Token handling: Supabase JS stores session in AsyncStorage (acceptable).
+  For high-security: `expo-secure-store` (Keychain/Keystore) with custom
+  storage adapter. Token refresh is automatic.
+- Input validation: client (UX) AND server (security). Measurement values
+  need CHECK constraints (`chest_cm > 0 AND chest_cm < 200`). Deep links
+  that modify state must verify authenticated user owns the resource.
+
+### App Store Submission Checklist
+
+Not immediate but worth knowing when preparing for production:
+
+- **iOS**: 1024x1024 icon (no alpha), screenshots per device size, privacy
+  nutrition labels, `NSCameraUsageDescription` if adding photos. Review: 24-48h.
+  Common rejections: placeholder content, broken links, no demo account.
+- **Android**: Feature graphic 1024x500, content rating questionnaire, data
+  safety section. Review: hours to 1 day.
+- **EAS Submit** automates uploads: `eas submit --platform ios|android`.
+- For portfolio: TestFlight (iOS) + internal testing track (Android) for
+  sharing with interviewers. Full publish not required.
