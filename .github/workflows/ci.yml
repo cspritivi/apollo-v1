@@ -6,6 +6,13 @@ name: CI
 on:
   pull_request:
 
+# The coverage report action needs write access to post PR comments
+# and create check annotations. These are scoped to the minimum needed.
+permissions:
+  checks: write
+  pull-requests: write
+  contents: read
+
 # Cancel in-progress runs for the same PR when new commits are pushed.
 # Saves runner minutes and ensures only the latest code is validated.
 concurrency:
