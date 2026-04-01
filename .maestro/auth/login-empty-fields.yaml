@@ -5,7 +5,7 @@
 # This validates the client-side guard in handleLogin() that prevents
 # unnecessary API calls for obviously invalid input.
 # ============================================================================
-appId: host.exp.Exponent
+appId: com.apollo.tailor
 
 ---
 

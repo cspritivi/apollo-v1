@@ -27,7 +27,7 @@
 # - Seed data loaded (products + product_options + fabrics)
 # - Test user has > 5 orders (accumulated from prior E2E runs)
 # ============================================================================
-appId: host.exp.Exponent
+appId: com.apollo.tailor
 
 ---
 

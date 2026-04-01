@@ -20,7 +20,7 @@
 # - Seed data loaded
 # - The test fabric is NOT already saved
 # ============================================================================
-appId: host.exp.Exponent
+appId: com.apollo.tailor
 
 ---
 

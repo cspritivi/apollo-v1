@@ -21,7 +21,7 @@
 # - At least one DELIVERED order with at least one alteration record exists
 #   (run request-alteration.yaml first, or seed alteration data manually)
 # ============================================================================
-appId: host.exp.Exponent
+appId: com.apollo.tailor
 
 ---
 

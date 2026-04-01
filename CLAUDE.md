@@ -37,6 +37,34 @@ the Supabase dashboard directly — no custom admin panel is needed at this stag
 
 **Node version:** See `.nvmrc` in repo root. Always use this version.
 
+### Build & Development Setup
+
+The project uses **EAS Build + expo-dev-client** (not Expo Go). The app
+config lives in `app.config.ts` (dynamic, environment-aware) — there is
+no `app.json`.
+
+**Daily development:**
+```bash
+npm start              # Starts Metro with --dev-client flag
+npm run ios            # Opens on iOS simulator (dev client must be installed)
+npm run android        # Opens on Android emulator
+```
+
+**Building the dev client** (only needed when native deps change):
+```bash
+npm run build:dev:ios      # Cloud build for iOS simulator
+npm run build:dev:android  # Cloud build for Android
+```
+
+**Other build profiles:**
+```bash
+npm run build:preview      # Internal testing (TestFlight / internal track)
+npm run build:production   # Store submission
+```
+
+EAS CLI is installed as a dev dependency (`npx eas ...`), not globally.
+Build profiles are defined in `eas.json`.
+
 ---
 
 ## Project Structure
@@ -309,6 +337,8 @@ automated changelog generation. Interviewers recognise this pattern.
 [x] Order tracking / lifecycle screen
 [x] Alterations flow (data layer + request UI + tracking UI + 62 tests + Maestro E2E)
 
+[x] EAS Build + Dev Client migration (replaces Expo Go)
+
 All core features complete. Update this checklist as new features are added.
 
 ---
@@ -316,7 +346,10 @@ All core features complete. Update this checklist as new features are added.
 ## Maestro E2E Testing — Lessons Learned
 
 Tests live in `.maestro/` organized by feature (e.g., `.maestro/catalog/`,
-`.maestro/auth/`). App runs in Expo Go (`appId: host.exp.Exponent`).
+`.maestro/auth/`). After migrating to EAS Build / Dev Client, the app
+runs in a custom dev client (`appId: com.apollo.tailor`) instead of
+Expo Go (`host.exp.Exponent`). Maestro test `appId` values must use
+the bundle identifier, not the Expo Go ID.
 
 ### iOS Accessibility Grouping (Critical)
 

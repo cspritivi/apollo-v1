@@ -22,7 +22,7 @@
 # - Seed data loaded (20 fabrics)
 # - The first visible fabric is NOT already saved (test isolation)
 # ============================================================================
-appId: host.exp.Exponent
+appId: com.apollo.tailor
 
 ---
 

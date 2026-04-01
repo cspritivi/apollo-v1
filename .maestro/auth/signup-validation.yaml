@@ -9,7 +9,7 @@
 # These validations happen BEFORE any network call to Supabase, saving
 # bandwidth and providing instant feedback.
 # ============================================================================
-appId: host.exp.Exponent
+appId: com.apollo.tailor
 
 ---
 
