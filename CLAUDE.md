@@ -338,6 +338,7 @@ automated changelog generation. Interviewers recognise this pattern.
 [x] Alterations flow (data layer + request UI + tracking UI + 62 tests + Maestro E2E)
 
 [x] EAS Build + Dev Client migration (replaces Expo Go)
+[x] CI/CD Pipeline — GitHub Actions + EAS Build (#35)
 
 All core features complete. Update this checklist as new features are added.
 
@@ -435,11 +436,12 @@ These unblock the majority of the feature roadmap.
    `expo-dev-client` with `app.config.ts` and EAS Build profiles
    (`development`, `preview`, `production`). Bundle ID: `com.apollo.tailor`.
 
-2. **CI/CD Pipeline — GitHub Actions + EAS Build (#35)** — 160+ tests exist
-   but no automated pipeline runs them on PRs. Pipeline: `tsc --noEmit` →
-   `jest --coverage` → `eslint` on every push/PR. EAS Build triggers preview
-   builds on merges to main. EAS Update for over-the-air JS bundle updates.
-   Free tier: 30 EAS builds/month.
+2. ~~**CI/CD Pipeline — GitHub Actions + EAS Build (#35)**~~ ✅ Done.
+   CI runs on PRs (3 parallel jobs: typecheck, lint, test with coverage
+   comments). CD runs on push to main/release (conditional: EAS Build for
+   native changes, EAS Update OTA for JS-only). Fingerprint runtime
+   versioning prevents incompatible OTA updates. Branch protection
+   requires all CI checks + PR review before merge.
 
 3. **Analytics (PostHog) + Crash Reporting (Sentry) (#36)** — No visibility
    into customer behavior or crashes. Sentry (`@sentry/react-native`) for

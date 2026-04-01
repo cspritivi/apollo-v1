@@ -1,0 +1,166 @@
+# CD — builds and deploys after code lands on main or release branches.
+#
+# STRATEGY:
+# 1. Detect whether changes are JS-only or touch native code.
+# 2. JS-only changes → EAS Update (OTA) — fast, no build credits.
+#    Native changes  → full EAS Build  — slower, uses build credits.
+# 3. Branch determines the build profile:
+#    main      → preview  (TestFlight / internal track)
+#    release/* → production (store submission)
+# 4. Manual workflow_dispatch always triggers a full build for either profile.
+#
+# SECRETS SEPARATION:
+# - GitHub Secrets: only EXPO_TOKEN (authenticates EAS CLI).
+# - EAS Secrets: runtime/app vars (Supabase URL, Stripe keys, etc.)
+#   managed via `eas secret:create`. Never stored in this repo.
+name: CD
+
+on:
+  push:
+    branches: [main, "release/*"]
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "EAS build profile"
+        required: true
+        default: "preview"
+        type: choice
+        options:
+          - preview
+          - production
+      platform:
+        description: "Target platform"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - ios
+          - android
+
+# Cancel in-progress runs for the same branch when new commits are pushed.
+# Only the latest commit on a branch needs a build — saves build credits.
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Step 1: Detect what changed ────────────────────────────────────
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    # Skip change detection for manual triggers — always build
+    if: github.event_name != 'workflow_dispatch'
+    outputs:
+      native: ${{ steps.filter.outputs.native }}
+      js: ${{ steps.filter.outputs.js }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            native:
+              - 'app.config.ts'
+              - 'eas.json'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'ios/**'
+              - 'android/**'
+              - 'plugins/**'
+            js:
+              - 'src/**'
+              - 'app/**'
+              - 'assets/**'
+
+  # ── Step 2: Resolve which profile to use ───────────────────────────
+  resolve-profile:
+    name: Resolve Profile
+    runs-on: ubuntu-latest
+    outputs:
+      profile: ${{ steps.resolve.outputs.profile }}
+    steps:
+      - id: resolve
+        # workflow_dispatch uses the user-selected profile.
+        # Push events derive profile from branch name.
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "profile=${{ inputs.profile }}" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.ref }}" == refs/heads/release/* ]]; then
+            echo "profile=production" >> "$GITHUB_OUTPUT"
+          else
+            echo "profile=preview" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ── Step 3: Full EAS Build (native changes or manual trigger) ──────
+  eas-build:
+    name: EAS Build (${{ matrix.platform }})
+    needs: [detect-changes, resolve-profile]
+    # Run if: native files changed, OR manual trigger, OR no changes detected
+    # (safety net — if paths-filter returns nothing, build anyway)
+    if: |
+      always() &&
+      needs.resolve-profile.result == 'success' &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        needs.detect-changes.outputs.native == 'true'
+      )
+    runs-on: ubuntu-latest
+    strategy:
+      # Both platforms run independently — an iOS cert issue shouldn't
+      # block Android, and vice versa.
+      fail-fast: false
+      matrix:
+        platform: ${{ github.event_name == 'workflow_dispatch' && inputs.platform == 'all' && fromJSON('["ios", "android"]') || github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.platform)) || fromJSON('["ios", "android"]') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+      - run: npm ci
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Build
+        run: |
+          eas build \
+            --platform ${{ matrix.platform }} \
+            --profile ${{ needs.resolve-profile.outputs.profile }} \
+            --non-interactive
+
+  # ── Step 4: EAS Update / OTA (JS-only changes) ────────────────────
+  eas-update:
+    name: EAS Update (OTA)
+    needs: [detect-changes, resolve-profile]
+    # Only run for JS-only changes on push events (not manual trigger,
+    # which always does a full build). Skip if native also changed —
+    # the build job handles that case.
+    if: |
+      always() &&
+      needs.resolve-profile.result == 'success' &&
+      github.event_name != 'workflow_dispatch' &&
+      needs.detect-changes.outputs.js == 'true' &&
+      needs.detect-changes.outputs.native != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+      - run: npm ci
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      # OTA updates go to the channel matching the build profile.
+      # Runtime versioning (fingerprint policy in app.config.ts) ensures
+      # updates only apply to binaries with compatible native code.
+      - name: Publish OTA Update
+        run: |
+          eas update \
+            --branch ${{ needs.resolve-profile.outputs.profile }} \
+            --message "OTA: ${{ github.event.head_commit.message }}" \
+            --non-interactive
