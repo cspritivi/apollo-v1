@@ -9,7 +9,7 @@
 # paths are wrong (e.g., typo in "/(auth)/sign-up"), the navigation
 # silently fails. This test catches routing issues early.
 # ============================================================================
-appId: host.exp.Exponent
+appId: com.apollo.tailor
 
 ---
 

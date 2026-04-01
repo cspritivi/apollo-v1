@@ -5,7 +5,7 @@
 # and cleans up independently, so order doesn't matter — but running the
 # happy path first gives the fastest signal on whether the core flow works.
 # ============================================================================
-appId: host.exp.Exponent
+appId: com.apollo.tailor
 ---
 - runFlow: full-configurator-flow.yaml
 - runFlow: skip-steps-and-review.yaml

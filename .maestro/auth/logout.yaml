@@ -16,7 +16,7 @@
 # 5. useSession sets session to null
 # 6. Root layout detects null session → redirects to login screen
 # ============================================================================
-appId: host.exp.Exponent
+appId: com.apollo.tailor
 
 ---
 

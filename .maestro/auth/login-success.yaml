@@ -13,7 +13,7 @@
 # A test user must exist in Supabase Auth with the credentials below.
 # Create one manually in the Supabase dashboard or use the sign-up flow first.
 # ============================================================================
-appId: host.exp.Exponent
+appId: com.apollo.tailor
 # Using Expo Go's app ID since we're running in development mode.
 # In a production build, this would be the app's bundle ID.
 

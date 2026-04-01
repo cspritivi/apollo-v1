@@ -22,7 +22,7 @@
 # - Test user exists in Supabase Auth (cspritivi@gmail.com / test123456)
 # - Seed data loaded (products + fabrics)
 # ============================================================================
-appId: host.exp.Exponent
+appId: com.apollo.tailor
 
 ---
 

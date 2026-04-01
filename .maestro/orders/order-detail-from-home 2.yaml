@@ -21,7 +21,7 @@
 # - Seed data loaded (products + product_options + fabrics)
 # - SQL migrations run (fabric_meters, nullable measurement_snapshot)
 # ============================================================================
-appId: host.exp.Exponent
+appId: com.apollo.tailor
 
 ---
 

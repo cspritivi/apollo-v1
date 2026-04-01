@@ -6,7 +6,7 @@
 # signal on the core path. Cart remove runs before cart checkout to avoid
 # leftover cart state interfering (though each test cleans up after itself).
 # ============================================================================
-appId: host.exp.Exponent
+appId: com.apollo.tailor
 ---
 - runFlow: express-checkout.yaml
 - runFlow: add-to-cart.yaml

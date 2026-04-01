@@ -18,7 +18,7 @@
 # - Test user exists in Supabase Auth
 # - Seed data loaded (products + product_options + fabrics)
 # ============================================================================
-appId: host.exp.Exponent
+appId: com.apollo.tailor
 
 ---
 

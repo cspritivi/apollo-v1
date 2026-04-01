@@ -396,3 +396,95 @@ duplication cost.
 > file in the right folder. It's more files (one `_layout.tsx` per stack)
 > but the navigation behavior is correct by default instead of patched
 > with workarounds."
+
+---
+
+## Why We Migrated from Expo Go to EAS Build / Dev Client
+
+### The Context
+
+During initial development, we used Expo Go — a pre-built app published by
+Expo that runs your JavaScript code inside a generic native container. It's
+the fastest way to start: install the app, scan a QR code, and your code
+runs instantly. No Xcode, no Android Studio, no native compilation.
+
+But Expo Go has a hard ceiling: you cannot add native modules that aren't
+already bundled into it. The container is fixed.
+
+### The Problem
+
+Our roadmap required features that all depend on custom native code:
+
+- **Stripe** (`@stripe/stripe-react-native`) — links native iOS/Android
+  payment SDKs for card entry, Apple Pay, Google Pay, and UPI
+- **Sentry** (`@sentry/react-native`) — hooks into the native crash
+  reporting pipeline with source maps
+- **Push Notifications** — requires native entitlements and custom
+  configuration that Expo Go's generic setup doesn't support
+- **App Store / Play Store submission** — Expo Go can't produce
+  production binaries (`.ipa`, `.aab`)
+
+None of these can work in Expo Go. This single infrastructure constraint
+blocked the majority of the feature roadmap.
+
+### The Solution: EAS Build + expo-dev-client
+
+**`expo-dev-client`** replaces Expo Go with a custom-built development app.
+It's functionally identical to Expo Go — fast refresh, same developer UX —
+but the native layer is yours. Any native module you install gets compiled
+into your custom dev client.
+
+**EAS Build** is Expo's cloud build service. Instead of needing Xcode locally
+(or a Mac at all for iOS builds), Expo's servers compile the native project.
+You run `eas build`, wait a few minutes, and download the result. This is
+important because:
+
+- iOS builds require macOS + Xcode. Cloud builds eliminate this dependency
+  for team members on Windows/Linux
+- Native compilation is slow and resource-intensive. Offloading it means
+  your local machine only runs Metro (the JavaScript bundler), which is
+  lightweight
+
+**Three build profiles** serve different purposes:
+
+| Profile | Purpose | Distribution |
+|---|---|---|
+| `development` | Dev client — replaces Expo Go | Install on your device |
+| `preview` | Internal testing builds | TestFlight (iOS) / Internal track (Android) |
+| `production` | Store submission | App Store / Play Store |
+
+### The Key Insight: When to Migrate
+
+We didn't start with EAS Build. We started with Expo Go and built all core
+features — auth, catalog, configurator, orders, alterations — without needing
+custom native modules. This was deliberate:
+
+- **Too early** = unnecessary complexity. Expo Go is faster for prototyping
+  and has zero build configuration. If we'd set up EAS Build on day one,
+  we'd have spent time on build infrastructure instead of building features.
+- **Too late** = blocked roadmap. If we'd tried to add Stripe or Sentry
+  first and then realized we needed EAS Build, we'd be doing infrastructure
+  work under pressure with a feature deadline.
+- **Right time** = when the next batch of features all require native modules.
+  The core app is stable, tested (160+ tests), and working. Now we invest
+  in the infrastructure that unblocks everything ahead.
+
+This is a general principle: defer infrastructure investment until it's
+actually needed, but do it *before* it becomes urgent.
+
+### How to Say It
+
+> "We started with Expo Go for rapid prototyping — it's zero-config and
+> let us build the entire core app without touching native code. But our
+> roadmap required Stripe payments, Sentry crash reporting, and push
+> notifications, all of which need custom native modules that Expo Go
+> can't include. So we migrated to EAS Build with expo-dev-client. The
+> dev client gives us the same developer experience — fast refresh, Metro
+> bundler — but with a custom native container that includes whatever
+> modules we need. EAS Build compiles in the cloud, so we don't need
+> Xcode locally, and we set up three build profiles: development for
+> day-to-day work, preview for TestFlight and internal testing, and
+> production for store submission. The timing was deliberate — we didn't
+> do it on day one because Expo Go was faster for prototyping, and we
+> didn't wait until we were blocked on a feature. We did it exactly when
+> the next wave of features all required native modules."
