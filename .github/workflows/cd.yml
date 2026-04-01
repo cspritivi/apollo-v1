@@ -29,14 +29,14 @@ on:
           - preview
           - production
       platform:
-        description: "Target platform"
+        description: "Target platform (iOS requires Apple Developer Program)"
         required: true
-        default: "all"
+        default: "android"
         type: choice
         options:
-          - all
-          - ios
           - android
+          - ios
+          - all
 
 # Cancel in-progress runs for the same branch when new commits are pushed.
 # Only the latest commit on a branch needs a build — saves build credits.
@@ -111,7 +111,10 @@ jobs:
       # block Android, and vice versa.
       fail-fast: false
       matrix:
-        platform: ${{ github.event_name == 'workflow_dispatch' && inputs.platform == 'all' && fromJSON('["ios", "android"]') || github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.platform)) || fromJSON('["ios", "android"]') }}
+        # Android-only by default. iOS requires Apple Developer Program ($99/yr)
+        # and is opt-in via workflow_dispatch. When iOS credentials are set up,
+        # change the fallback from '["android"]' to '["ios", "android"]'.
+        platform: ${{ github.event_name == 'workflow_dispatch' && inputs.platform == 'all' && fromJSON('["ios", "android"]') || github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.platform)) || fromJSON('["android"]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
