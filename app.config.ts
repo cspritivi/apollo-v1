@@ -74,6 +74,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     policy: "fingerprint",
   },
   plugins: ["expo-router", "expo-asset"],
+  updates: {
+    /**
+     * EAS Update URL — tells the app where to check for OTA updates.
+     * Combined with runtimeVersion above, the app only downloads updates
+     * whose fingerprint matches the installed native binary.
+     */
+    url: "https://u.expo.dev/409841e3-f700-425a-8218-58584e4433da",
+  },
   extra: {
     eas: {
       projectId: "409841e3-f700-425a-8218-58584e4433da",
