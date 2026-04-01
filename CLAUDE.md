@@ -431,12 +431,9 @@ Avoid building things that would make future items harder to add.
 
 These unblock the majority of the feature roadmap.
 
-1. **Move to EAS Build / Dev Client (#41)** — Expo Go cannot run custom
-   native modules (Stripe, Sentry), receive push notifications with custom
-   config, or produce production binaries. This is the single biggest blocker.
-   Use `expo-dev-client` for development builds that mirror production while
-   retaining fast refresh. EAS Build profiles: `development`, `preview`
-   (TestFlight/internal track), `production` (store submission).
+1. ~~**Move to EAS Build / Dev Client (#41)**~~ ✅ Done. App uses
+   `expo-dev-client` with `app.config.ts` and EAS Build profiles
+   (`development`, `preview`, `production`). Bundle ID: `com.apollo.tailor`.
 
 2. **CI/CD Pipeline — GitHub Actions + EAS Build (#35)** — 160+ tests exist
    but no automated pipeline runs them on PRs. Pipeline: `tsc --noEmit` →
