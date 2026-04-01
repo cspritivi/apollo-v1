@@ -60,6 +60,19 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
    * Used by Expo Router for in-app link handling.
    */
   scheme: "apollo",
+  /**
+   * Fingerprint-based runtime versioning for OTA update safety.
+   *
+   * Expo computes a hash of all native dependencies. When native deps
+   * change (new package, config plugin, etc.), the fingerprint changes
+   * and old binaries won't receive the incompatible OTA update. Users
+   * on older binaries stay on their last compatible update until they
+   * install a new binary. This prevents the crash scenario where an
+   * OTA update depends on native code the installed binary doesn't have.
+   */
+  runtimeVersion: {
+    policy: "fingerprint",
+  },
   plugins: ["expo-router", "expo-asset"],
   extra: {
     eas: {

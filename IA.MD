@@ -488,3 +488,66 @@ actually needed, but do it *before* it becomes urgent.
 > do it on day one because Expo Go was faster for prototyping, and we
 > didn't wait until we were blocked on a feature. We did it exactly when
 > the next wave of features all required native modules."
+
+---
+
+## CI/CD Pipeline Architecture
+
+### The Context
+
+With 149 tests, a TypeScript strict-mode codebase, and ESLint, we needed
+automated validation to prevent regressions as the feature set grows. The
+challenge was designing a pipeline that's fast on PRs (developer experience)
+but smart about expensive native builds (cost control).
+
+### The Decision
+
+Split into two workflows with fundamentally different triggers and goals:
+
+**CI (pull requests only):** Three parallel jobs — typecheck, lint, test.
+Each runs independently so a type error doesn't block the lint result.
+Coverage comments post directly to the PR via `jest-coverage-report-action`
+(no external Codecov service needed). Concurrency groups cancel stale runs
+when new commits are pushed to the same PR.
+
+**CD (push to main/release + manual trigger):** Uses `dorny/paths-filter`
+to detect whether changes are JS-only or touch native code. JS-only changes
+trigger an EAS Update (OTA) — fast, no build credits consumed. Native changes
+trigger a full EAS Build with a platform matrix (`ios` + `android`, `fail-fast: false`).
+Branch determines the profile: `main` → preview, `release/*` → production.
+
+### Why This Over Alternatives
+
+- **Why not one workflow?** CI and CD have different triggers, different costs,
+  and different failure modes. Separating them keeps each workflow simple and
+  avoids accidental EAS builds on every PR.
+- **Why conditional builds?** EAS Build credits are limited (30/month free tier).
+  Most PRs are JS-only — shipping those as OTA updates saves build credits
+  for when native code actually changes.
+- **Why fingerprint runtime versioning?** OTA updates are dangerous if they
+  assume native code that the installed binary doesn't have. Expo's fingerprint
+  policy auto-hashes all native dependencies. If the fingerprint changes, old
+  binaries won't receive the incompatible update — they stay on their last
+  compatible version until the user installs a new binary.
+- **Why `fail-fast: false` on the platform matrix?** An iOS signing issue
+  shouldn't cancel the Android build. Both platforms should complete independently
+  so you get full signal from one even if the other fails.
+
+### What I'd Say in an Interview
+
+> "We split CI and CD into separate workflows because they serve different
+> purposes. CI is cheap and fast — three parallel jobs on every PR that give
+> immediate feedback. CD is expensive and deliberate — it detects whether
+> changes touch native code and chooses between a full EAS Build or a
+> lightweight OTA update accordingly. This saved us from burning through
+> our 30 monthly build credits on JS-only changes.
+>
+> The most important safety mechanism is fingerprint-based runtime versioning.
+> Without it, an OTA update could depend on a native module that doesn't exist
+> in the user's installed binary, causing a crash. The fingerprint is an
+> auto-computed hash of all native dependencies — when it changes, old binaries
+> are automatically excluded from receiving the update.
+>
+> We also set up branch protection requiring all three CI checks plus a PR
+> review before any merge to main. Combined with concurrency groups that
+> cancel stale runs, this gives us a pipeline that's both safe and efficient."

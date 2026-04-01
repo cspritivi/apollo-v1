@@ -47,20 +47,18 @@ export default function ProgressBar({
   completedSteps,
   onGoToStep,
 }: ProgressBarProps) {
-  if (totalSteps === 0) return null;
-
-  const currentLabel = stepLabels[currentStep] ?? "";
-
-  // Track the center X of each circle relative to the container.
-  // We store refs to circle Views and measure them against the container
-  // when onLayout fires. This gives pixel-perfect positioning regardless
-  // of how lines shift the circles within each stepWrapper.
+  // All hooks must be called before any early return to satisfy
+  // React's rules of hooks (consistent call order every render).
   const containerRef = useRef<View>(null);
   const circleRefs = useRef<Record<number, View>>({});
   const [circleCenters, setCircleCenters] = useState<Record<number, number>>(
     {},
   );
   const measuredRef = useRef<Record<number, boolean>>({});
+
+  if (totalSteps === 0) return null;
+
+  const currentLabel = stepLabels[currentStep] ?? "";
 
   return (
     <View style={styles.container} ref={containerRef}>
