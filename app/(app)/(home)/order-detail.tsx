@@ -28,6 +28,7 @@ import StatusBadge from "../../../src/features/orders/components/StatusBadge";
 import StatusTimeline from "../../../src/features/orders/components/StatusTimeline";
 import { formatDate } from "../../../src/features/orders/utils/formatDate";
 import { formatOptionGroupTitle } from "../../../src/features/configurator/components/OptionStep";
+import SupportFAB from "../../../src/components/SupportFAB";
 
 export default function OrderDetailScreen() {
   const { orderId } = useLocalSearchParams<{
@@ -69,100 +70,110 @@ export default function OrderDetailScreen() {
   const fabricName = order.fabrics?.name ?? "Custom Fabric";
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header — product name, fabric, status, and date */}
-      <View style={styles.header}>
-        <Text style={styles.productName}>{productName}</Text>
-        <Text style={styles.fabricName}>{fabricName}</Text>
-        <View style={styles.headerRow}>
-          <StatusBadge status={order.current_status as OrderStatus} />
-          <Text style={styles.date}>
-            Ordered {formatDate(order.created_at)}
-          </Text>
-        </View>
-      </View>
-
-      {/* Timeline Card — full status history */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Order Timeline</Text>
-        <StatusTimeline statusHistory={order.status_history} />
-      </View>
-
-      {/* Details Card — chosen options, price, and notes */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Order Details</Text>
-
-        {/* Chosen options — iterate the JSONB snapshot from the order */}
-        {Object.entries(order.chosen_options).map(([group, option]) => (
-          <View key={group} style={styles.detailRow}>
-            <Text style={styles.detailLabel}>
-              {formatOptionGroupTitle(group)}
+    <View style={styles.container}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
+        {/* Header — product name, fabric, status, and date */}
+        <View style={styles.header}>
+          <Text style={styles.productName}>{productName}</Text>
+          <Text style={styles.fabricName}>{fabricName}</Text>
+          <View style={styles.headerRow}>
+            <StatusBadge status={order.current_status as OrderStatus} />
+            <Text style={styles.date}>
+              Ordered {formatDate(order.created_at)}
             </Text>
-            <Text style={styles.detailValue}>{option.name}</Text>
           </View>
-        ))}
-
-        {/* Price */}
-        <View style={[styles.detailRow, styles.priceRow]}>
-          <Text style={styles.priceLabel}>Total</Text>
-          <Text style={styles.priceValue}>
-            {formatPrice(order.final_price)}
-          </Text>
         </View>
 
-        {/* Customer notes — only shown when present */}
-        {order.customer_notes && (
-          <View style={styles.notesSection}>
-            <Text style={styles.detailLabel}>Notes</Text>
-            <Text style={styles.notesText}>{order.customer_notes}</Text>
-          </View>
-        )}
-      </View>
+        {/* Timeline Card — full status history */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Order Timeline</Text>
+          <StatusTimeline statusHistory={order.status_history} />
+        </View>
 
-      {/* Alterations Card — shows all alteration requests for this order.
+        {/* Details Card — chosen options, price, and notes */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Order Details</Text>
+
+          {/* Chosen options — iterate the JSONB snapshot from the order */}
+          {Object.entries(order.chosen_options).map(([group, option]) => (
+            <View key={group} style={styles.detailRow}>
+              <Text style={styles.detailLabel}>
+                {formatOptionGroupTitle(group)}
+              </Text>
+              <Text style={styles.detailValue}>{option.name}</Text>
+            </View>
+          ))}
+
+          {/* Price */}
+          <View style={[styles.detailRow, styles.priceRow]}>
+            <Text style={styles.priceLabel}>Total</Text>
+            <Text style={styles.priceValue}>
+              {formatPrice(order.final_price)}
+            </Text>
+          </View>
+
+          {/* Customer notes — only shown when present */}
+          {order.customer_notes && (
+            <View style={styles.notesSection}>
+              <Text style={styles.detailLabel}>Notes</Text>
+              <Text style={styles.notesText}>{order.customer_notes}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Alterations Card — shows all alteration requests for this order.
           Only rendered when there are alterations to display. Each row navigates
           to the alteration detail screen on tap. */}
-      {alterations && alterations.length > 0 && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Alterations</Text>
-          {alterations.map((alteration: Alteration) => (
-            <AlterationRow
-              key={alteration.id}
-              alteration={alteration}
-              onPress={(alt) =>
-                router.push({
-                  pathname: "/(app)/(home)/alteration-detail",
-                  params: { alterationId: alt.id },
-                })
-              }
-            />
-          ))}
-        </View>
-      )}
+        {alterations && alterations.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Alterations</Text>
+            {alterations.map((alteration: Alteration) => (
+              <AlterationRow
+                key={alteration.id}
+                alteration={alteration}
+                onPress={(alt) =>
+                  router.push({
+                    pathname: "/(app)/(home)/alteration-detail",
+                    params: { alterationId: alt.id },
+                  })
+                }
+              />
+            ))}
+          </View>
+        )}
 
-      {/* Request Alteration CTA — only shown for delivered orders.
+        {/* Request Alteration CTA — only shown for delivered orders.
           Once an order is delivered, the customer can request alterations
           (e.g., fit adjustments). This navigates to the alteration request
           form, passing the orderId so the request is linked to this order. */}
-      {order.current_status === OrderStatus.DELIVERED && (
-        <Pressable
-          style={styles.alterationButton}
-          onPress={() =>
-            router.push({
-              pathname: "/(app)/(home)/alteration-request",
-              params: { orderId: order.id },
-            })
-          }
-        >
-          <Text style={styles.alterationButtonText}>Request Alteration</Text>
-        </Pressable>
-      )}
+        {order.current_status === OrderStatus.DELIVERED && (
+          <Pressable
+            style={styles.alterationButton}
+            onPress={() =>
+              router.push({
+                pathname: "/(app)/(home)/alteration-request",
+                params: { orderId: order.id },
+              })
+            }
+          >
+            <Text style={styles.alterationButtonText}>Request Alteration</Text>
+          </Pressable>
+        )}
 
-      {/* Order reference — truncated ID for customer support */}
-      <Text style={styles.reference}>
-        Order ref: {order.id.slice(0, 8).toUpperCase()}
-      </Text>
-    </ScrollView>
+        {/* Order reference — truncated ID for customer support */}
+        <Text style={styles.reference}>
+          Order ref: {order.id.slice(0, 8).toUpperCase()}
+        </Text>
+      </ScrollView>
+      {/* WhatsApp support FAB — pre-filled with order context */}
+      <SupportFAB
+        context={{
+          screen: "order-detail",
+          orderId: order.id.slice(0, 8).toUpperCase(),
+          orderStatus: order.current_status,
+        }}
+      />
+    </View>
   );
 }
 

@@ -1,5 +1,6 @@
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { Product } from "../../../types";
+import FitGuaranteeBadge from "../../../components/FitGuaranteeBadge";
 
 /**
  * Props for the ProductCard component.
@@ -75,6 +76,9 @@ export default function ProductCard({ product, onPress }: ProductCardProps) {
         )}
 
         <Text style={styles.price}>{priceDisplay}</Text>
+        {/* Trust signal — compact badge on product cards reduces purchase anxiety
+            for first-time custom clothing buyers. */}
+        <FitGuaranteeBadge variant="compact" />
       </View>
     </Pressable>
   );

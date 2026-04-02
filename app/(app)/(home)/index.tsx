@@ -12,6 +12,8 @@ import { useSession } from "../../../src/hooks/useSession";
 import { useOrders } from "../../../src/features/orders/hooks";
 import OrderRow from "../../../src/features/orders/components/OrderRow";
 import { Order } from "../../../src/types";
+import RecentlyViewedRow from "../../../src/components/RecentlyViewedRow";
+import { RecentlyViewedItem } from "../../../src/stores/recentlyViewedStore";
 
 /**
  * Home screen — main dashboard for authenticated customers.
@@ -41,6 +43,19 @@ export default function HomeScreen() {
     router.push(`/order-detail?orderId=${order.id}`);
   };
 
+  // Navigate to the appropriate screen when a recently viewed item is tapped
+  const handleRecentlyViewedPress = (item: RecentlyViewedItem) => {
+    if (item.type === "product") {
+      router.push({
+        pathname: "/(products)/configurator",
+        params: { productId: item.id },
+      } as any);
+    } else {
+      // For fabrics, navigate to the fabrics tab
+      router.navigate("/(app)/fabrics" as any);
+    }
+  };
+
   return (
     <ScrollView
       style={styles.scrollContainer}
@@ -67,6 +82,10 @@ export default function HomeScreen() {
           </Pressable>
         </View>
       </View>
+
+      {/* Recently Viewed — shows items the customer has browsed for easy
+          re-discovery. Only renders if there are recently viewed items. */}
+      <RecentlyViewedRow onItemPress={handleRecentlyViewedPress} />
 
       {/* My Orders Section */}
       <View style={styles.ordersSection}>

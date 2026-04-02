@@ -26,6 +26,7 @@ import { useCartStore } from "../../src/stores/cartStore";
 import { useCreateOrders } from "../../src/features/orders/hooks";
 import { useSession } from "../../src/hooks/useSession";
 import CartItemCard from "../../src/features/orders/components/CartItemCard";
+import FitGuaranteeBadge from "../../src/components/FitGuaranteeBadge";
 import { CreateOrderInput } from "../../src/features/orders/api";
 
 export default function CartScreen() {
@@ -121,6 +122,10 @@ export default function CartScreen() {
 
       {/* Order summary — fixed at bottom */}
       <View style={styles.summaryBar}>
+        {/* Trust signal near checkout — reduces last-moment hesitation */}
+        <View style={{ marginBottom: 12 }}>
+          <FitGuaranteeBadge variant="full" />
+        </View>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>
             {itemCount} item{itemCount !== 1 ? "s" : ""}
