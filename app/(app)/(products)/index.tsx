@@ -10,6 +10,7 @@ import { useRouter } from "expo-router";
 import { useProducts } from "../../../src/features/catalog/hooks";
 import ProductCard from "../../../src/features/catalog/components/ProductCard";
 import { Product } from "../../../src/types";
+import { useRecentlyViewedStore } from "../../../src/stores/recentlyViewedStore";
 
 /**
  * Products catalog screen — browsable grid of available product types.
@@ -47,14 +48,24 @@ export default function ProductsScreen() {
    * and fetches the full product data via useProduct(id). Zustand is used
    * later for tracking selections *within* the configurator steps.
    */
+  const addRecentlyViewed = useRecentlyViewedStore((s) => s.addItem);
+
   const handleProductPress = useCallback(
     (product: Product) => {
+      // Record this product as recently viewed
+      addRecentlyViewed({
+        id: product.id,
+        type: "product",
+        name: product.name,
+        imageUrl: product.image_url,
+        price: product.base_price,
+      });
       router.push({
         pathname: "/configurator",
         params: { productId: product.id },
       });
     },
-    [router],
+    [router, addRecentlyViewed],
   );
 
   // --- Loading state ---

@@ -17,6 +17,7 @@ import FabricDetailModal from "../../src/features/catalog/components/FabricDetai
 import ColorFilterBar from "../../src/features/catalog/components/ColorFilterBar";
 import { useSession } from "../../src/hooks/useSession";
 import { Fabric } from "../../src/types";
+import { useRecentlyViewedStore } from "../../src/stores/recentlyViewedStore";
 
 /**
  * Fabrics catalog screen — browsable grid of available fabrics.
@@ -120,9 +121,22 @@ export default function FabricsScreen() {
    * a new function reference is created on every render, causing every card to
    * re-render even if the data hasn't changed. useCallback memoizes the reference.
    */
-  const handleFabricPress = useCallback((fabric: Fabric) => {
-    setSelectedFabric(fabric);
-  }, []);
+  const addRecentlyViewed = useRecentlyViewedStore((s) => s.addItem);
+
+  const handleFabricPress = useCallback(
+    (fabric: Fabric) => {
+      setSelectedFabric(fabric);
+      // Record this fabric as recently viewed for the browse-to-purchase loop
+      addRecentlyViewed({
+        id: fabric.id,
+        type: "fabric",
+        name: fabric.name,
+        imageUrl: fabric.image_url,
+        price: fabric.price_per_meter,
+      });
+    },
+    [addRecentlyViewed],
+  );
 
   const handleCloseModal = useCallback(() => {
     setSelectedFabric(null);

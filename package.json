@@ -53,6 +53,7 @@
         "preset": "jest-expo",
         "testMatch": [
           "<rootDir>/src/features/**/*.test.tsx",
+          "<rootDir>/src/components/**/*.test.tsx",
           "<rootDir>/app/**/*.test.tsx"
         ],
         "transformIgnorePatterns": [

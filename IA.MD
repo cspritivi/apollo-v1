@@ -551,3 +551,104 @@ Branch determines the profile: `main` → preview, `release/*` → production.
 > We also set up branch protection requiring all three CI checks plus a PR
 > review before any merge to main. Combined with concurrency groups that
 > cancel stale runs, this gives us a pipeline that's both safe and efficient."
+
+---
+
+## Trust Signals Placement Strategy (FitGuaranteeBadge)
+
+### The Decision
+
+We built a `FitGuaranteeBadge` component with two variants — `compact` (icon + text
+for product cards) and `full` (banner with description for checkout/review screens).
+The full variant is placed right before the price breakdown on the configurator review
+and directly above the "Place Order" button on the cart screen.
+
+### Why This Matters
+
+Custom clothing is a $200-800+ commitment where customers can't try before buying.
+Research on conversion optimization shows that trust signals have measurably higher
+impact when placed near high-friction actions (checkout, configure) versus browse
+screens. We use two variants to balance visibility with screen real estate.
+
+### The Tradeoff
+
+Adding the badge to product cards slightly increases visual density. We chose a compact
+variant (just icon + text) to minimize noise while still planting the trust signal
+early in the discovery journey. The full banner is reserved for moments of decision.
+
+### What I'd Say in an Interview
+
+> "I designed the trust signal as a two-variant component placed at different
+> friction points. Compact badges on product cards plant the guarantee early
+> in the customer journey. Full banners on the review and checkout screens
+> reinforce it at the moment of highest purchase anxiety — right before they
+> commit money. The component includes a tappable modal with full policy details
+> so the signal doesn't feel like empty marketing."
+
+---
+
+## Recently Viewed Store Design (LRU with Deduplication)
+
+### The Decision
+
+We built a Zustand store with AsyncStorage persistence that tracks recently viewed
+fabrics and products. Items are ordered by most recently viewed, duplicates update
+the timestamp and move to front (dedup), and the list caps at 20 items with LRU
+eviction.
+
+### Why Zustand (Not React Query)
+
+Recently viewed is client-owned browsing history, not server data. It doesn't need
+caching, revalidation, or synchronization — just a local ordered list that persists
+across app restarts. This follows our state management philosophy: React Query for
+server state, Zustand for client state.
+
+### Why Store Display Data (Not Just IDs)
+
+We store enough to render a card (name, image, price) without re-fetching. Full
+Fabric/Product objects would bloat storage. If we stored only IDs, we'd need
+a query waterfall on every home screen render — fetch IDs, then batch-fetch items.
+The snapshot approach means the recently viewed row renders instantly from cache.
+
+### What I'd Say in an Interview
+
+> "The recently viewed store is an LRU cache with deduplication — viewing an item
+> moves it to the front instead of creating a duplicate. We store just enough
+> display data (name, image, price) to render cards without re-fetching, which
+> means the section loads instantly from AsyncStorage. The 20-item cap keeps
+> storage lean while covering the typical browsing session."
+
+---
+
+## WhatsApp Support FAB with Contextual Deep Links
+
+### The Decision
+
+We added a floating action button on the configurator and order detail screens
+that opens WhatsApp with a pre-filled message containing screen-specific context
+(product name, order ID, order status).
+
+### Why WhatsApp (Not a Custom Chat)
+
+For a small tailoring business, WhatsApp is the highest-impact, lowest-effort
+support channel. No chatbot infrastructure, no ticket system, no maintenance cost.
+Customers already use WhatsApp daily, and the tailor likely already uses it for
+business communication. The implementation is just `Linking.openURL` with a
+pre-filled `wa.me` URL.
+
+### Why Contextual Prefill
+
+Context-aware prefill saves the customer from explaining their situation. Instead
+of "Hi, I have a question" → "What's your order number?" → "What's the issue?",
+the tailor immediately sees "question about order #ABC123 (status: IN_PRODUCTION)"
+and can respond with relevant information.
+
+### What I'd Say in an Interview
+
+> "We chose WhatsApp because building a custom support system for a small business
+> would be over-engineering — the tailor already uses WhatsApp with customers.
+> The interesting part is the contextual deep link. Each screen passes its own
+> context (product being configured, order ID and status) so the pre-filled
+> message includes everything the tailor needs to help without back-and-forth.
+> We also handle the fallback gracefully — if WhatsApp isn't installed, we show
+> the phone number in an alert."

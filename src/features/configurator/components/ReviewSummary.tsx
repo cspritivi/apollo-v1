@@ -10,6 +10,7 @@ import {
 import { Product, Fabric, ProductOption } from "../../../types";
 import { calculatePrice } from "../../orders/utils/calculatePrice";
 import { formatOptionGroupTitle } from "./OptionStep";
+import FitGuaranteeBadge from "../../../components/FitGuaranteeBadge";
 
 /**
  * ReviewSummary — the final step of the configurator wizard.
@@ -211,6 +212,12 @@ export default function ReviewSummary({
           textAlignVertical="top"
           accessibilityLabel="Notes for tailor"
         />
+      </View>
+
+      {/* Fit guarantee — full banner placed right before price breakdown,
+          the moment of highest purchase anxiety in the configurator flow. */}
+      <View style={{ marginHorizontal: 16, marginBottom: 12 }}>
+        <FitGuaranteeBadge variant="full" />
       </View>
 
       {/* Price breakdown */}

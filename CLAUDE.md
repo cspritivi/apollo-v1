@@ -340,6 +340,11 @@ automated changelog generation. Interviewers recognise this pattern.
 [x] EAS Build + Dev Client migration (replaces Expo Go)
 [x] CI/CD Pipeline — GitHub Actions + EAS Build (#35)
 
+[x] Tab bar icons (#18)
+[x] Fit guarantee badge / trust signals (#29)
+[x] Recently viewed items tracking (#30)
+[x] WhatsApp support FAB (#27)
+
 All core features complete. Update this checklist as new features are added.
 
 ---
@@ -441,7 +446,9 @@ These unblock the majority of the feature roadmap.
    comments). CD runs on push to main/release (conditional: EAS Build for
    native changes, EAS Update OTA for JS-only). Fingerprint runtime
    versioning prevents incompatible OTA updates. Branch protection
-   requires all CI checks + PR review before merge.
+   requires all CI checks + PR review before merge. Android-only builds
+   by default — iOS requires Apple Developer Program enrollment ($99/yr).
+   `expo-updates` installed for OTA channel support.
 
 3. **Analytics (PostHog) + Crash Reporting (Sentry) (#36)** — No visibility
    into customer behavior or crashes. Sentry (`@sentry/react-native`) for

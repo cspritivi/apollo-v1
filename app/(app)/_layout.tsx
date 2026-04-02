@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import Toast from "react-native-toast-message";
 import { useCartStore } from "../../src/stores/cartStore";
@@ -68,6 +69,13 @@ export default function AppLayout() {
             tabBarLabel: "Home",
             tabBarAccessibilityLabel: "Home",
             headerShown: false,
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons
+                name={focused ? "home" : "home-outline"}
+                size={size}
+                color={color}
+              />
+            ),
           }}
         />
         <Tabs.Screen
@@ -76,6 +84,13 @@ export default function AppLayout() {
             title: "Fabrics",
             tabBarLabel: "Fabrics",
             tabBarAccessibilityLabel: "Fabrics",
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons
+                name={focused ? "color-palette" : "color-palette-outline"}
+                size={size}
+                color={color}
+              />
+            ),
           }}
         />
         <Tabs.Screen
@@ -85,6 +100,13 @@ export default function AppLayout() {
             tabBarLabel: "Products",
             tabBarAccessibilityLabel: "Products",
             headerShown: false,
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons
+                name={focused ? "shirt" : "shirt-outline"}
+                size={size}
+                color={color}
+              />
+            ),
           }}
         />
         <Tabs.Screen
@@ -94,6 +116,13 @@ export default function AppLayout() {
             tabBarLabel: "Cart",
             tabBarAccessibilityLabel: "Cart",
             tabBarBadge: cartItemCount > 0 ? cartItemCount : undefined,
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons
+                name={focused ? "cart" : "cart-outline"}
+                size={size}
+                color={color}
+              />
+            ),
           }}
         />
         {/* Order success is reached via router.replace after checkout —

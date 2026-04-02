@@ -24,6 +24,7 @@ import OptionStep, {
   formatOptionGroupTitle,
 } from "../../../src/features/configurator/components/OptionStep";
 import ReviewSummary from "../../../src/features/configurator/components/ReviewSummary";
+import SupportFAB from "../../../src/components/SupportFAB";
 
 /**
  * Configurator Screen — the multi-step product configuration wizard.
@@ -418,6 +419,14 @@ export default function ConfiguratorScreen() {
           onGoToStep={goToStep}
         />
       </View>
+
+      {/* WhatsApp support FAB — pre-filled with the product being configured */}
+      <SupportFAB
+        context={{
+          screen: "configurator",
+          productName: product?.name ?? "product",
+        }}
+      />
     </View>
   );
 }
