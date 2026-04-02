@@ -46,8 +46,8 @@ export default function FitGuaranteeBadge({
             <Text style={styles.fullTitle}>Perfect Fit Guaranteed</Text>
           </View>
           <Text style={styles.fullDescription}>
-            Not sure about fit? We guarantee it. Free alterations if it's not
-            perfect.
+            Not sure about fit? We guarantee it. Free alterations if it&apos;s
+            not perfect.
           </Text>
         </Pressable>
         <PolicyModal
@@ -122,8 +122,8 @@ function PolicyModal({
 
           <Text style={styles.modalParagraph}>
             Every garment we create is made to your exact measurements. If
-            something doesn't fit right, we'll alter it for free until you're
-            completely satisfied.
+            something doesn&apos;t fit right, we&apos;ll alter it for free until
+            you&apos;re completely satisfied.
           </Text>
 
           <View style={styles.bulletList}>
