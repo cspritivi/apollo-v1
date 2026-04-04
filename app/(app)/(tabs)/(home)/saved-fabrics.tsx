@@ -14,11 +14,11 @@ import {
   useSavedFabrics,
   useSaveFabric,
   useUnsaveFabric,
-} from "../../../src/features/catalog/hooks";
-import SavedFabricCard from "../../../src/features/catalog/components/SavedFabricCard";
-import FabricDetailModal from "../../../src/features/catalog/components/FabricDetailModal";
-import { useSession } from "../../../src/hooks/useSession";
-import { Fabric } from "../../../src/types";
+} from "../../../../src/features/catalog/hooks";
+import SavedFabricCard from "../../../../src/features/catalog/components/SavedFabricCard";
+import FabricDetailModal from "../../../../src/features/catalog/components/FabricDetailModal";
+import { useSession } from "../../../../src/hooks/useSession";
+import { Fabric } from "../../../../src/types";
 
 /**
  * Saved Fabrics screen — shows all fabrics the customer has bookmarked.

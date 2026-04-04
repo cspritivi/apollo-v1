@@ -13,7 +13,9 @@
     "build:preview": "eas build --profile preview --platform all",
     "build:production": "eas build --profile production --platform all",
     "lint": "eslint src/",
-    "test": "jest",
+    "test:logic": "jest -c jest.logic.config.js",
+    "test:components": "jest -c jest.components.config.js",
+    "test": "npm run test:logic && npm run test:components",
     "test:watch": "jest --watch",
     "prepare": "husky"
   },
@@ -25,42 +27,7 @@
         "lines": 70,
         "statements": 70
       }
-    },
-    "projects": [
-      {
-        "displayName": "logic",
-        "testMatch": [
-          "<rootDir>/src/stores/**/*.test.ts",
-          "<rootDir>/src/lib/**/*.test.ts",
-          "<rootDir>/src/hooks/**/*.test.ts",
-          "<rootDir>/src/features/**/*.test.ts"
-        ],
-        "testEnvironment": "node",
-        "transform": {
-          "^.+\\.tsx?$": [
-            "ts-jest",
-            {
-              "tsconfig": "tsconfig.json"
-            }
-          ]
-        },
-        "transformIgnorePatterns": [
-          "node_modules/(?!(zustand))"
-        ]
-      },
-      {
-        "displayName": "components",
-        "preset": "jest-expo",
-        "testMatch": [
-          "<rootDir>/src/features/**/*.test.tsx",
-          "<rootDir>/src/components/**/*.test.tsx",
-          "<rootDir>/app/**/*.test.tsx"
-        ],
-        "transformIgnorePatterns": [
-          "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|@testing-library|native-base|react-native-svg|zustand)"
-        ]
-      }
-    ]
+    }
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.1.2",

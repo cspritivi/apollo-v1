@@ -25,10 +25,10 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { useAlteration } from "../../../src/features/alterations/hooks";
-import AlterationStatusBadge from "../../../src/features/alterations/components/AlterationStatusBadge";
-import { formatDate } from "../../../src/features/orders/utils/formatDate";
-import { AlterationStatus } from "../../../src/types";
+import { useAlteration } from "../../../../src/features/alterations/hooks";
+import AlterationStatusBadge from "../../../../src/features/alterations/components/AlterationStatusBadge";
+import { formatDate } from "../../../../src/features/orders/utils/formatDate";
+import { AlterationStatus } from "../../../../src/types";
 
 export default function AlterationDetailScreen() {
   const { alterationId } = useLocalSearchParams<{ alterationId: string }>();

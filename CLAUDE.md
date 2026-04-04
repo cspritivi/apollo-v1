@@ -344,6 +344,7 @@ automated changelog generation. Interviewers recognise this pattern.
 [x] Fit guarantee badge / trust signals (#29)
 [x] Recently viewed items tracking (#30)
 [x] WhatsApp support FAB (#27)
+[x] Cart to header icon (#19) — Stack above tabs, persistent CartHeaderIcon
 
 All core features complete. Update this checklist as new features are added.
 
@@ -466,7 +467,7 @@ These unblock the majority of the feature roadmap.
 4. Tab icons (#18) — quick visual fix
 
 **Navigation restructure:**
-5. Cart to header (#19) — navigation change
+5. ~~Cart to header (#19)~~ ✅ Done. Stack above tabs pattern.
 6. Home/Profile restructure (#20) — bigger refactor, sets up the stage
 
 **Core features:**
