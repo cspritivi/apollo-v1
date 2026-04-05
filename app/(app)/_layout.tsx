@@ -1,5 +1,6 @@
 import { Stack } from "expo-router";
 import Toast from "react-native-toast-message";
+import { stackHeaderOptions } from "../../src/lib/headerConfig";
 
 /**
  * App Group Layout — Stack navigator wrapping the entire authenticated area.
@@ -18,6 +19,13 @@ import Toast from "react-native-toast-message";
  * 3. Back button returns to wherever the user was in the tabs
  * 4. Three tabs remain: Home, Fabrics, Products — no wasted space
  *
+ * HEADER STYLING:
+ * All header options come from src/lib/headerConfig.ts — the single source of
+ * truth for header appearance across the entire app. This Stack's screenOptions
+ * apply to cart and order-success; the (tabs) screen hides the Stack header and
+ * provides its own via the Tabs/nested Stack navigators (which also use the
+ * shared config).
+ *
  * INTERVIEW TALKING POINT:
  * "We restructured from a 4-tab layout to a 3-tab layout with cart as a
  * Stack screen above the tabs. This matches the Amazon/Nike pattern where
@@ -28,11 +36,7 @@ import Toast from "react-native-toast-message";
 export default function AppLayout() {
   return (
     <>
-      <Stack
-        screenOptions={{
-          headerTitleStyle: { fontWeight: "700" },
-        }}
-      >
+      <Stack screenOptions={stackHeaderOptions}>
         {/* Tabs group — provides its own headers, so we hide the Stack header */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 

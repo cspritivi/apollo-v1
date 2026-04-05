@@ -12,7 +12,7 @@
 #
 # FLOW:
 # Login → Products → Two-Piece Suit → configure all steps → Review
-# → "Add to Cart" → verify on Products tab → Cart tab → verify item
+# → "Add to Cart" → verify on Products tab → Cart (header icon) → verify item
 # appears with correct product name → cleanup (logout)
 #
 # PREREQUISITE:
@@ -136,8 +136,9 @@ appId: com.apollo.tailor
     timeout: 10000
 
 # ---- VERIFY CART ----
-# Navigate to the Cart tab
-- tapOn: "Cart"
+# Cart is a header icon (not a tab). After adding 1 item, the accessibility
+# label is "Cart, 1 items". Tap it to push the cart screen.
+- tapOn: "Cart, 1 items"
 
 # The cart should now show the item we just added
 - extendedWaitUntil:
@@ -165,7 +166,9 @@ appId: com.apollo.tailor
       text: "Your cart is empty"
     timeout: 5000
 
-# Navigate home and log out
+# Navigate back to tabs (cart is a Stack screen above the tab bar),
+# then go home and log out
+- tapOn: "Back"
 - tapOn: "Home"
 - tapOn: "Sign Out"
 - extendedWaitUntil:

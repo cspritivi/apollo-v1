@@ -13,7 +13,7 @@
 # FLOW:
 # Login → Products → configure Two-Piece Suit → "Add to Cart"
 # → Products → configure Dress Shirt → "Add to Cart"
-# → Cart tab → verify 2 items → "Place Order" → Order Success
+# → Cart (header icon) → verify 2 items → "Place Order" → Order Success
 # → cleanup (logout)
 #
 # PREREQUISITE:
@@ -222,7 +222,9 @@ appId: com.apollo.tailor
 # ===========================================================================
 # CART CHECKOUT
 # ===========================================================================
-- tapOn: "Cart"
+# Cart is a header icon (not a tab). After adding 2 items, the accessibility
+# label is "Cart, 2 items". Tap it to push the cart screen.
+- tapOn: "Cart, 2 items"
 
 # Verify both items are in the cart
 - extendedWaitUntil:

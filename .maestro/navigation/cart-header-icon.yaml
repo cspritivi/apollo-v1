@@ -1,0 +1,202 @@
+# ============================================================================
+# NAVIGATION — CART HEADER ICON
+#
+# Tests the persistent cart icon in the header: visibility across all tabs,
+# badge count, navigation to cart screen, and back navigation.
+#
+# WHY THIS TEST EXISTS:
+# Cart was moved from a tab to a header icon (#19). The icon must appear on
+# every screen, the badge must update when items are added, tapping it must
+# push the cart screen (with the tab bar hidden), and back must return to
+# the exact previous screen.
+#
+# FLOW:
+# Login → verify icon on Home → verify icon on Fabrics → verify icon on Products
+# → add item to cart → verify badge appears → tap icon → verify cart screen
+# → back → verify returned to Products → cleanup (remove item, logout)
+#
+# PREREQUISITE:
+# - Test user exists in Supabase Auth (cspritivi@gmail.com / test123456)
+# - Seed data loaded (products + product_options + fabrics)
+# ============================================================================
+appId: com.apollo.tailor
+
+---
+
+# ---- AUTHENTICATE ----
+- assertVisible: "Welcome Back"
+- tapOn: "Email"
+- inputText: "cspritivi@gmail.com"
+- tapOn: "Password"
+- inputText: "test123456"
+- tapOn: "Sign In"
+
+- tapOn:
+    text: "Not Now"
+    optional: true
+
+- extendedWaitUntil:
+    visible:
+      text: "Home"
+    timeout: 10000
+
+# ===========================================================================
+# VERIFY CART ICON ON ALL TABS (empty state — "Cart, empty")
+# ===========================================================================
+
+# Home tab — cart icon should be visible
+- assertVisible: "Cart, empty"
+
+# Fabrics tab
+- tapOn: "Fabrics"
+- extendedWaitUntil:
+    visible:
+      text: "Fabrics"
+    timeout: 5000
+- assertVisible: "Cart, empty"
+
+# Products tab
+- tapOn: "Products"
+- extendedWaitUntil:
+    visible:
+      text: "Two-Piece Suit.*"
+    timeout: 10000
+- assertVisible: "Cart, empty"
+
+# ===========================================================================
+# TAP CART ICON → NAVIGATE TO EMPTY CART → BACK
+# ===========================================================================
+- tapOn: "Cart, empty"
+
+- extendedWaitUntil:
+    visible:
+      text: "Your cart is empty"
+    timeout: 5000
+
+# Back should return to Products (the screen we came from)
+- tapOn: "Back"
+
+- extendedWaitUntil:
+    visible:
+      text: "Two-Piece Suit.*"
+    timeout: 5000
+
+# ===========================================================================
+# ADD ITEM → VERIFY BADGE UPDATES
+# ===========================================================================
+- tapOn:
+    text: "Two-Piece Suit.*"
+
+# Fabric
+- extendedWaitUntil:
+    visible:
+      text: "Choose Fabric"
+    timeout: 10000
+- tapOn:
+    text: "Black Wool Crepe.*"
+- tapOn: "Next"
+
+# Steps 1-5: select first option on each step
+- extendedWaitUntil:
+    visible:
+      text: "Choose.*"
+    timeout: 5000
+- tapOn:
+    id: "option-card-0"
+- tapOn: "Next"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose.*"
+    timeout: 5000
+- tapOn:
+    id: "option-card-0"
+- tapOn: "Next"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose.*"
+    timeout: 5000
+- tapOn:
+    id: "option-card-0"
+- tapOn: "Next"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose.*"
+    timeout: 5000
+- tapOn:
+    id: "option-card-0"
+- tapOn: "Next"
+
+- extendedWaitUntil:
+    visible:
+      text: "Choose.*"
+    timeout: 5000
+- tapOn:
+    id: "option-card-0"
+- tapOn: "Next"
+
+# Review → Add to Cart
+- extendedWaitUntil:
+    visible:
+      text: "Review Your Configuration"
+    timeout: 5000
+- tapOn: "Add to cart"
+
+# Back on Products — badge should now show 1 item
+- extendedWaitUntil:
+    visible:
+      text: "Two-Piece Suit.*"
+    timeout: 10000
+
+- assertVisible: "Cart, 1 items"
+
+# ===========================================================================
+# TAP BADGE → CART SCREEN → VERIFY ITEM → BACK NAVIGATION
+# ===========================================================================
+- tapOn: "Cart, 1 items"
+
+- extendedWaitUntil:
+    visible:
+      text: "Two-Piece Suit"
+    timeout: 5000
+
+- assertVisible: "Place Order"
+
+# Back from cart returns to Products (not Home or Fabrics)
+- tapOn: "Back"
+
+- extendedWaitUntil:
+    visible:
+      text: "Two-Piece Suit.*"
+    timeout: 5000
+
+# Verify tab bar is visible again after returning from cart
+- assertVisible: "Home"
+- assertVisible: "Fabrics"
+
+# ===========================================================================
+# CLEANUP — remove item from cart and logout
+# ===========================================================================
+- tapOn: "Cart, 1 items"
+
+- extendedWaitUntil:
+    visible:
+      text: "Two-Piece Suit"
+    timeout: 5000
+
+- tapOn: "Remove Two-Piece Suit from cart"
+
+- extendedWaitUntil:
+    visible:
+      text: "Your cart is empty"
+    timeout: 5000
+
+- tapOn: "Back"
+- tapOn: "Home"
+- tapOn: "Sign Out"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome Back"
+    timeout: 10000

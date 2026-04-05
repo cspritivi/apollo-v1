@@ -131,7 +131,9 @@ appId: com.apollo.tailor
     timeout: 10000
 
 # ---- GO TO CART ----
-- tapOn: "Cart"
+# Cart is a header icon (not a tab). After adding 1 item, the accessibility
+# label is "Cart, 1 items". Tap it to push the cart screen.
+- tapOn: "Cart, 1 items"
 
 # Verify item is in the cart
 - extendedWaitUntil:

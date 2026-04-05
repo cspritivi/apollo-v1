@@ -1,5 +1,6 @@
 import { Stack } from "expo-router";
 import CartHeaderIcon from "../../../../src/components/CartHeaderIcon";
+import { stackHeaderOptions } from "../../../../src/lib/headerConfig";
 
 /**
  * Home Stack Layout — nested Stack navigator inside the Home tab.
@@ -23,6 +24,9 @@ import CartHeaderIcon from "../../../../src/components/CartHeaderIcon";
  * canonical source of truth — this inclusion is required only because we
  * override the header configuration.
  *
+ * HEADER STYLING:
+ * All visual options come from src/lib/headerConfig.ts (shared config).
+ *
  * INTERVIEW TALKING POINT:
  * "Each tab has its own Stack navigator, so navigation state is isolated per tab.
  * Pushing Order Detail in the Home tab doesn't affect the Products or Fabrics tabs.
@@ -37,11 +41,7 @@ export default function HomeLayout() {
   return (
     <Stack
       screenOptions={{
-        headerTitleStyle: { fontWeight: "700" },
-        // Override the default iOS back button label (which shows the previous
-        // screen's title) with a consistent "Back" label. This avoids coupling
-        // E2E tests to specific screen titles and keeps the header clean.
-        headerBackTitle: "Back",
+        ...stackHeaderOptions,
         // Cart icon — inherited from Tabs intent, required because this Stack
         // provides its own header (tab-level headerShown: false)
         headerRight: CartHeaderRight,

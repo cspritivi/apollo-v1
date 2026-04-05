@@ -1,5 +1,6 @@
 import { Stack } from "expo-router";
 import CartHeaderIcon from "../../../../src/components/CartHeaderIcon";
+import { stackHeaderOptions } from "../../../../src/lib/headerConfig";
 
 /**
  * Products Stack Layout — nested Stack navigator inside the Products tab.
@@ -19,6 +20,9 @@ import CartHeaderIcon from "../../../../src/components/CartHeaderIcon";
  * include headerRight to carry the cart icon forward. The Tabs layout is the
  * canonical source of truth — this inclusion is required only because we
  * override the header configuration.
+ *
+ * HEADER STYLING:
+ * All visual options come from src/lib/headerConfig.ts (shared config).
  */
 
 // Stable reference — avoids re-creating headerRight on every render
@@ -28,8 +32,7 @@ export default function ProductsLayout() {
   return (
     <Stack
       screenOptions={{
-        headerTitleStyle: { fontWeight: "700" },
-        headerBackTitle: "Back",
+        ...stackHeaderOptions,
         // Cart icon — inherited from Tabs intent, required because this Stack
         // provides its own header (tab-level headerShown: false)
         headerRight: CartHeaderRight,
