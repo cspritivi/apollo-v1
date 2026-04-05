@@ -8,7 +8,7 @@
  */
 
 import { View, Text, StyleSheet } from "react-native";
-import { OrderStatus } from "../../../types";
+import { OrderStatus } from "@/types";
 
 // Status → display label and color mapping.
 // Exported so StatusTimeline can reuse the same colors — single source of truth.

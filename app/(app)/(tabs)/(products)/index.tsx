@@ -7,10 +7,10 @@ import {
   StyleSheet,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useProducts } from "../../../../src/features/catalog/hooks";
-import ProductCard from "../../../../src/features/catalog/components/ProductCard";
-import { Product } from "../../../../src/types";
-import { useRecentlyViewedStore } from "../../../../src/stores/recentlyViewedStore";
+import { useProducts } from "@/features/catalog/hooks";
+import ProductCard from "@/features/catalog/components/ProductCard";
+import { Product } from "@/types";
+import { useRecentlyViewedStore } from "@/stores/recentlyViewedStore";
 
 /**
  * Products catalog screen — browsable grid of available product types.

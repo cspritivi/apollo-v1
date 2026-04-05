@@ -26,8 +26,8 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Product, Fabric, ProductOption } from "../types";
-import { calculatePrice } from "../features/orders/utils/calculatePrice";
+import { Product, Fabric, ProductOption } from "@/types";
+import { calculatePrice } from "@/features/orders/utils/calculatePrice";
 
 // ============================================================================
 // TYPES

@@ -1,4 +1,7 @@
+const base = require("./jest.base.config");
+
 module.exports = {
+  ...base,
   displayName: "components",
   preset: "jest-expo",
   testMatch: [

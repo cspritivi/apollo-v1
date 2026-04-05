@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { openWhatsAppSupport, SupportContext } from "../lib/support";
+import { openWhatsAppSupport, SupportContext } from "@/lib/support";
 
 /**
  * SupportFAB — floating action button for WhatsApp support.

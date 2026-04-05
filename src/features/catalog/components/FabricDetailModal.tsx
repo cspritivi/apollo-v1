@@ -9,7 +9,7 @@ import {
   Modal,
   StyleSheet,
 } from "react-native";
-import { Fabric } from "../../../types";
+import { Fabric } from "@/types";
 
 /**
  * Props for the FabricDetailModal.

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Session } from "@supabase/supabase-js";
-import { supabase } from "../lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 /**
  * Custom hook that tracks the current Supabase auth session.

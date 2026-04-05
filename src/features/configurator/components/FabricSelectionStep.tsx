@@ -7,9 +7,9 @@ import {
   Pressable,
   StyleSheet,
 } from "react-native";
-import { Fabric } from "../../../types";
-import { useFabrics } from "../../catalog/hooks";
-import ColorFilterBar from "../../catalog/components/ColorFilterBar";
+import { Fabric } from "@/types";
+import { useFabrics } from "@/features/catalog/hooks";
+import ColorFilterBar from "@/features/catalog/components/ColorFilterBar";
 
 /**
  * FabricSelectionStep — the first step of the configurator wizard.

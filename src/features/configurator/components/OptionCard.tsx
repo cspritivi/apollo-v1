@@ -1,5 +1,5 @@
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
-import { ProductOption } from "../../../types";
+import { ProductOption } from "@/types";
 
 /**
  * OptionCard — displays a single configurable option within an option group.

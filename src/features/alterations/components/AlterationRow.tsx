@@ -10,9 +10,9 @@
  */
 
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import { Alteration } from "../../../types";
-import AlterationStatusBadge from "./AlterationStatusBadge";
-import { formatDate } from "../../orders/utils/formatDate";
+import { Alteration } from "@/types";
+import AlterationStatusBadge from "@/features/alterations/components/AlterationStatusBadge";
+import { formatDate } from "@/features/orders/utils/formatDate";
 
 interface AlterationRowProps {
   alteration: Alteration;

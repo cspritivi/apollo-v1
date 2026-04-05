@@ -12,9 +12,9 @@
  */
 
 import { View, Text, StyleSheet } from "react-native";
-import { StatusHistoryEntry, OrderStatus } from "../../../types";
-import { STATUS_CONFIG } from "./StatusBadge";
-import { formatDateTime } from "../utils/formatDate";
+import { StatusHistoryEntry, OrderStatus } from "@/types";
+import { STATUS_CONFIG } from "@/features/orders/components/StatusBadge";
+import { formatDateTime } from "@/features/orders/utils/formatDate";
 
 interface StatusTimelineProps {
   statusHistory: StatusHistoryEntry[];

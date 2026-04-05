@@ -19,7 +19,7 @@
  */
 
 import { useConfiguratorStore } from "../configuratorStore";
-import { Product, Fabric, ProductOption } from "../../types";
+import { Product, Fabric, ProductOption } from "@/types";
 
 // ============================================================================
 // TEST FIXTURES

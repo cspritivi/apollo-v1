@@ -7,10 +7,10 @@ import {
   Pressable,
   StyleSheet,
 } from "react-native";
-import { Product, Fabric, ProductOption } from "../../../types";
-import { calculatePrice } from "../../orders/utils/calculatePrice";
-import { formatOptionGroupTitle } from "./OptionStep";
-import FitGuaranteeBadge from "../../../components/FitGuaranteeBadge";
+import { Product, Fabric, ProductOption } from "@/types";
+import { calculatePrice } from "@/features/orders/utils/calculatePrice";
+import { formatOptionGroupTitle } from "@/features/configurator/components/OptionStep";
+import FitGuaranteeBadge from "@/components/FitGuaranteeBadge";
 
 /**
  * ReviewSummary — the final step of the configurator wizard.

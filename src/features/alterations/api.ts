@@ -12,8 +12,8 @@
  * alteration-related in one place.
  */
 
-import { supabase } from "../../lib/supabase";
-import { Alteration, AlterationStatus } from "../../types";
+import { supabase } from "@/lib/supabase";
+import { Alteration, AlterationStatus } from "@/types";
 
 // ============================================================================
 // TYPES

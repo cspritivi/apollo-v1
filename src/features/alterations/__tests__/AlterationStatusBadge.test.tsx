@@ -9,7 +9,7 @@
 import React from "react";
 import { render } from "@testing-library/react-native";
 import AlterationStatusBadge from "../components/AlterationStatusBadge";
-import { AlterationStatus } from "../../../types";
+import { AlterationStatus } from "@/types";
 
 describe("AlterationStatusBadge", () => {
   it("renders 'Requested' for REQUESTED status", () => {

@@ -8,7 +8,7 @@
 import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
 import AlterationRow from "../components/AlterationRow";
-import { Alteration, AlterationStatus } from "../../../types";
+import { Alteration, AlterationStatus } from "@/types";
 
 // ============================================================================
 // FIXTURES

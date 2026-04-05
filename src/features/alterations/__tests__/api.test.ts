@@ -12,7 +12,7 @@
  * .insert() / .select() / .eq(). Same approach as orderCreation.test.ts.
  */
 
-import { AlterationStatus } from "../../../types";
+import { AlterationStatus } from "@/types";
 
 // ============================================================================
 // SUPABASE MOCK

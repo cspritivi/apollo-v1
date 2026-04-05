@@ -1,7 +1,7 @@
 import { Pressable, View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
-import { useCartStore } from "../stores/cartStore";
+import { useCartStore } from "@/stores/cartStore";
 
 /**
  * CartHeaderIcon — persistent cart icon with badge for the header.

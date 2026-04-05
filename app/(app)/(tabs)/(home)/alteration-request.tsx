@@ -28,9 +28,9 @@ import {
   Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useSession } from "../../../../src/hooks/useSession";
-import { useCreateAlteration } from "../../../../src/features/alterations/hooks";
-import AlterationRequestForm from "../../../../src/features/alterations/components/AlterationRequestForm";
+import { useSession } from "@/hooks/useSession";
+import { useCreateAlteration } from "@/features/alterations/hooks";
+import AlterationRequestForm from "@/features/alterations/components/AlterationRequestForm";
 
 export default function AlterationRequestScreen() {
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
