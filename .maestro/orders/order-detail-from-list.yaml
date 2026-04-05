@@ -43,13 +43,6 @@ appId: com.apollo.tailor
     text: "Not Now"
     optional: true
 
-# Tap Home tab — app may not land on Home by default after login
-- tapOn: "Home"
-
-- extendedWaitUntil:
-    visible:
-      text: "Home"
-    timeout: 10000
 
 # ---- CONFIGURE AND PLACE ORDER (EXPRESS CHECKOUT) ----
 # Place an order so we guarantee at least one exists in the list

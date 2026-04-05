@@ -35,13 +35,6 @@ appId: com.apollo.tailor
     text: "Not Now"
     optional: true
 
-# Tap Home tab — app may not land on Home by default after login
-- tapOn: "Home"
-
-- extendedWaitUntil:
-    visible:
-      text: "Home"
-    timeout: 10000
 
 # ===========================================================================
 # VERIFY CART ICON ON ALL TABS (empty state — "Cart, empty")
@@ -163,6 +156,13 @@ appId: com.apollo.tailor
 # ===========================================================================
 # TAP BADGE → CART SCREEN → VERIFY ITEM → BACK NAVIGATION
 # ===========================================================================
+# Wait for the "Added to cart" toast to dismiss (visibilityTime: 2000ms).
+# The toast renders above the header and blocks taps on the cart icon.
+- extendedWaitUntil:
+    notVisible:
+      text: "Added to cart"
+    timeout: 5000
+
 - tapOn:
     id: "cart-header-icon"
 
@@ -189,7 +189,7 @@ appId: com.apollo.tailor
 # CLEANUP — remove item from cart and logout
 # ===========================================================================
 - tapOn:
-    id: "cart-header-icon"
+    text: "Cart, 1 items"
 
 - extendedWaitUntil:
     visible:

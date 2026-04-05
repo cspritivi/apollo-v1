@@ -36,13 +36,6 @@ appId: com.apollo.tailor
     text: "Not Now"
     optional: true
 
-# Tap Home tab — app may not land on Home by default after login
-- tapOn: "Home"
-
-- extendedWaitUntil:
-    visible:
-      text: "Home"
-    timeout: 10000
 
 # ===========================================================================
 # ITEM 1: TWO-PIECE SUIT
@@ -227,6 +220,12 @@ appId: com.apollo.tailor
 # ===========================================================================
 # Cart is a header icon (not a tab). After adding 2 items, the accessibility
 # label is "Cart, 2 items". Tap it to push the cart screen.
+# Wait for "Added to cart" toast to dismiss — it overlays the header
+- extendedWaitUntil:
+    notVisible:
+      text: "Added to cart"
+    timeout: 5000
+
 - tapOn:
     id: "cart-header-icon"
 

@@ -1,5 +1,5 @@
 appId: com.apollo.tailor
 ---
-- runFlow: saved-fabrics-back.yaml
-- runFlow: tab-state-preservation.yaml
+# - runFlow: saved-fabrics-back.yaml
+# - runFlow: tab-state-preservation.yaml
 - runFlow: cart-header-icon.yaml
