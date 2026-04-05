@@ -32,6 +32,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
      * its own unique identifier.
      */
     bundleIdentifier: "com.apollo.tailor",
+    /**
+     * Declares the app only uses standard/exempt encryption (HTTPS).
+     * Required by Apple for App Store and TestFlight submissions.
+     * Without this, EAS Build prompts interactively on every build.
+     */
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+    },
   },
   android: {
     /**

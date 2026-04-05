@@ -54,11 +54,14 @@ jobs:
           node-version-file: ".nvmrc"
           cache: "npm"
       - run: npm ci
-      - run: npm test -- --coverage
+      - run: npm run test:logic -- --coverage
+      - run: npm run test:components -- --coverage --forceExit
       # Post coverage summary as a PR comment.
       # Uses GITHUB_TOKEN (automatically available) — no external service needed.
+      # Runs against the components config since that covers UI + integration tests.
       - uses: ArtiomTr/jest-coverage-report-action@v2
         if: always()
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           skip-step: install
+          test-script: npx jest -c jest.components.config.js --forceExit

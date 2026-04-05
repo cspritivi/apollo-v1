@@ -652,3 +652,69 @@ and can respond with relevant information.
 > message includes everything the tailor needs to help without back-and-forth.
 > We also handle the fallback gracefully — if WhatsApp isn't installed, we show
 > the phone number in an alert."
+
+---
+
+## Cart as Header Icon — Stack Above Tabs Pattern
+
+### The Context
+
+The cart was originally a 4th tab in the bottom tab bar. This wasted a tab
+slot on a screen customers visit infrequently (only at checkout), and the
+cart wasn't visible when browsing other tabs.
+
+### The Decision
+
+Move cart from a tab to a persistent header icon with a badge count, accessible
+from every screen. The navigation architecture changed from a flat Tabs layout
+to a Stack wrapping a (tabs) route group:
+
+```
+(app)/_layout.tsx → Stack
+  ├── (tabs)/_layout.tsx → Tabs (Home, Fabrics, Products)
+  ├── cart.tsx → Stack screen (pushed on top of tabs)
+  └── order-success.tsx → Stack screen (replaces cart after checkout)
+```
+
+### Why This Over Alternatives
+
+**Option 1: Keep cart as a hidden tab (href: null)**
+Simplest change — just hide the cart tab and add a header icon that navigates
+to it. But this means the tab bar stays visible on the cart screen, which breaks
+the checkout focus. Users could tap other tabs mid-checkout.
+
+**Option 2: Modal presentation**
+Cart slides up from the bottom. Polished feel (like Nike/ASOS), but complicates
+the checkout flow — order-success would need to transition from a modal context,
+and back navigation behavior is less predictable.
+
+**Option 3 (chosen): Stack above tabs**
+Cart pushes on top of the entire tab bar. Tab bar disappears, giving checkout
+full focus. Standard slide-from-right animation. Back button returns to the
+exact previous screen. This is the pattern Amazon and Shopify use.
+
+### Key Technical Details
+
+- **router.navigate() not push():** Prevents duplicate cart screens in the stack.
+  Cart state lives in Zustand, not screen params, so there's no benefit to fresh
+  instances.
+- **Edge re-entry guard:** CartHeaderIcon checks `usePathname() === '/cart'` and
+  skips navigation when already on cart. Double-guarded with navigate()'s inherent
+  idempotency.
+- **Performance:** Subscribes to `s.items.length` (a primitive number) rather than
+  full cart state. Zustand's shallow equality means re-renders only when count changes.
+- **Stable headerRight:** Module-level `CartHeaderRight` component avoids recreating
+  the function reference on every render.
+- **Single source of truth:** Tabs layout defines `headerRight: CartHeaderRight` as
+  the canonical injection point. Nested Stacks only include it because they override
+  the header configuration (headerShown: false at the tab level).
+
+### What to Say in an Interview
+
+> "We restructured from a 4-tab layout to 3 tabs with cart as a Stack screen above
+> the tab navigator. The (tabs) route group keeps URLs clean while giving us a parent
+> Stack that can push cart and order-success on top of the entire tab bar. The cart
+> icon uses three optimization techniques: a Zustand primitive selector for minimal
+> re-renders, router.navigate() for idempotent navigation, and a pathname-based guard
+> to prevent re-entry. This matches the Amazon/Nike pattern where cart is always
+> accessible but doesn't waste a tab slot."

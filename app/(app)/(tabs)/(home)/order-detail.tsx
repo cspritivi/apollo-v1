@@ -20,15 +20,15 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useOrder } from "../../../src/features/orders/hooks";
-import { useAlterationsByOrder } from "../../../src/features/alterations/hooks";
-import AlterationRow from "../../../src/features/alterations/components/AlterationRow";
-import { OrderStatus, Alteration } from "../../../src/types";
-import StatusBadge from "../../../src/features/orders/components/StatusBadge";
-import StatusTimeline from "../../../src/features/orders/components/StatusTimeline";
-import { formatDate } from "../../../src/features/orders/utils/formatDate";
-import { formatOptionGroupTitle } from "../../../src/features/configurator/components/OptionStep";
-import SupportFAB from "../../../src/components/SupportFAB";
+import { useOrder } from "../../../../src/features/orders/hooks";
+import { useAlterationsByOrder } from "../../../../src/features/alterations/hooks";
+import AlterationRow from "../../../../src/features/alterations/components/AlterationRow";
+import { OrderStatus, Alteration } from "../../../../src/types";
+import StatusBadge from "../../../../src/features/orders/components/StatusBadge";
+import StatusTimeline from "../../../../src/features/orders/components/StatusTimeline";
+import { formatDate } from "../../../../src/features/orders/utils/formatDate";
+import { formatOptionGroupTitle } from "../../../../src/features/configurator/components/OptionStep";
+import SupportFAB from "../../../../src/components/SupportFAB";
 
 export default function OrderDetailScreen() {
   const { orderId } = useLocalSearchParams<{

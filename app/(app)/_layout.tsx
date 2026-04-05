@@ -1,143 +1,68 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
+import { Stack } from "expo-router";
 import Toast from "react-native-toast-message";
-import { useCartStore } from "../../src/stores/cartStore";
+import { stackHeaderOptions } from "../../src/lib/headerConfig";
 
 /**
- * App Group Layout — tab-based navigation for authenticated screens.
+ * App Group Layout — Stack navigator wrapping the entire authenticated area.
  *
- * ARCHITECTURE: TABS + NESTED STACKS
- * Each tab that has push/pop flows gets its own Stack navigator (defined in
- * a _layout.tsx inside its route group folder). This gives each tab an
- * independent navigation stack with automatic back button behavior.
+ * ARCHITECTURE: ROOT STACK ABOVE TABS
+ * This Stack contains three screens:
+ * - (tabs): The tab bar with Home, Fabrics, Products
+ * - cart: Pushed on top of tabs (tab bar disappears)
+ * - order-success: Replaces cart after checkout
  *
- * - (home)/ → Stack: Home dashboard, Orders list, Order Detail, Saved Fabrics
- * - fabrics → plain tab screen (no sub-navigation)
- * - (products)/ → Stack: Products catalog, Configurator
- * - cart → plain tab screen (no sub-navigation)
- * - order-success → hidden screen (reached via router.replace after checkout)
+ * WHY A STACK ABOVE TABS:
+ * Cart was previously a tab, wasting a slot on a screen visited only at checkout.
+ * Moving it to a Stack screen above the tabs means:
+ * 1. Cart is accessible from any screen via a header icon
+ * 2. Tab bar hides when cart is open (standard push behavior)
+ * 3. Back button returns to wherever the user was in the tabs
+ * 4. Three tabs remain: Home, Fabrics, Products — no wasted space
  *
- * WHY NESTED STACKS (PREVIOUSLY FLAT TABS):
- * The previous flat approach used href: null to hide pushed screens (orders,
- * order-detail, configurator) inside the tab bar. This broke back navigation —
- * router.back() didn't maintain a proper stack, so Home → Orders → Order Detail
- * → Back would skip Orders and jump to Home. The workaround was a fragile `from`
- * search param on order-detail. Nested Stacks fix this entirely — each stack
- * manages its own history and back buttons work automatically.
- *
- * IMPORTANT: Tab screens that contain a nested Stack must set headerShown: false
- * to avoid double headers (one from Tabs, one from the nested Stack).
+ * HEADER STYLING:
+ * All header options come from src/lib/headerConfig.ts — the single source of
+ * truth for header appearance across the entire app. This Stack's screenOptions
+ * apply to cart and order-success; the (tabs) screen hides the Stack header and
+ * provides its own via the Tabs/nested Stack navigators (which also use the
+ * shared config).
  *
  * INTERVIEW TALKING POINT:
- * "We migrated from flat tabs with hidden screens to tabs with nested stacks.
- * The flat approach broke back navigation and required manual workarounds.
- * Nested stacks give each tab its own navigation history — the standard pattern
- * used in production React Native apps like Airbnb and Instagram."
+ * "We restructured from a 4-tab layout to a 3-tab layout with cart as a
+ * Stack screen above the tabs. This matches the Amazon/Nike pattern where
+ * the cart is a header icon, not a tab. The (tabs) route group keeps URLs
+ * clean — /fabrics not /tabs/fabrics — while giving us a Stack navigator
+ * that can push cart and order-success on top of the entire tab bar."
  */
 export default function AppLayout() {
-  // Cart badge — shows item count on the Cart tab when > 0
-  const cartItemCount = useCartStore((s) => s.itemCount());
-
   return (
     <>
-      <Tabs
-        screenOptions={{
-          headerShown: true,
-          tabBarActiveTintColor: "#4f46e5",
-          tabBarInactiveTintColor: "#9ca3af",
-          tabBarLabelStyle: {
-            fontSize: 12,
-            fontWeight: "600",
-          },
-          headerTitleStyle: {
-            fontWeight: "700",
-          },
-        }}
-      >
-        {/**
-         * Tab order is defined by the order of <Tabs.Screen> declarations here,
-         * NOT by the file names. This gives us explicit control over tab ordering.
-         *
-         * Tabs with nested Stacks ((home), (products)) set headerShown: false
-         * because their Stack _layout.tsx provides the header. Without this,
-         * you'd see two stacked headers.
-         */}
-        <Tabs.Screen
-          name="(home)"
-          options={{
-            title: "Home",
-            tabBarLabel: "Home",
-            tabBarAccessibilityLabel: "Home",
-            headerShown: false,
-            tabBarIcon: ({ color, size, focused }) => (
-              <Ionicons
-                name={focused ? "home" : "home-outline"}
-                size={size}
-                color={color}
-              />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="fabrics"
-          options={{
-            title: "Fabrics",
-            tabBarLabel: "Fabrics",
-            tabBarAccessibilityLabel: "Fabrics",
-            tabBarIcon: ({ color, size, focused }) => (
-              <Ionicons
-                name={focused ? "color-palette" : "color-palette-outline"}
-                size={size}
-                color={color}
-              />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="(products)"
-          options={{
-            title: "Products",
-            tabBarLabel: "Products",
-            tabBarAccessibilityLabel: "Products",
-            headerShown: false,
-            tabBarIcon: ({ color, size, focused }) => (
-              <Ionicons
-                name={focused ? "shirt" : "shirt-outline"}
-                size={size}
-                color={color}
-              />
-            ),
-          }}
-        />
-        <Tabs.Screen
+      <Stack screenOptions={stackHeaderOptions}>
+        {/* Tabs group — provides its own headers, so we hide the Stack header */}
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+
+        {/* Cart — pushed on top of tabs from any screen via CartHeaderIcon.
+            headerRight is null to hide the cart icon during checkout. */}
+        <Stack.Screen
           name="cart"
           options={{
             title: "Cart",
-            tabBarLabel: "Cart",
-            tabBarAccessibilityLabel: "Cart",
-            tabBarBadge: cartItemCount > 0 ? cartItemCount : undefined,
-            tabBarIcon: ({ color, size, focused }) => (
-              <Ionicons
-                name={focused ? "cart" : "cart-outline"}
-                size={size}
-                color={color}
-              />
-            ),
+            headerRight: () => null,
           }}
         />
-        {/* Order success is reached via router.replace after checkout —
-          hidden from the tab bar since it's a post-action screen, not
-          a browseable section. */}
-        <Tabs.Screen
+
+        {/* Order success — replaces cart after checkout via router.replace().
+            headerRight is null to hide the cart icon during checkout. */}
+        <Stack.Screen
           name="order-success"
           options={{
             title: "Order Placed",
-            href: null,
+            headerRight: () => null,
           }}
         />
-      </Tabs>
+      </Stack>
+
       {/* Toast overlay — renders above all screens so toasts are visible
-        regardless of which tab/screen is active. */}
+          regardless of which tab/screen is active. */}
       <Toast />
     </>
   );

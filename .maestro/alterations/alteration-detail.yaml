@@ -37,10 +37,8 @@ appId: com.apollo.tailor
     text: "Not Now"
     optional: true
 
-- extendedWaitUntil:
-    visible:
-      text: "Home"
-    timeout: 10000
+- tapOn: "Home"
+
 
 # ---- NAVIGATE TO DELIVERED ORDER ----
 - scrollUntilVisible:

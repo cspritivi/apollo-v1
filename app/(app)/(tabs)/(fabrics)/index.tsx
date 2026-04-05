@@ -11,13 +11,13 @@ import {
   useSavedFabrics,
   useSaveFabric,
   useUnsaveFabric,
-} from "../../src/features/catalog/hooks";
-import FabricCard from "../../src/features/catalog/components/FabricCard";
-import FabricDetailModal from "../../src/features/catalog/components/FabricDetailModal";
-import ColorFilterBar from "../../src/features/catalog/components/ColorFilterBar";
-import { useSession } from "../../src/hooks/useSession";
-import { Fabric } from "../../src/types";
-import { useRecentlyViewedStore } from "../../src/stores/recentlyViewedStore";
+} from "../../../../src/features/catalog/hooks";
+import FabricCard from "../../../../src/features/catalog/components/FabricCard";
+import FabricDetailModal from "../../../../src/features/catalog/components/FabricDetailModal";
+import ColorFilterBar from "../../../../src/features/catalog/components/ColorFilterBar";
+import { useSession } from "../../../../src/hooks/useSession";
+import { Fabric } from "../../../../src/types";
+import { useRecentlyViewedStore } from "../../../../src/stores/recentlyViewedStore";
 
 /**
  * Fabrics catalog screen — browsable grid of available fabrics.

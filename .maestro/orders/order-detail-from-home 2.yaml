@@ -37,10 +37,6 @@ appId: com.apollo.tailor
     text: "Not Now"
     optional: true
 
-- extendedWaitUntil:
-    visible:
-      text: "Home"
-    timeout: 10000
 
 # ---- CONFIGURE AND PLACE ORDER (EXPRESS CHECKOUT) ----
 - tapOn: "Products"

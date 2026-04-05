@@ -34,10 +34,6 @@ appId: com.apollo.tailor
     text: "Not Now"
     optional: true
 
-- extendedWaitUntil:
-    visible:
-      text: "Home"
-    timeout: 10000
 
 # ---- CONFIGURE AND ADD TO CART ----
 - tapOn: "Products"
@@ -131,7 +127,16 @@ appId: com.apollo.tailor
     timeout: 10000
 
 # ---- GO TO CART ----
-- tapOn: "Cart"
+# Cart is a header icon (not a tab). After adding 1 item, the accessibility
+# label is "Cart, 1 items". Tap it to push the cart screen.
+# Wait for "Added to cart" toast to dismiss — it overlays the header
+- extendedWaitUntil:
+    notVisible:
+      text: "Added to cart"
+    timeout: 5000
+
+- tapOn:
+    id: "cart-header-icon"
 
 # Verify item is in the cart
 - extendedWaitUntil:
