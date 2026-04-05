@@ -227,7 +227,8 @@ appId: com.apollo.tailor
 # ===========================================================================
 # Cart is a header icon (not a tab). After adding 2 items, the accessibility
 # label is "Cart, 2 items". Tap it to push the cart screen.
-- tapOn: "Cart, 2 items"
+- tapOn:
+    id: "cart-header-icon"
 
 # Verify both items are in the cart
 - extendedWaitUntil:

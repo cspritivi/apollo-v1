@@ -48,7 +48,8 @@ appId: com.apollo.tailor
 # ===========================================================================
 
 # Home tab — cart icon should be visible
-- assertVisible: "Cart, empty"
+- assertVisible:
+    id: "cart-header-icon"
 
 # Fabrics tab
 - tapOn: "Fabrics"
@@ -56,7 +57,8 @@ appId: com.apollo.tailor
     visible:
       text: "Fabrics"
     timeout: 5000
-- assertVisible: "Cart, empty"
+- assertVisible:
+    id: "cart-header-icon"
 
 # Products tab
 - tapOn: "Products"
@@ -64,12 +66,14 @@ appId: com.apollo.tailor
     visible:
       text: "Two-Piece Suit.*"
     timeout: 10000
-- assertVisible: "Cart, empty"
+- assertVisible:
+    id: "cart-header-icon"
 
 # ===========================================================================
 # TAP CART ICON → NAVIGATE TO EMPTY CART → BACK
 # ===========================================================================
-- tapOn: "Cart, empty"
+- tapOn:
+    id: "cart-header-icon"
 
 - extendedWaitUntil:
     visible:
@@ -153,12 +157,14 @@ appId: com.apollo.tailor
       text: "Two-Piece Suit.*"
     timeout: 10000
 
-- assertVisible: "Cart, 1 items"
+- assertVisible:
+    id: "cart-header-icon"
 
 # ===========================================================================
 # TAP BADGE → CART SCREEN → VERIFY ITEM → BACK NAVIGATION
 # ===========================================================================
-- tapOn: "Cart, 1 items"
+- tapOn:
+    id: "cart-header-icon"
 
 - extendedWaitUntil:
     visible:
@@ -182,7 +188,8 @@ appId: com.apollo.tailor
 # ===========================================================================
 # CLEANUP — remove item from cart and logout
 # ===========================================================================
-- tapOn: "Cart, 1 items"
+- tapOn:
+    id: "cart-header-icon"
 
 - extendedWaitUntil:
     visible:

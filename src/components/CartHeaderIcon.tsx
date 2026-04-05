@@ -59,6 +59,7 @@ export default function CartHeaderIcon() {
       onPress={handlePress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      testID="cart-header-icon"
       style={styles.container}
       hitSlop={8}
     >
