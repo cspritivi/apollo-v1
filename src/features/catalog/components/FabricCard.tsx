@@ -7,7 +7,7 @@ import {
   Animated,
   StyleSheet,
 } from "react-native";
-import { Fabric } from "../../../types";
+import { Fabric } from "@/types";
 
 /**
  * Props for the FabricCard component.

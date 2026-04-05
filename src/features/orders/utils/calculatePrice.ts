@@ -23,7 +23,7 @@
  * @param selectedOptions - Map of option_group → ProductOption with price_modifier
  * @returns Total price in cents, rounded to nearest integer
  */
-import { ProductOption } from "../../../types";
+import { ProductOption } from "@/types";
 
 export function calculatePrice(
   basePrice: number,

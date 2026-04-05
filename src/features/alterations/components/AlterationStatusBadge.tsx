@@ -14,7 +14,7 @@
  */
 
 import { View, Text, StyleSheet } from "react-native";
-import { AlterationStatus } from "../../../types";
+import { AlterationStatus } from "@/types";
 
 // Status → display label and color mapping.
 // Exported so other alteration components can reuse these colors.

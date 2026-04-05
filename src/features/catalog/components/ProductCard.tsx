@@ -1,6 +1,6 @@
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
-import { Product } from "../../../types";
-import FitGuaranteeBadge from "../../../components/FitGuaranteeBadge";
+import { Product } from "@/types";
+import FitGuaranteeBadge from "@/components/FitGuaranteeBadge";
 
 /**
  * Props for the ProductCard component.

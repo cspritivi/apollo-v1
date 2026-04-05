@@ -8,8 +8,8 @@ import {
   fetchProducts,
   fetchProductById,
   fetchProductOptions,
-} from "./api";
-import { ProductOption, SavedFabric } from "../../types";
+} from "@/features/catalog/api";
+import { ProductOption, SavedFabric } from "@/types";
 
 /**
  * Catalog hooks — React Query wrappers for fabric data fetching.

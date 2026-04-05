@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
-import CartHeaderIcon from "../../../../src/components/CartHeaderIcon";
-import { stackHeaderOptions } from "../../../../src/lib/headerConfig";
+import CartHeaderIcon from "@/components/CartHeaderIcon";
+import { stackHeaderOptions } from "@/lib/headerConfig";
 
 /**
  * Products Stack Layout — nested Stack navigator inside the Products tab.

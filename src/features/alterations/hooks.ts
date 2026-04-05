@@ -19,7 +19,7 @@ import {
   fetchAlterationsByProfile,
   fetchAlterationById,
   CreateAlterationInput,
-} from "./api";
+} from "@/features/alterations/api";
 
 // ============================================================================
 // QUERY HOOKS

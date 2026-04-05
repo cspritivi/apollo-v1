@@ -9,7 +9,7 @@ import {
 import {
   RecentlyViewedItem,
   useRecentlyViewedStore,
-} from "../stores/recentlyViewedStore";
+} from "@/stores/recentlyViewedStore";
 
 /**
  * RecentlyViewedRow — horizontal scrollable row of recently viewed items.

@@ -19,7 +19,7 @@ import {
   fetchOrders,
   fetchOrderById,
   CreateOrderInput,
-} from "./api";
+} from "@/features/orders/api";
 
 // ============================================================================
 // QUERY HOOKS

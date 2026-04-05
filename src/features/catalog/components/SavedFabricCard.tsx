@@ -1,5 +1,5 @@
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
-import { Fabric } from "../../../types";
+import { Fabric } from "@/types";
 
 /**
  * Props for the SavedFabricCard component.

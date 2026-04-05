@@ -10,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { Link } from "expo-router";
-import { useSignIn } from "../../src/features/auth/hooks";
+import { useSignIn } from "@/features/auth/hooks";
 
 /**
  * Login Screen — email/password sign-in form.

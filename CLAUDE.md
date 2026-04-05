@@ -226,6 +226,41 @@ Examples of what should be commented:
 Comments are not optional boilerplate — they are a core part of this
 codebase's purpose.
 
+### Import Conventions
+
+All imports from `src/` use the `@/` path alias — no relative paths through
+`src/`. This is enforced by ESLint (`no-restricted-imports` blocks `../../*`).
+
+```ts
+// ✅ Correct
+import { useCartStore } from "@/stores/cartStore";
+import { calculatePrice } from "@/features/orders/utils/calculatePrice";
+
+// ❌ Wrong — deep relative imports
+import { useCartStore } from "../../../../src/stores/cartStore";
+```
+
+**Feature boundaries (enforced by `eslint-plugin-boundaries`):**
+Features export a public API via `hooks.ts` and `api.ts`. Other features
+should import through these files, not reach into `components/` or `utils/`
+directly. Cross-feature imports trigger a lint warning. `app/` screen files
+may import feature internals directly since they are consumers, not features.
+
+Known cross-feature imports (warnings, not errors — pending refactor):
+- `alterations` → `orders/utils/formatDate` (should move to `src/lib/`)
+- `configurator` → `catalog/hooks` (public API, legitimate)
+- `configurator` → `catalog/components/ColorFilterBar` (should export via hooks)
+- `configurator` → `orders/utils/calculatePrice` (should move to `src/lib/`)
+TODO: Move shared utils to `src/lib/` and upgrade boundary rule to error.
+
+**Exception:** Test files may use `../` to import their co-located source
+file (e.g., `from "../CartHeaderIcon"` in `__tests__/CartHeaderIcon.test.tsx`).
+These have a 1:1 relationship — moving the test always means moving the source.
+
+**Deliberate tradeoff:** Using `@/` everywhere (even same-directory) increases
+verbosity for co-located files but eliminates the "should this be `@/` or
+`../`?" question. Zero ambiguity, zero import path updates on file moves.
+
 ### Naming
 - Components: `PascalCase.tsx` (e.g., `FabricCard.tsx`)
 - Hooks: `useCamelCase.ts` (e.g., `useOrderStatus.ts`)

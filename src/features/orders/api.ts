@@ -12,9 +12,9 @@
  * disabled submit button.
  */
 
-import { supabase } from "../../lib/supabase";
-import { Order, OrderWithRelations, ProductOption } from "../../types";
-import { calculatePrice } from "./utils/calculatePrice";
+import { supabase } from "@/lib/supabase";
+import { Order, OrderWithRelations, ProductOption } from "@/types";
+import { calculatePrice } from "@/features/orders/utils/calculatePrice";
 
 // ============================================================================
 // TYPES

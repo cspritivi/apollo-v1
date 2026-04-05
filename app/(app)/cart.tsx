@@ -22,12 +22,12 @@ import {
   StyleSheet,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useCartStore } from "../../src/stores/cartStore";
-import { useCreateOrders } from "../../src/features/orders/hooks";
-import { useSession } from "../../src/hooks/useSession";
-import CartItemCard from "../../src/features/orders/components/CartItemCard";
-import FitGuaranteeBadge from "../../src/components/FitGuaranteeBadge";
-import { CreateOrderInput } from "../../src/features/orders/api";
+import { useCartStore } from "@/stores/cartStore";
+import { useCreateOrders } from "@/features/orders/hooks";
+import { useSession } from "@/hooks/useSession";
+import CartItemCard from "@/features/orders/components/CartItemCard";
+import FitGuaranteeBadge from "@/components/FitGuaranteeBadge";
+import { CreateOrderInput } from "@/features/orders/api";
 
 export default function CartScreen() {
   const router = useRouter();

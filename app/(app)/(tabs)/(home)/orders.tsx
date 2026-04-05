@@ -14,10 +14,10 @@ import {
   StyleSheet,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useSession } from "../../../../src/hooks/useSession";
-import { useOrders } from "../../../../src/features/orders/hooks";
-import OrderRow from "../../../../src/features/orders/components/OrderRow";
-import { Order } from "../../../../src/types";
+import { useSession } from "@/hooks/useSession";
+import { useOrders } from "@/features/orders/hooks";
+import OrderRow from "@/features/orders/components/OrderRow";
+import { Order } from "@/types";
 
 export default function OrdersListScreen() {
   const { session } = useSession();

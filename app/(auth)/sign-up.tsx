@@ -11,7 +11,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
-import { useSignUp } from "../../src/features/auth/hooks";
+import { useSignUp } from "@/features/auth/hooks";
 
 /**
  * Sign-Up Screen — creates a new account with email, password, and name.

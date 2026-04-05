@@ -17,7 +17,7 @@
  * and verify what gets passed to .insert().
  */
 
-import { ProductOption } from "../../../types";
+import { ProductOption } from "@/types";
 
 // Mock Supabase before importing api.ts
 const mockInsert = jest.fn();

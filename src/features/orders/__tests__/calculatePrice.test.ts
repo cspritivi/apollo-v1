@@ -11,7 +11,7 @@
  */
 
 import { calculatePrice } from "../utils/calculatePrice";
-import { ProductOption } from "../../../types";
+import { ProductOption } from "@/types";
 
 // ============================================================================
 // TEST FIXTURES

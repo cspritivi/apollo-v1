@@ -10,7 +10,7 @@
 import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
 import OrderRow from "../components/OrderRow";
-import { Order, OrderStatus } from "../../../types";
+import { Order, OrderStatus } from "@/types";
 
 // ============================================================================
 // FIXTURES

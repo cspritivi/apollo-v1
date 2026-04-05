@@ -1,6 +1,6 @@
 import { View, Text, FlatList, StyleSheet } from "react-native";
-import { ProductOption } from "../../../types";
-import OptionCard from "./OptionCard";
+import { ProductOption } from "@/types";
+import OptionCard from "@/features/configurator/components/OptionCard";
 
 /**
  * OptionStep — renders one configurator step for a given option group.

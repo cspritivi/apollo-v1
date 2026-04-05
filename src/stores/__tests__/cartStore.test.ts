@@ -16,7 +16,7 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
   removeItem: jest.fn(() => Promise.resolve()),
 }));
 
-import { Product, Fabric, ProductOption } from "../../types";
+import { Product, Fabric, ProductOption } from "@/types";
 
 // ============================================================================
 // TEST FIXTURES

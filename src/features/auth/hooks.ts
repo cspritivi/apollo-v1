@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { signIn, signUp, signOut } from "./api";
+import { signIn, signUp, signOut } from "@/features/auth/api";
 
 /**
  * Auth hooks — React Query mutations for auth operations.

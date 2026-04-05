@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 import Toast from "react-native-toast-message";
-import { stackHeaderOptions } from "../../src/lib/headerConfig";
+import { stackHeaderOptions } from "@/lib/headerConfig";
 
 /**
  * App Group Layout — Stack navigator wrapping the entire authenticated area.

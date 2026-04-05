@@ -8,23 +8,20 @@ import {
   StyleSheet,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import {
-  useProduct,
-  useProductOptions,
-} from "../../../../src/features/catalog/hooks";
-import { useConfiguratorStore } from "../../../../src/stores/configuratorStore";
-import { useCartStore } from "../../../../src/stores/cartStore";
-import { useCreateOrder } from "../../../../src/features/orders/hooks";
-import { useSession } from "../../../../src/hooks/useSession";
-import { calculatePrice } from "../../../../src/features/orders/utils/calculatePrice";
+import { useProduct, useProductOptions } from "@/features/catalog/hooks";
+import { useConfiguratorStore } from "@/stores/configuratorStore";
+import { useCartStore } from "@/stores/cartStore";
+import { useCreateOrder } from "@/features/orders/hooks";
+import { useSession } from "@/hooks/useSession";
+import { calculatePrice } from "@/features/orders/utils/calculatePrice";
 import Toast from "react-native-toast-message";
-import ProgressBar from "../../../../src/features/configurator/components/ProgressBar";
-import FabricSelectionStep from "../../../../src/features/configurator/components/FabricSelectionStep";
+import ProgressBar from "@/features/configurator/components/ProgressBar";
+import FabricSelectionStep from "@/features/configurator/components/FabricSelectionStep";
 import OptionStep, {
   formatOptionGroupTitle,
-} from "../../../../src/features/configurator/components/OptionStep";
-import ReviewSummary from "../../../../src/features/configurator/components/ReviewSummary";
-import SupportFAB from "../../../../src/components/SupportFAB";
+} from "@/features/configurator/components/OptionStep";
+import ReviewSummary from "@/features/configurator/components/ReviewSummary";
+import SupportFAB from "@/components/SupportFAB";
 
 /**
  * Configurator Screen — the multi-step product configuration wizard.

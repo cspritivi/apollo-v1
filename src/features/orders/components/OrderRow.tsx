@@ -12,8 +12,8 @@
  */
 
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import { Order, OrderStatus } from "../../../types";
-import StatusBadge from "./StatusBadge";
+import { Order, OrderStatus } from "@/types";
+import StatusBadge from "@/features/orders/components/StatusBadge";
 
 interface OrderRowProps {
   order: Order;

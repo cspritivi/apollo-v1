@@ -12,7 +12,7 @@
  */
 
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
-import { CartItem } from "../../../stores/cartStore";
+import { CartItem } from "@/stores/cartStore";
 
 interface CartItemCardProps {
   item: CartItem;

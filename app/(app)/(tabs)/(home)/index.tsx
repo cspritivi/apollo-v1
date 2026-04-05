@@ -7,13 +7,13 @@ import {
   StyleSheet,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useSignOut } from "../../../../src/features/auth/hooks";
-import { useSession } from "../../../../src/hooks/useSession";
-import { useOrders } from "../../../../src/features/orders/hooks";
-import OrderRow from "../../../../src/features/orders/components/OrderRow";
-import { Order } from "../../../../src/types";
-import RecentlyViewedRow from "../../../../src/components/RecentlyViewedRow";
-import { RecentlyViewedItem } from "../../../../src/stores/recentlyViewedStore";
+import { useSignOut } from "@/features/auth/hooks";
+import { useSession } from "@/hooks/useSession";
+import { useOrders } from "@/features/orders/hooks";
+import OrderRow from "@/features/orders/components/OrderRow";
+import { Order } from "@/types";
+import RecentlyViewedRow from "@/components/RecentlyViewedRow";
+import { RecentlyViewedItem } from "@/stores/recentlyViewedStore";
 
 /**
  * Home screen — main dashboard for authenticated customers.

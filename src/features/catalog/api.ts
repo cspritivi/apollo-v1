@@ -1,5 +1,5 @@
-import { supabase } from "../../lib/supabase";
-import { Fabric, Product, ProductOption, SavedFabric } from "../../types";
+import { supabase } from "@/lib/supabase";
+import { Fabric, Product, ProductOption, SavedFabric } from "@/types";
 
 /**
  * Catalog API — all Supabase queries for fabric and product browsing live here.
