@@ -1,11 +1,11 @@
 # ============================================================================
-# ORDERS — HOME SCREEN MY ORDERS
+# ORDERS — PROFILE SCREEN MY ORDERS
 #
-# Tests that after placing an order, it appears on the Home screen in the
+# Tests that after placing an order, it appears on the Profile screen in the
 # "My Orders" section with a "Placed" status badge.
 #
 # WHY THIS TEST EXISTS:
-# The Home screen is the customer's main dashboard. "My Orders" is the
+# The Profile screen is the customer's account dashboard. "My Orders" is the
 # primary way customers track their order status at a glance. If the
 # orders section doesn't load or display correctly, the customer has no
 # visibility into their order after placing it.
@@ -13,7 +13,7 @@
 # FLOW:
 # Login → Products → configure Two-Piece Suit → "Place Order Now"
 # → confirm dialog → Order Success → "View My Orders"
-# → Home screen → verify "My Orders" section shows order with "Placed"
+# → Profile screen → verify "My Orders" section shows order with "Placed"
 # badge → cleanup (logout)
 #
 # PREREQUISITE:
@@ -148,7 +148,7 @@ appId: com.apollo.tailor
 # Navigate to Home via "View My Orders"
 - tapOn: "View My Orders"
 
-# ---- VERIFY MY ORDERS ON HOME SCREEN ----
+# ---- VERIFY MY ORDERS ON PROFILE SCREEN ----
 - extendedWaitUntil:
     visible:
       text: "My Orders"
@@ -163,6 +163,7 @@ appId: com.apollo.tailor
     text: "\\$.*"
 
 # ---- CLEANUP ----
+# Already on Profile screen (where Sign Out lives)
 - tapOn: "Sign Out"
 - extendedWaitUntil:
     visible:

@@ -1,7 +1,7 @@
 # ============================================================================
-# LOGOUT — SIGN OUT FROM HOME SCREEN
+# LOGOUT — SIGN OUT FROM PROFILE SCREEN
 #
-# Tests the full sign-out flow: user taps Sign Out on the home screen
+# Tests the full sign-out flow: user taps Sign Out on the Profile screen
 # and is redirected back to the login screen.
 #
 # PREREQUISITE:
@@ -20,8 +20,8 @@ appId: com.apollo.tailor
 
 ---
 
-# Should be on home screen (assumes user is already logged in)
-- assertVisible: "You are logged in!"
+# Navigate to Profile screen where Sign Out lives (assumes user is already logged in)
+- tapOn: "Profile"
 
 # Tap sign out
 - tapOn: "Sign Out"

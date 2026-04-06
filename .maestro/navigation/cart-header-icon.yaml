@@ -204,7 +204,7 @@ appId: com.apollo.tailor
     timeout: 5000
 
 - tapOn: "Back"
-- tapOn: "Home"
+- tapOn: "Profile"
 - tapOn: "Sign Out"
 - extendedWaitUntil:
     visible:

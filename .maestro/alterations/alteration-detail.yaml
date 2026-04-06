@@ -12,7 +12,7 @@
 # into their alteration request.
 #
 # FLOW:
-# Login → Home → "View All Orders" → find "Delivered" order → tap
+# Login → Profile → "View All Orders" → find "Delivered" order → tap
 # → scroll to "Alterations" card → tap an alteration row
 # → verify detail screen content → back → cleanup (logout)
 #
@@ -37,7 +37,7 @@ appId: com.apollo.tailor
     text: "Not Now"
     optional: true
 
-- tapOn: "Home"
+- tapOn: "Profile"
 
 
 # ---- NAVIGATE TO DELIVERED ORDER ----
@@ -128,15 +128,16 @@ appId: com.apollo.tailor
       text: "My Orders"
     timeout: 5000
 
-# Back to home
+# Back to Profile
 - tapOn: "Back"
 
 - extendedWaitUntil:
     visible:
-      text: "Home"
+      text: "Profile"
     timeout: 5000
 
 # ---- CLEANUP ----
+# Already on Profile screen (where Sign Out lives)
 - tapOn: "Sign Out"
 - extendedWaitUntil:
     visible:

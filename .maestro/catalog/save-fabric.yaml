@@ -75,8 +75,8 @@ appId: com.apollo.tailor
       id: "save-fabric-button"
     timeout: 5000
 
-# ---- CLEANUP: navigate home and log out so the next test starts fresh ----
-- tapOn: "Home"
+# ---- CLEANUP: navigate to Profile and log out so the next test starts fresh ----
+- tapOn: "Profile"
 - tapOn: "Sign Out"
 - extendedWaitUntil:
     visible:

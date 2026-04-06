@@ -1,8 +1,8 @@
 # ============================================================================
 # NAVIGATION — SAVED FABRICS BACK NAVIGATION
 #
-# Tests that the Stack back button from Saved Fabrics returns to the Home
-# screen. This verifies the nested Stack navigator in the Home tab works
+# Tests that the Stack back button from Saved Fabrics returns to the Profile
+# screen. This verifies the nested Stack navigator in the Profile tab works
 # correctly for the Saved Fabrics push/pop flow.
 #
 # WHY THIS TEST EXISTS:
@@ -10,11 +10,11 @@
 # screen (href: null) with a manual headerLeft back button. The manual back
 # button used router.back() which could skip screens in the flat tab layout.
 # With nested Stacks, the back button is provided by React Navigation and
-# correctly pops to the previous screen in the Home stack.
+# correctly pops to the previous screen in the Profile stack.
 #
 # FLOW:
-# Login → Home → "Saved Fabrics" button → verify Saved Fabrics screen
-# → back → verify Home screen → cleanup (logout)
+# Login → Profile → "Saved Fabrics" button → verify Saved Fabrics screen
+# → back → verify Profile screen → cleanup (logout)
 #
 # PREREQUISITE:
 # - Test user exists in Supabase Auth (cspritivi@gmail.com / test123456)
@@ -35,7 +35,7 @@ appId: com.apollo.tailor
     text: "Not Now"
     optional: true
 
-- tapOn: "Home"
+- tapOn: "Profile"
 
 
 # ---- NAVIGATE TO SAVED FABRICS ----
@@ -47,15 +47,15 @@ appId: com.apollo.tailor
       text: "Saved Fabrics"
     timeout: 5000
 
-# ---- NAVIGATE BACK TO HOME ----
+# ---- NAVIGATE BACK TO PROFILE ----
 # Tap the Stack header's back button. We set headerBackTitle: "Back" in the
 # Stack layout so the label is consistent regardless of which screen pushed.
 # Note: Maestro's `- back` command (system back gesture) doesn't reliably
 # pop Stack screens on iOS in Expo Go — tap the header button directly.
 - tapOn: "Back"
 
-# Verify we're back on the Home screen by checking for content that only
-# exists on the Home dashboard (Sign Out button + Saved Fabrics nav button).
+# Verify we're back on the Profile screen by checking for content that only
+# exists on the Profile dashboard (Sign Out button + Saved Fabrics nav button).
 - extendedWaitUntil:
     visible:
       text: "Sign Out"

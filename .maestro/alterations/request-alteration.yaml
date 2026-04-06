@@ -11,7 +11,7 @@
 # issues. This test verifies the full path works end-to-end.
 #
 # FLOW:
-# Login → Home → "View All Orders" → scroll to find "Delivered" badge
+# Login → Profile → "View All Orders" → scroll to find "Delivered" badge
 # → tap that order → verify "Request Alteration" button → tap it
 # → fill description (>10 chars) → submit → dismiss success alert
 # → verify alteration appears in "Alterations" card → cleanup (logout)
@@ -36,12 +36,12 @@ appId: com.apollo.tailor
     text: "Not Now"
     optional: true
 
-- tapOn: "Home"
+- tapOn: "Profile"
 
 
 # ---- NAVIGATE TO ORDERS LIST ----
 # Use "View All Orders" to get the full list where we can scroll to find
-# a DELIVERED order. The home screen only shows 5 recent orders which may
+# a DELIVERED order. The Profile screen only shows 5 recent orders which may
 # not include the delivered one.
 - scrollUntilVisible:
     element:
@@ -153,7 +153,7 @@ appId: com.apollo.tailor
     timeout: 5000
 
 # ---- CLEANUP ----
-# Navigate back to home and sign out
+# Navigate back to Profile and sign out
 - tapOn: "Back"
 
 - extendedWaitUntil:
@@ -165,9 +165,10 @@ appId: com.apollo.tailor
 
 - extendedWaitUntil:
     visible:
-      text: "Home"
+      text: "Profile"
     timeout: 5000
 
+# Already on Profile screen (where Sign Out lives)
 - tapOn: "Sign Out"
 - extendedWaitUntil:
     visible:

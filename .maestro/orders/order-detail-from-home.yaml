@@ -1,8 +1,8 @@
 # ============================================================================
-# ORDERS — ORDER DETAIL FROM HOME SCREEN
+# ORDERS — ORDER DETAIL FROM PROFILE SCREEN
 #
 # Tests navigating to the order detail screen by tapping an order row on the
-# Home screen's "My Orders" section. Verifies the detail screen shows product
+# Profile screen's "My Orders" section. Verifies the detail screen shows product
 # name, fabric name, status badge, timeline, chosen options, and price.
 #
 # WHY THIS TEST EXISTS:
@@ -13,8 +13,8 @@
 # FLOW:
 # Login → Products → configure Two-Piece Suit → "Place Order Now"
 # → confirm dialog → Order Success → "View My Orders"
-# → Home screen → tap order row → verify Order Detail screen
-# → tap back → verify Home screen → cleanup (logout)
+# → Profile screen → tap order row → verify Order Detail screen
+# → tap back → verify Profile screen → cleanup (logout)
 #
 # PREREQUISITE:
 # - Test user exists in Supabase Auth (cspritivi@gmail.com / test123456)
@@ -203,6 +203,7 @@ appId: com.apollo.tailor
     timeout: 10000
 
 # ---- CLEANUP ----
+# Already on Profile screen (where Sign Out lives)
 - tapOn: "Sign Out"
 - extendedWaitUntil:
     visible:

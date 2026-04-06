@@ -253,6 +253,7 @@ appId: com.apollo.tailor
 - assertVisible: "View My Orders"
 
 # ---- CLEANUP ----
+# "View My Orders" now navigates to Profile screen where My Orders lives
 - tapOn: "View My Orders"
 
 - extendedWaitUntil:
@@ -260,6 +261,7 @@ appId: com.apollo.tailor
       text: "My Orders"
     timeout: 10000
 
+# Already on Profile screen (where Sign Out lives)
 - tapOn: "Sign Out"
 - extendedWaitUntil:
     visible:

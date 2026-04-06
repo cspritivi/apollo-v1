@@ -183,8 +183,8 @@ appId: com.apollo.tailor
       text: "Two-Piece Suit.*"
     timeout: 5000
 
-# Navigate home and log out
-- tapOn: "Home"
+# Navigate to Profile and log out
+- tapOn: "Profile"
 - tapOn: "Sign Out"
 - extendedWaitUntil:
     visible:
