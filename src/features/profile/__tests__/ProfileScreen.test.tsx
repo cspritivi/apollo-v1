@@ -139,7 +139,7 @@ describe("ProfileScreen — header", () => {
     expect(getByTestId("profile-avatar-initial").props.children).toBe("J");
   });
 
-  it("falls back to email initial when full_name is missing", () => {
+  it("falls back to email for display name when full_name is missing", () => {
     mockSession = {
       user: {
         id: "user-123",
@@ -147,7 +147,10 @@ describe("ProfileScreen — header", () => {
         user_metadata: { full_name: "" },
       },
     };
-    const { getByTestId } = render(<ProfileScreen />);
+    const { getAllByText, getByTestId } = render(<ProfileScreen />);
+    // Name field shows email as fallback — email appears twice (name + email row)
+    expect(getAllByText("test@example.com").length).toBe(2);
+    // Avatar initial falls back to first letter of email
     expect(getByTestId("profile-avatar-initial").props.children).toBe("T");
   });
 });

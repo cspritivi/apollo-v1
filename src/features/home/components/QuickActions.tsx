@@ -26,7 +26,7 @@ export default function QuickActions() {
         onPress={() => router.navigate("/(products)" as never)}
       >
         <Ionicons name="shirt-outline" size={24} color="#4f46e5" />
-        <Text style={styles.actionText}>Design Your Suit</Text>
+        <Text style={styles.actionText}>Browse Products</Text>
       </Pressable>
 
       <Pressable

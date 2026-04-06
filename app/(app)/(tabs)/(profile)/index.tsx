@@ -42,8 +42,11 @@ export default function ProfileScreen() {
   const recentOrders = orders?.slice(0, PROFILE_ORDER_LIMIT) ?? [];
   const hasMoreOrders = (orders?.length ?? 0) > PROFILE_ORDER_LIMIT;
 
-  // Extract user display info from session metadata
-  const fullName = session?.user.user_metadata?.full_name || "";
+  // Extract user display info from session metadata.
+  // full_name may be missing for older accounts or profiles updated via
+  // the Supabase dashboard — fall back to email so the header isn't blank.
+  const fullName =
+    session?.user.user_metadata?.full_name || session?.user.email || "";
   const email = session?.user.email || "";
 
   // Avatar initial: first letter of name, fallback to first letter of email

@@ -18,9 +18,9 @@ describe("QuickActions", () => {
     jest.clearAllMocks();
   });
 
-  it('renders a "Design Your Suit" action', () => {
+  it('renders a "Browse Products" action', () => {
     const { getByText } = render(<QuickActions />);
-    expect(getByText("Design Your Suit")).toBeTruthy();
+    expect(getByText("Browse Products")).toBeTruthy();
   });
 
   it('renders a "Browse Fabrics" action', () => {
@@ -28,9 +28,9 @@ describe("QuickActions", () => {
     expect(getByText("Browse Fabrics")).toBeTruthy();
   });
 
-  it("navigates to Products tab when Design Your Suit is pressed", () => {
+  it("navigates to Products tab when Browse Products is pressed", () => {
     const { getByText } = render(<QuickActions />);
-    fireEvent.press(getByText("Design Your Suit"));
+    fireEvent.press(getByText("Browse Products"));
     expect(mockNavigate).toHaveBeenCalledWith("/(products)");
   });
 
