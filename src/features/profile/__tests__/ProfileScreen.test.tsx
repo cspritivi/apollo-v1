@@ -15,7 +15,9 @@ import ProfileScreen from "../../../../app/(app)/(tabs)/(profile)/index";
 import { Order, OrderStatus } from "@/types";
 
 // ============================================================================
-// MOCKS
+// MOCKS — use module-level variables that jest.mock factories can't reference.
+// Instead, we control behavior per test by mutating module-scope variables
+// that the mock implementations close over via require-time binding.
 // ============================================================================
 
 const mockPush = jest.fn();
@@ -25,21 +27,24 @@ jest.mock("expo-router", () => ({
   useRouter: () => ({ push: mockPush, navigate: mockNavigate }),
 }));
 
-/** Mock session with user metadata — simulates a logged-in customer */
-const mockSession = {
+/**
+ * Mock session — the mock returns a getter function so we can swap values
+ * per test. jest.mock hoisting prevents referencing outer variables directly.
+ */
+let mockSession = {
   user: {
     id: "user-123",
     email: "test@example.com",
     user_metadata: { full_name: "John Doe" },
   },
 };
-let sessionValue: { session: typeof mockSession | null; isLoading: boolean } = {
-  session: mockSession,
-  isLoading: false,
-};
+let mockSessionLoading = false;
 
 jest.mock("@/hooks/useSession", () => ({
-  useSession: () => sessionValue,
+  useSession: () => ({
+    session: mockSession,
+    isLoading: mockSessionLoading,
+  }),
 }));
 
 /** Mock orders — controlled per test */
@@ -68,7 +73,7 @@ jest.mock("@/features/auth/hooks", () => ({
 // FIXTURES
 // ============================================================================
 
-const makeOrder = (overrides: Partial<Order> = {}): Order => ({
+const makeOrder = (overrides = {}) => ({
   id: "order-abc-123",
   profile_id: "user-123",
   product_id: "product-1",
@@ -100,7 +105,14 @@ beforeEach(() => {
   mockOrders = [];
   mockOrdersLoading = false;
   mockSignOutPending = false;
-  sessionValue = { session: mockSession, isLoading: false };
+  mockSession = {
+    user: {
+      id: "user-123",
+      email: "test@example.com",
+      user_metadata: { full_name: "John Doe" },
+    },
+  };
+  mockSessionLoading = false;
 });
 
 // ============================================================================
@@ -127,15 +139,12 @@ describe("ProfileScreen — header", () => {
   });
 
   it("falls back to email initial when full_name is missing", () => {
-    sessionValue = {
-      session: {
-        ...mockSession,
-        user: {
-          ...mockSession.user,
-          user_metadata: { full_name: "" },
-        },
+    mockSession = {
+      user: {
+        id: "user-123",
+        email: "test@example.com",
+        user_metadata: { full_name: "" },
       },
-      isLoading: false,
     };
     const { getByTestId } = render(<ProfileScreen />);
     expect(getByTestId("profile-avatar-initial").props.children).toBe("T");

@@ -14,11 +14,14 @@ import { Tabs } from "expo-router";
  * Each nested Stack includes headerRight: CartHeaderRight in its screenOptions.
  * The Tabs navigator never renders its own header, so it doesn't need headerRight.
  *
- * WHY 3 TABS (not 4):
- * Cart was moved from a tab to a header icon + Stack screen (see parent
- * _layout.tsx). This frees up a tab slot and makes the cart accessible
- * from every screen via the persistent header icon — matching the standard
- * e-commerce pattern (Amazon, Nike, ASOS).
+ * TAB LAYOUT (4 tabs):
+ * Home (storefront) | Fabrics | Products | Profile (account)
+ *
+ * WHY 4 TABS:
+ * Home was split from account management in #20. Home is now a curated
+ * storefront (sells), Profile is the account dashboard (manages). Cart
+ * lives as a header icon + Stack screen. This matches the standard e-commerce
+ * pattern (Amazon, Nike, ASOS) where 4 tabs is the norm.
  */
 export default function TabsLayout() {
   return (
@@ -80,6 +83,21 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "shirt" : "shirt-outline"}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="(profile)"
+        options={{
+          title: "Profile",
+          tabBarLabel: "Profile",
+          tabBarAccessibilityLabel: "Profile",
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? "person" : "person-outline"}
               size={size}
               color={color}
             />
