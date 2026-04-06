@@ -11,7 +11,7 @@
 
 import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
-import ProfileScreen from "../../../../app/(app)/(tabs)/(profile)/index";
+import ProfileScreen from "../index";
 import { Order, OrderStatus } from "@/types";
 
 // ============================================================================
