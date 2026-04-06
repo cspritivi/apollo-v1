@@ -357,6 +357,7 @@ automated changelog generation. Interviewers recognise this pattern.
 - Deviate from the folder structure without flagging it and explaining why
 - Duplicate state that already exists in a Zustand store or React Query cache
 - Add `Co-Authored-By` lines to git commit messages
+- Add "Generated with Claude Code" or similar attribution lines to PRs
 
 ---
 
