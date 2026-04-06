@@ -11,7 +11,8 @@
 
 import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
-import ProfileScreen from "../index";
+// eslint-disable-next-line no-restricted-imports -- screen lives in app/, no @/ alias available
+import ProfileScreen from "../../../../app/(app)/(tabs)/(profile)/index";
 import { Order, OrderStatus } from "@/types";
 
 // ============================================================================
