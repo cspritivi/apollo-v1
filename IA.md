@@ -775,3 +775,82 @@ management to a dedicated profile section.
 > ambiguous routes. I also had to grep for hardcoded pathnames that would
 > silently break after the move — two references in order-detail.tsx pointed
 > to `/(app)/(home)/alteration-*` and would have routed into a deleted stack."
+
+---
+
+## Why expo-image + FlashList (Image & List Performance Migration)
+
+### The Context
+
+The app uses remote images from Supabase Storage across ~10 components (fabric
+cards, product cards, configurator option cards, cart thumbnails, home screen).
+All lists used React Native's FlatList. As the fabric catalog grows beyond 20
+items, two UX issues compound: images flash in without placeholders on every
+scroll, and FlatList stutters on mid-range Android because it creates new cell
+components instead of recycling them.
+
+### Why expo-image (NOT React Native's Image)
+
+React Native's `Image` has no built-in caching strategy, no placeholder support,
+and no transition animations. Every time a user scrolls back to an already-loaded
+image, it may re-fetch. `expo-image` wraps SDWebImage (iOS) and Glide (Android) —
+the same native image libraries that Instagram, Twitter, and other production apps
+use. It provides:
+- **Disk + memory caching** — images load instantly on revisit
+- **Blurhash placeholders** — a blurred preview shows during load instead of a
+  blank grey box
+- **Fade-in transitions** — smooth 200ms crossfade from placeholder to image
+
+### Why a Shared AppImage Wrapper
+
+Rather than scattering expo-image props (`placeholder`, `transition`, `contentFit`)
+across 10 files, we centralized defaults in `src/components/AppImage.tsx`. This
+gives one place to:
+- Change cache policy or blurhash defaults
+- Upgrade to per-image blurhash later (currently a single default hash)
+- Control failure behavior consistently
+
+AppImage enforces **two distinct fallback models**:
+1. **Missing source** (null/undefined) — renders a letter fallback if `fallbackText`
+   is provided. This is for development/data gaps where no image URL exists.
+2. **Load failure** (404, network error) — the blurhash placeholder stays visible.
+   `fallbackText` is intentionally not used here to avoid competing fallback models.
+
+### Why FlashList (NOT FlatList)
+
+FlatList virtualizes (only renders visible items) but doesn't recycle — it creates
+new component instances as you scroll, which causes GC pressure and stutter at
+scale. Shopify's FlashList recycles cells like native UICollectionView (iOS) /
+RecyclerView (Android), maintaining 60fps even with 100+ items.
+
+Key migration details:
+- **`estimatedItemSize` is required** — FlashList uses it for initial layout.
+  Values were estimated from card dimensions and should be tuned via FlashList's
+  dev-mode warnings after measuring on device.
+- **`extraData` is required** for lists where render depends on state outside
+  `data` (saved fabric state, selected option, edit mode). Without it, recycled
+  cells show stale visual state. We use simple, stable values (plain arrays,
+  primitive IDs, booleans) rather than mutable Sets.
+- **`columnWrapperStyle` was removed** — FlashList doesn't support it. The cards
+  already use `flex: 1` + `margin: 6` which self-spaces in a 2-column layout.
+- **Null-padding for odd grid counts** was centralized into `padGridData()` utility.
+
+### Why RecentlyViewedRow Kept FlatList
+
+The horizontal recently viewed row shows 3-10 items. FlashList's cell recycling
+only manifests with longer lists, and it has known quirks with horizontal layouts
+and small datasets. FlatList is the right choice for this specific use case.
+
+### Interview Answer
+
+> "We hit the classic mobile image performance wall — images flashing on scroll,
+> no caching between screen revisits. I migrated to expo-image which wraps
+> SDWebImage and Glide natively, added blurhash placeholders, and wrapped it
+> all in an AppImage component so the 10 call sites share one configuration.
+> For lists, FlatList creates new components on scroll while FlashList recycles
+> them — same principle as UICollectionView. The tricky part was `extraData`:
+> FlashList recycles cells, so any state that affects rendering but lives
+> outside the data array (like a 'saved' flag or 'selected' state) must be
+> explicitly declared, otherwise recycled cells show stale UI. I also kept
+> FlatList for the small horizontal recently-viewed row where recycling has
+> no benefit and FlashList has known quirks."

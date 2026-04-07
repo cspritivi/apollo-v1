@@ -1,11 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  ActivityIndicator,
-  StyleSheet,
-} from "react-native";
+import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { FlashList } from "@shopify/flash-list";
+import { padGridData } from "@/lib/gridUtils";
 import {
   useFabrics,
   useSavedFabrics,
@@ -28,11 +24,12 @@ import { useRecentlyViewedStore } from "@/stores/recentlyViewedStore";
  * - FabricCard renders each item in the grid
  * - FabricDetailModal shows full details when a card is tapped
  *
- * WHY FlatList (NOT ScrollView WITH .map()):
- * FlatList virtualizes the list — it only renders items currently visible on
- * screen plus a small buffer. With 20+ fabrics (and potentially hundreds as
- * the catalog grows), a ScrollView would mount all items at once, causing
- * slow initial render and high memory usage on lower-end devices.
+ * WHY FlashList (NOT FlatList OR ScrollView):
+ * FlashList recycles cells like native UICollectionView / RecyclerView,
+ * maintaining 60fps even with 100+ items. FlatList virtualizes but doesn't
+ * recycle — it creates new cell components as you scroll, which causes stutter
+ * on mid-range Android with large catalogs. ScrollView would mount all items
+ * at once, causing slow initial render and high memory usage.
  *
  * WHY availableOnly: true:
  * Customers should only see fabrics that are currently in stock. The tailor
@@ -68,6 +65,15 @@ export default function FabricsScreen() {
     if (!savedFabrics) return new Set<string>();
     return new Set(savedFabrics.map((s) => s.fabric_id));
   }, [savedFabrics]);
+
+  // Plain array of saved IDs for FlashList's extraData. FlashList uses
+  // referential equality to decide when to re-render cells — a Set's identity
+  // doesn't change on mutation, but a new array is created each time
+  // savedFabrics changes (via useMemo), triggering the correct re-render.
+  const savedFabricIdArray = useMemo(
+    () => Array.from(savedFabricIds),
+    [savedFabricIds],
+  );
 
   // Selected fabric controls modal visibility (null = modal hidden).
   // Single state variable instead of separate `selectedFabric` + `isModalOpen`.
@@ -203,26 +209,17 @@ export default function FabricsScreen() {
         onSelectColor={setSelectedColor}
       />
 
-      {/**
-       * WHY numColumns={2}:
-       * A 2-column grid is the standard pattern for product catalogs on mobile
-       * (Instagram shop, Etsy, etc.). It shows enough detail per item while
-       * letting users browse quickly. Three columns would make images too small
-       * for fabric texture to be visible.
-       */}
-      {/* WHY PAD WITH NULL:
-          FlatList with numColumns={2} and flex:1 cards causes the last item
-          to stretch full-width when the count is odd. Appending a null entry
-          lets us render an invisible spacer that occupies the empty cell,
-          keeping all real cards the same size. */}
-      <FlatList
-        data={
-          filteredFabrics.length % 2 !== 0
-            ? [...filteredFabrics, null]
-            : filteredFabrics
-        }
+      {/* FlashList with cell recycling for smooth scrolling on large catalogs.
+          numColumns={2} creates the standard product grid layout.
+          extraData ensures cells re-render when save state changes — without it,
+          recycled cells could show stale save button state. */}
+      <FlashList<Fabric | null>
+        data={padGridData(filteredFabrics)}
         keyExtractor={(item, index) => item?.id ?? `spacer-${index}`}
         numColumns={2}
+        // savedFabricIdArray changes identity when save state changes,
+        // forcing FlashList to re-render cells with updated isSaved props.
+        extraData={savedFabricIdArray}
         renderItem={({ item }) =>
           item ? (
             <FabricCard
@@ -236,14 +233,7 @@ export default function FabricsScreen() {
           )
         }
         contentContainerStyle={styles.listContent}
-        columnWrapperStyle={styles.columnWrapper}
         showsVerticalScrollIndicator={false}
-        /**
-         * Pull-to-refresh uses React Query's refetch under the hood.
-         * The isRefetching flag comes from useQuery — it's true during
-         * background refetches (not the initial load), which is exactly
-         * when the pull-to-refresh spinner should show.
-         */
         refreshing={isRefetching}
         onRefresh={refetch}
       />
@@ -267,9 +257,6 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 10,
     paddingBottom: 24,
-  },
-  columnWrapper: {
-    justifyContent: "space-between",
   },
   centered: {
     flex: 1,

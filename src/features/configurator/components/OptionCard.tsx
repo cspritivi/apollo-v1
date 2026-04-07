@@ -1,5 +1,6 @@
-import { View, Text, Image, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import { ProductOption } from "@/types";
+import AppImage from "@/components/AppImage";
 
 /**
  * OptionCard — displays a single configurable option within an option group.
@@ -50,24 +51,18 @@ export default function OptionCard({
       accessibilityLabel={`${option.name}${priceDisplay ? `, ${priceDisplay}` : ""}${isSelected ? ", selected" : ""}`}
       testID={testID}
     >
-      {/* Option image — the most important part of the card */}
-      {option.image_url ? (
-        <Image
-          source={{ uri: option.image_url }}
-          style={styles.image}
-          resizeMode="cover"
-          accessibilityLabel={`${option.name} option preview`}
-        />
-      ) : (
-        // Fallback when no image is available — shows first letter in a grey box.
-        // This shouldn't happen in production (all options should have images)
-        // but prevents a crash during development with placeholder data.
-        <View style={[styles.image, styles.imageFallback]}>
-          <Text style={styles.imageFallbackText}>
-            {option.name.charAt(0).toUpperCase()}
-          </Text>
-        </View>
-      )}
+      {/* Option image — the most important part of the card.
+          AppImage shows a blurhash placeholder during load. If no image URL
+          exists (shouldn't happen in production but possible during development),
+          the letter fallback renders instead. */}
+      <AppImage
+        source={option.image_url}
+        style={styles.image}
+        accessibilityLabel={`${option.name} option preview`}
+        fallbackText={option.name.charAt(0).toUpperCase()}
+        fallbackStyle={styles.imageFallback}
+        fallbackTextStyle={styles.imageFallbackText}
+      />
 
       {/* Selection indicator — checkmark badge on selected option */}
       {isSelected && (

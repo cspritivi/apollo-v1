@@ -1,13 +1,7 @@
 import { useRef, useEffect } from "react";
-import {
-  View,
-  Text,
-  Image,
-  Pressable,
-  Animated,
-  StyleSheet,
-} from "react-native";
+import { View, Text, Pressable, Animated, StyleSheet } from "react-native";
 import { Fabric } from "@/types";
+import AppImage from "@/components/AppImage";
 
 /**
  * Props for the FabricCard component.
@@ -38,10 +32,9 @@ interface FabricCardProps {
  * on toggle to provide tactile feedback.
  *
  * WHY IMAGE WITH A FALLBACK BACKGROUND:
- * Fabric images come from Supabase Storage. On slow connections the image
- * may take time to load — the grey background prevents a jarring flash of
- * white. We use React Native's built-in Image component rather than
- * expo-image to avoid an additional dependency for now.
+ * Fabric images come from Supabase Storage. AppImage (wrapping expo-image)
+ * provides a blurhash placeholder during loading and native-level caching
+ * via SDWebImage (iOS) / Glide (Android), preventing jarring flashes.
  */
 export default function FabricCard({
   fabric,
@@ -120,10 +113,9 @@ export default function FabricCard({
       {/* Image container with relative positioning so the save button
           can be absolutely positioned over the top-right corner. */}
       <View>
-        <Image
-          source={{ uri: fabric.image_url }}
+        <AppImage
+          source={fabric.image_url}
           style={styles.image}
-          resizeMode="cover"
           accessibilityLabel={`${fabric.name} fabric swatch`}
         />
 

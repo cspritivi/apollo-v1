@@ -2,11 +2,11 @@ import { useState, useCallback, useMemo, useLayoutEffect } from "react";
 import {
   View,
   Text,
-  FlatList,
   Pressable,
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 import { useNavigation } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import {
@@ -203,9 +203,12 @@ export default function SavedFabricsScreen() {
           </Text>
         </View>
       ) : (
-        <FlatList
+        <FlashList<Fabric>
           data={savedFabricDetails}
           keyExtractor={(item) => item.id}
+          // isEditing changes which UI elements render (delete buttons),
+          // so FlashList needs to know when to re-render recycled cells.
+          extraData={isEditing}
           renderItem={({ item }) => (
             <SavedFabricCard
               fabric={item}

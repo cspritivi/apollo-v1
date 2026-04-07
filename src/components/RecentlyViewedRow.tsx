@@ -1,11 +1,5 @@
-import {
-  View,
-  Text,
-  Image,
-  Pressable,
-  FlatList,
-  StyleSheet,
-} from "react-native";
+import { View, Text, Pressable, FlatList, StyleSheet } from "react-native";
+import AppImage from "@/components/AppImage";
 import {
   RecentlyViewedItem,
   useRecentlyViewedStore,
@@ -49,6 +43,11 @@ export default function RecentlyViewedRow({
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Recently Viewed</Text>
+      {/* WHY FlatList (NOT FlashList):
+          This horizontal list shows 3-10 items. FlashList's cell recycling
+          benefit only manifests with longer lists. FlashList also has known
+          quirks with horizontal + small datasets. FlatList is the right
+          choice here. Revisit if the list grows significantly. */}
       <FlatList
         data={filteredItems}
         keyExtractor={(item) => item.id}
@@ -65,19 +64,13 @@ export default function RecentlyViewedRow({
             accessibilityRole="button"
             accessibilityLabel={`${item.name}, recently viewed`}
           >
-            {item.imageUrl ? (
-              <Image
-                source={{ uri: item.imageUrl }}
-                style={styles.image}
-                resizeMode="cover"
-              />
-            ) : (
-              <View style={[styles.image, styles.imagePlaceholder]}>
-                <Text style={styles.placeholderText}>
-                  {item.name.charAt(0)}
-                </Text>
-              </View>
-            )}
+            <AppImage
+              source={item.imageUrl}
+              style={styles.image}
+              fallbackText={item.name.charAt(0)}
+              fallbackStyle={styles.imagePlaceholder}
+              fallbackTextStyle={styles.placeholderText}
+            />
             <Text style={styles.name} numberOfLines={1}>
               {item.name}
             </Text>

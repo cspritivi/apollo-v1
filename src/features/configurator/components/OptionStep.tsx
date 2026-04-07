@@ -1,6 +1,8 @@
-import { View, Text, FlatList, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 import { ProductOption } from "@/types";
 import OptionCard from "@/features/configurator/components/OptionCard";
+import { padGridData } from "@/lib/gridUtils";
 
 /**
  * OptionStep — renders one configurator step for a given option group.
@@ -68,15 +70,14 @@ export default function OptionStep({
           : "Tap an option to select it"}
       </Text>
 
-      {/* WHY PAD WITH NULL:
-          FlatList with numColumns={2} and flex:1 cards causes the last item
-          to stretch full-width when the count is odd. Appending a null entry
-          lets us render an invisible spacer that occupies the empty cell,
-          keeping all real cards the same size. Same fix as the main catalog. */}
-      <FlatList
-        data={options.length % 2 !== 0 ? [...options, null] : options}
+      {/* FlashList with cell recycling for smooth scrolling.
+          extraData ensures cells re-render when the selected option changes —
+          without it, recycled cells could show stale selection borders. */}
+      <FlashList<ProductOption | null>
+        data={padGridData(options)}
         keyExtractor={(item, index) => item?.id ?? `spacer-${index}`}
         numColumns={2}
+        extraData={selectedOption?.id}
         renderItem={({ item, index }) =>
           item ? (
             <OptionCard
@@ -90,7 +91,6 @@ export default function OptionStep({
           )
         }
         contentContainerStyle={styles.grid}
-        columnWrapperStyle={styles.columnWrapper}
         showsVerticalScrollIndicator={false}
       />
     </View>
@@ -119,8 +119,5 @@ const styles = StyleSheet.create({
   grid: {
     paddingHorizontal: 6,
     paddingBottom: 100, // Extra padding so last row isn't hidden behind nav buttons
-  },
-  columnWrapper: {
-    justifyContent: "space-between" as const,
   },
 });

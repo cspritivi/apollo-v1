@@ -307,6 +307,24 @@ chore/setup-supabase-client
 refactor/extract-order-state-machine
 ```
 
+When a branch addresses a GitHub issue, **always** create it using
+`gh issue develop` so it is linked in the issue's Development sidebar:
+```bash
+gh issue develop 56 --name "fix/maestro-tests-restructure-56"
+```
+This auto-links the branch to the issue and ensures the connection is
+visible in GitHub's UI. Do not create issue-linked branches manually
+with `git checkout -b`.
+
+If a branch addresses **multiple issues**, use `gh issue develop` with the
+primary issue, then reference additional issues in the PR body using
+closing keywords:
+```
+Closes #56
+Closes #20
+```
+All referenced issues will be auto-closed when the PR merges.
+
 ### Commit messages (Conventional Commits)
 ```
 feat: add fabric detail modal
@@ -382,6 +400,7 @@ automated changelog generation. Interviewers recognise this pattern.
 [x] WhatsApp support FAB (#27)
 [x] Cart to header icon (#19) — Stack above tabs, persistent CartHeaderIcon
 [x] Home/Profile restructure (#20) — Home is curated storefront, Profile is account dashboard (4 tabs)
+[x] expo-image + FlashList performance migration (#42) — AppImage wrapper, FlashList with extraData, padGridData utility
 
 All core features complete. Update this checklist as new features are added.
 

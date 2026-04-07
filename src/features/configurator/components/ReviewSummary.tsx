@@ -1,12 +1,12 @@
 import {
   View,
   Text,
-  Image,
   ScrollView,
   TextInput,
   Pressable,
   StyleSheet,
 } from "react-native";
+import AppImage from "@/components/AppImage";
 import { Product, Fabric, ProductOption } from "@/types";
 import { calculatePrice } from "@/features/orders/utils/calculatePrice";
 import { formatOptionGroupTitle } from "@/features/configurator/components/OptionStep";
@@ -89,17 +89,13 @@ export default function ReviewSummary({
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Product</Text>
         <View style={styles.itemRow}>
-          {product.image_url ? (
-            <Image
-              source={{ uri: product.image_url }}
-              style={styles.thumbnail}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={[styles.thumbnail, styles.thumbnailFallback]}>
-              <Text style={styles.fallbackText}>{product.name.charAt(0)}</Text>
-            </View>
-          )}
+          <AppImage
+            source={product.image_url}
+            style={styles.thumbnail}
+            fallbackText={product.name.charAt(0)}
+            fallbackStyle={styles.thumbnailFallback}
+            fallbackTextStyle={styles.fallbackText}
+          />
           <View style={styles.itemInfo}>
             <Text style={styles.itemName}>{product.name}</Text>
             <Text style={styles.itemPrice}>
@@ -122,11 +118,7 @@ export default function ReviewSummary({
         </View>
         {fabric ? (
           <View style={styles.itemRow}>
-            <Image
-              source={{ uri: fabric.image_url }}
-              style={styles.thumbnail}
-              resizeMode="cover"
-            />
+            <AppImage source={fabric.image_url} style={styles.thumbnail} />
             <View style={styles.itemInfo}>
               <Text style={styles.itemName}>{fabric.name}</Text>
               <Text style={styles.itemPrice}>
@@ -163,21 +155,13 @@ export default function ReviewSummary({
               </View>
               {selected ? (
                 <View style={styles.itemRow}>
-                  {selected.image_url ? (
-                    <Image
-                      source={{ uri: selected.image_url }}
-                      style={styles.optionThumbnail}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View
-                      style={[styles.optionThumbnail, styles.thumbnailFallback]}
-                    >
-                      <Text style={styles.fallbackTextSmall}>
-                        {selected.name.charAt(0)}
-                      </Text>
-                    </View>
-                  )}
+                  <AppImage
+                    source={selected.image_url}
+                    style={styles.optionThumbnail}
+                    fallbackText={selected.name.charAt(0)}
+                    fallbackStyle={styles.thumbnailFallback}
+                    fallbackTextStyle={styles.fallbackTextSmall}
+                  />
                   <View style={styles.itemInfo}>
                     <Text style={styles.optionName}>{selected.name}</Text>
                     {selected.price_modifier !== 0 && (
