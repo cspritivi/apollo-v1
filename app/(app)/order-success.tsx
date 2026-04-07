@@ -48,7 +48,7 @@ export default function OrderSuccessScreen() {
       <View style={styles.buttonContainer}>
         <Pressable
           style={styles.primaryButton}
-          onPress={() => router.replace("/")}
+          onPress={() => router.replace("/(profile)")}
           accessibilityRole="button"
           accessibilityLabel="View My Orders"
         >

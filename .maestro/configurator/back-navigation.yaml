@@ -138,7 +138,7 @@ appId: com.apollo.tailor
       text: "Trousers.*"
     timeout: 5000
 
-- tapOn: "Home"
+- tapOn: "Profile"
 - tapOn: "Sign Out"
 - extendedWaitUntil:
     visible:

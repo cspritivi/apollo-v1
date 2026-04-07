@@ -59,8 +59,8 @@ appId: com.apollo.tailor
 - assertVisible:
     text: "Camel Wool Twill.*"
 
-# ---- CLEANUP: navigate home and log out so the next test starts fresh ----
-- tapOn: "Home"
+# ---- CLEANUP: navigate to Profile and log out so the next test starts fresh ----
+- tapOn: "Profile"
 - tapOn: "Sign Out"
 - extendedWaitUntil:
     visible:

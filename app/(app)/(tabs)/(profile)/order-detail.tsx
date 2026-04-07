@@ -1,14 +1,13 @@
 /**
  * Order Detail Screen — shows full order information and status timeline.
  *
- * Accessed by tapping an OrderRow from the Home screen or Orders list.
+ * Accessed by tapping an OrderRow from the Profile screen or Orders list.
  * Uses `useOrder(orderId)` which fetches the order with joined product/fabric
  * names in a single Supabase query (see fetchOrderById in api.ts).
  *
- * NAVIGATION: This screen lives in the Home stack, pushed on top of either
- * the Home dashboard or the Orders list. Back navigation works automatically
- * via React Navigation's stack behavior — no manual headerLeft or `from`
- * param needed.
+ * NAVIGATION: This screen lives in the Profile stack (moved from Home as
+ * part of #20). Back navigation works automatically via React Navigation's
+ * stack behavior — no manual headerLeft or `from` param needed.
  */
 
 import {
@@ -133,7 +132,7 @@ export default function OrderDetailScreen() {
                 alteration={alteration}
                 onPress={(alt) =>
                   router.push({
-                    pathname: "/(app)/(home)/alteration-detail",
+                    pathname: "/(app)/(profile)/alteration-detail",
                     params: { alterationId: alt.id },
                   })
                 }
@@ -151,7 +150,7 @@ export default function OrderDetailScreen() {
             style={styles.alterationButton}
             onPress={() =>
               router.push({
-                pathname: "/(app)/(home)/alteration-request",
+                pathname: "/(app)/(profile)/alteration-request",
                 params: { orderId: order.id },
               })
             }

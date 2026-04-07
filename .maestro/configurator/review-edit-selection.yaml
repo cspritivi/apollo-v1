@@ -188,7 +188,7 @@ appId: com.apollo.tailor
       text: "Two-Piece Suit.*"
     timeout: 5000
 
-- tapOn: "Home"
+- tapOn: "Profile"
 - tapOn: "Sign Out"
 - extendedWaitUntil:
     visible:

@@ -67,8 +67,8 @@ appId: com.apollo.tailor
       text: "Black Wool Crepe.*"
     timeout: 5000
 
-# ---- CLEANUP: navigate home and log out so the next test starts fresh ----
-- tapOn: "Home"
+# ---- CLEANUP: navigate to Profile and log out so the next test starts fresh ----
+- tapOn: "Profile"
 - tapOn: "Sign Out"
 - extendedWaitUntil:
     visible:

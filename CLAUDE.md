@@ -357,6 +357,7 @@ automated changelog generation. Interviewers recognise this pattern.
 - Deviate from the folder structure without flagging it and explaining why
 - Duplicate state that already exists in a Zustand store or React Query cache
 - Add `Co-Authored-By` lines to git commit messages
+- Add "Generated with Claude Code" or similar attribution lines to PRs
 
 ---
 
@@ -380,6 +381,7 @@ automated changelog generation. Interviewers recognise this pattern.
 [x] Recently viewed items tracking (#30)
 [x] WhatsApp support FAB (#27)
 [x] Cart to header icon (#19) — Stack above tabs, persistent CartHeaderIcon
+[x] Home/Profile restructure (#20) — Home is curated storefront, Profile is account dashboard (4 tabs)
 
 All core features complete. Update this checklist as new features are added.
 
@@ -496,34 +498,44 @@ These unblock the majority of the feature roadmap.
 ### Suggested Priority Order
 
 **Quick wins (build momentum):**
-1. Fit guarantee badge (#29) — pure UI, no backend
-2. Recently viewed (#30) — small Zustand store
-3. WhatsApp support (#27) — one component
-4. Tab icons (#18) — quick visual fix
+1. ~~Fit guarantee badge (#29)~~ ✅
+2. ~~Recently viewed (#30)~~ ✅
+3. ~~WhatsApp support (#27)~~ ✅
+4. ~~Tab icons (#18)~~ ✅
 
 **Navigation restructure:**
 5. ~~Cart to header (#19)~~ ✅ Done. Stack above tabs pattern.
-6. Home/Profile restructure (#20) — bigger refactor, sets up the stage
+6. ~~Home/Profile restructure (#20)~~ ✅ Done. Home is curated storefront, Profile is account dashboard.
 
 **Core features:**
 7. Running price in configurator (#25) — schema change + UI
 8. Push notifications (#21) — requires EAS Build
-9. Guided measurements (#23) — important, larger effort
-10. Save full configurations (#22) — extends existing patterns
+9. Broadcast push notifications (#10) — new collections/fabrics announcements
+10. Guided measurements (#23) — important, larger effort
+11. Save full configurations (#22) — extends existing patterns
+12. Restore configurator state from recently viewed (#49) — extend recently viewed store
 
 **Medium effort:**
-11. Post-delivery fit check (#24)
-12. Appointment booking (#26)
-13. Fabric swatch ordering (#28)
-14. Customer reviews (#31)
+13. Post-delivery fit check (#24)
+14. Appointment booking (#26)
+15. Fabric swatch ordering (#28)
+16. Customer reviews (#31)
+17. Enrich WhatsApp support messages (#48) — add order/product context to messages
+18. Cart sync to Supabase (#6) — cross-device cart persistence
+
+**Hardening & quality:**
+19. Move shared utils to src/lib/ (#52) — enforce feature boundaries, upgrade lint to error
+20. Backfill api and hooks tests (#14) — increase coverage for auth, catalog, orders
+21. Client-side input validation (#7) — validate before order submission
+22. Order idempotency via client-side UUID (#4) — prevent duplicate orders
 
 **High effort:**
-15. Wedding party / group orders (#32)
-16. 3D garment configurator (#17)
-17. Stripe payment integration (#33)
-18. XState order lifecycle (#34)
-19. i18n foundation (#38)
-20. Accessibility audit (#39)
+23. Wedding party / group orders (#32)
+24. 3D garment configurator (#17)
+25. Stripe payment integration (#33)
+26. XState order lifecycle (#34)
+27. i18n foundation (#38)
+28. Accessibility audit (#39)
 
 ### Feature Implementation Context
 

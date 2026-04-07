@@ -172,7 +172,7 @@ appId: com.apollo.tailor
 # Navigate back to tabs (cart is a Stack screen above the tab bar),
 # then go home and log out
 - tapOn: "Back"
-- tapOn: "Home"
+- tapOn: "Profile"
 - tapOn: "Sign Out"
 - extendedWaitUntil:
     visible:

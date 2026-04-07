@@ -718,3 +718,60 @@ exact previous screen. This is the pattern Amazon and Shopify use.
 > re-renders, router.navigate() for idempotent navigation, and a pathname-based guard
 > to prevent re-entry. This matches the Amazon/Nike pattern where cart is always
 > accessible but doesn't waste a tab slot."
+
+---
+
+## 9. Home/Profile Separation — Storefront vs Account Dashboard (#20)
+
+### Decision
+
+Split the single Home tab (which served as an account dashboard) into two
+distinct tabs: Home (curated storefront) and Profile (account dashboard).
+The app now has 4 tabs: Home, Fabrics, Products, Profile.
+
+### Why This Approach
+
+The most valuable screen in a commerce app is the landing page. Using it as
+an account dashboard wastes the opportunity to inspire browsing and drive
+conversions. Every successful retail app (ASOS, Nike, Zara, Mr Porter) uses
+the home screen for editorial/promotional content and relegates account
+management to a dedicated profile section.
+
+### Implementation Details
+
+- **Atomic route migration**: All 5 account screens (orders, order-detail,
+  saved-fabrics, alteration-request, alteration-detail) moved from `(home)/`
+  to `(profile)/` in a single step to avoid ambiguous routes — Expo Router
+  route groups strip the group name from URLs, so duplicate filenames across
+  groups would resolve to the same path.
+- **Hardcoded route audit**: Two hardcoded pathnames in order-detail.tsx
+  referenced `/(app)/(home)/alteration-*` — these would silently break after
+  the move. Found via grep and fixed to `/(app)/(profile)/alteration-*`.
+- **Home storefront components** live in `src/features/home/components/` (not
+  `src/components/`) because they're Home-specific, not shared reusable UI.
+- **Profile screen** keeps sign-out as a single-tap action (no confirmation
+  alert) to avoid breaking ~20 Maestro E2E test cleanup blocks that all end
+  with `tapOn: "Sign Out"`.
+
+### Tradeoffs
+
+- **4 tabs vs 3**: Adds a tab but 4 is standard for mobile commerce. The UX
+  improvement far outweighs the minor navigation complexity.
+- **Storefront content is hardcoded**: Hero banner and sections use static
+  content initially. The component structure supports dynamic data sources
+  (CMS, Supabase table) when needed later.
+- **Featured fabrics query**: Reuses the same `useFabrics()` call as the
+  Fabrics tab — React Query deduplicates and caches automatically, so no
+  extra network requests.
+
+### What to Say in an Interview
+
+> "I restructured the navigation to follow the standard e-commerce pattern
+> where the home screen sells and the profile screen manages. The previous
+> design put account management on the landing page, which is like putting
+> the returns desk at the store entrance. The route migration had to be
+> atomic — Expo Router route groups strip group names from URLs, so having
+> `(home)/orders.tsx` and `(profile)/orders.tsx` simultaneously would create
+> ambiguous routes. I also had to grep for hardcoded pathnames that would
+> silently break after the move — two references in order-detail.tsx pointed
+> to `/(app)/(home)/alteration-*` and would have routed into a deleted stack."

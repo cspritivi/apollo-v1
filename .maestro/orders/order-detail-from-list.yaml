@@ -2,14 +2,14 @@
 # ORDERS — ORDER DETAIL FROM ORDERS LIST SCREEN
 #
 # Tests navigating to the order detail screen from the full "My Orders" list.
-# The customer places an order, navigates to Home, taps "View All Orders"
+# The customer places an order, navigates to Profile, taps "View All Orders"
 # to reach the orders list, then taps an order row to verify the detail screen.
 #
 # WHY THIS TEST EXISTS:
 # The orders list is a secondary entry point to order details (vs tapping
-# directly from Home). Both entry points push onto the same Home stack, so
+# directly from Profile). Both entry points push onto the same Profile stack, so
 # back navigation works automatically via React Navigation. This test verifies
-# the full path works and the back button returns to the orders list (not Home).
+# the full path works and the back button returns to the orders list (not Profile).
 #
 # NOTE: "View All Orders" only appears when the customer has > 5 orders.
 # The test user accumulates orders across E2E runs, so this link should
@@ -18,7 +18,7 @@
 #
 # FLOW:
 # Login → Products → configure Two-Piece Suit → "Place Order Now"
-# → confirm → Order Success → "View My Orders" → Home
+# → confirm → Order Success → "View My Orders" → Profile
 # → "View All Orders" → Orders list → tap order row → verify detail
 # → tap back → verify Orders list → cleanup (logout)
 #
@@ -146,7 +146,7 @@ appId: com.apollo.tailor
     text: "Place Order"
     index: 1
 
-# ---- ORDER SUCCESS → HOME ----
+# ---- ORDER SUCCESS → PROFILE ----
 - extendedWaitUntil:
     visible:
       text: "Order Placed!"
@@ -206,17 +206,17 @@ appId: com.apollo.tailor
 # ---- NAVIGATE BACK TO ORDERS LIST ----
 # Tap the Stack header's back button (headerBackTitle: "Back" set in layout).
 # Back navigation correctly returns to the orders list because order-detail
-# was pushed on top of it in the Home stack.
+# was pushed on top of it in the Profile stack.
 - tapOn: "Back"
 
-# Verify we're back on the orders list (not Home — nested stacks fix this)
+# Verify we're back on the orders list (not Profile — nested stacks fix this)
 - extendedWaitUntil:
     visible:
       id: "order-row"
     timeout: 10000
 
 # ---- CLEANUP ----
-- tapOn: "Home"
+- tapOn: "Profile"
 - tapOn: "Sign Out"
 - extendedWaitUntil:
     visible:

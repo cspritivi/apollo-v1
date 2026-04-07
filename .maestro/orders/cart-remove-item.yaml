@@ -168,7 +168,7 @@ appId: com.apollo.tailor
     timeout: 10000
 
 # ---- CLEANUP ----
-- tapOn: "Home"
+- tapOn: "Profile"
 - tapOn: "Sign Out"
 - extendedWaitUntil:
     visible:

@@ -2,12 +2,12 @@
 # FABRIC CATALOG — SAVED FABRICS SCREEN FLOW
 #
 # Tests the complete saved fabrics workflow: save a fabric from the catalog,
-# navigate to the Saved Fabrics screen via Home, verify the fabric appears,
+# navigate to the Saved Fabrics screen via Profile, verify the fabric appears,
 # then clean up by removing it.
 #
 # WHY TEST THE SAVED FABRICS SCREEN:
 # This is a cross-feature flow that exercises navigation (Fabrics tab →
-# Home tab → Saved Fabrics screen), data composition (saved IDs joined
+# Profile tab → Saved Fabrics screen), data composition (saved IDs joined
 # with cached fabric data), and the SavedFabricCard component. A bug in
 # cache-first composition or navigation would break this entire screen.
 #
@@ -57,13 +57,8 @@ appId: com.apollo.tailor
       text: "Unsave fabric"
     timeout: 5000
 
-# Navigate to Home, then to Saved Fabrics
-- tapOn: "Home"
-
-- extendedWaitUntil:
-    visible:
-      text: "You are logged in!"
-    timeout: 5000
+# Navigate to Profile, then to Saved Fabrics
+- tapOn: "Profile"
 
 - tapOn: "Saved Fabrics"
 
@@ -101,8 +96,9 @@ appId: com.apollo.tailor
       text: "No saved fabrics"
     timeout: 5000
 
-# ---- CLEANUP: navigate home and log out so the next test starts fresh ----
-- tapOn: "Home"
+# ---- CLEANUP: navigate to Profile and log out so the next test starts fresh ----
+# After removing the fabric, we're still on Saved Fabrics screen. Go back to Profile.
+- tapOn: "Back"
 - tapOn: "Sign Out"
 - extendedWaitUntil:
     visible:
