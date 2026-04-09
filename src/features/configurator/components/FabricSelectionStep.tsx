@@ -1,13 +1,9 @@
 import { useState, useMemo } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  Image,
-  Pressable,
-  StyleSheet,
-} from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
+import { FlashList } from "@shopify/flash-list";
+import AppImage from "@/components/AppImage";
 import { Fabric } from "@/types";
+import { padGridData } from "@/lib/gridUtils";
 import { useFabrics } from "@/features/catalog/hooks";
 import ColorFilterBar from "@/features/catalog/components/ColorFilterBar";
 
@@ -94,19 +90,14 @@ export default function FabricSelectionStep({
         onSelectColor={setSelectedColor}
       />
 
-      {/* WHY PAD WITH NULL:
-          FlatList with numColumns={2} and flex:1 cards causes the last item
-          to stretch full-width when the count is odd. Appending a null entry
-          lets us render an invisible spacer that occupies the empty cell,
-          keeping all real cards the same size. Same fix as the main catalog. */}
-      <FlatList
-        data={
-          filteredFabrics.length % 2 !== 0
-            ? [...filteredFabrics, null]
-            : filteredFabrics
-        }
+      {/* FlashList with cell recycling for smooth scrolling.
+          extraData ensures cells re-render when the selected fabric changes —
+          without it, recycled cells could show stale selection borders. */}
+      <FlashList<Fabric | null>
+        data={padGridData(filteredFabrics)}
         keyExtractor={(item, index) => item?.id ?? `spacer-${index}`}
         numColumns={2}
+        extraData={selectedFabric?.id}
         renderItem={({ item }) => {
           if (!item) {
             return <View style={{ flex: 1, margin: 6 }} />;
@@ -123,11 +114,7 @@ export default function FabricSelectionStep({
               accessibilityState={{ selected: isSelected }}
               accessibilityLabel={`${item.name}, ${priceDisplay}${isSelected ? ", selected" : ""}`}
             >
-              <Image
-                source={{ uri: item.image_url }}
-                style={styles.image}
-                resizeMode="cover"
-              />
+              <AppImage source={item.image_url} style={styles.image} />
 
               {isSelected && (
                 <View style={styles.selectedBadge}>
@@ -145,7 +132,6 @@ export default function FabricSelectionStep({
           );
         }}
         contentContainerStyle={styles.grid}
-        columnWrapperStyle={styles.columnWrapper}
         showsVerticalScrollIndicator={false}
       />
     </View>
@@ -187,9 +173,6 @@ const styles = StyleSheet.create({
   grid: {
     paddingHorizontal: 6,
     paddingBottom: 100,
-  },
-  columnWrapper: {
-    justifyContent: "space-between" as const,
   },
   card: {
     flex: 1,

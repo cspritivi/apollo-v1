@@ -1,11 +1,7 @@
 import { useCallback } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  ActivityIndicator,
-  StyleSheet,
-} from "react-native";
+import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { FlashList } from "@shopify/flash-list";
+import { padGridData } from "@/lib/gridUtils";
 import { useRouter } from "expo-router";
 import { useProducts } from "@/features/catalog/hooks";
 import ProductCard from "@/features/catalog/components/ProductCard";
@@ -102,24 +98,22 @@ export default function ProductsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 2-column grid — same layout as the fabrics screen for visual
-          consistency. With only 3 products this is a short list, but the
-          grid pattern scales well if more products are added later. */}
-      <FlatList
-        data={products.length % 2 !== 0 ? [...products, null] : products}
+      {/* 2-column grid — FlashList provides cell recycling for smooth 60fps
+          scrolling. With only 3 products this is a short list, but the pattern
+          scales well and validates FlashList integration before migrating
+          larger lists (fabrics). */}
+      <FlashList<Product | null>
+        data={padGridData(products)}
         keyExtractor={(item, index) => item?.id ?? `spacer-${index}`}
         numColumns={2}
         renderItem={({ item }) =>
           item ? (
             <ProductCard product={item} onPress={handleProductPress} />
           ) : (
-            // Invisible spacer for odd-count grids — prevents the last
-            // card from stretching full-width. Same pattern as fabrics.
             <View style={{ flex: 1, margin: 6 }} />
           )
         }
         contentContainerStyle={styles.listContent}
-        columnWrapperStyle={styles.columnWrapper}
         showsVerticalScrollIndicator={false}
         refreshing={isRefetching}
         onRefresh={refetch}
@@ -136,9 +130,6 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 10,
     paddingBottom: 24,
-  },
-  columnWrapper: {
-    justifyContent: "space-between",
   },
   centered: {
     flex: 1,

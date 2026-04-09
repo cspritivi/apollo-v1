@@ -1,6 +1,7 @@
-import { View, Text, Image, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Product } from "@/types";
 import FitGuaranteeBadge from "@/components/FitGuaranteeBadge";
+import AppImage from "@/components/AppImage";
 
 /**
  * Props for the ProductCard component.
@@ -46,23 +47,17 @@ export default function ProductCard({ product, onPress }: ProductCardProps) {
       accessibilityRole="button"
       accessibilityLabel={`${product.name}, ${priceDisplay}`}
     >
-      {/* Product image with fallback background for slow loads.
-          Uses the same grey placeholder pattern as FabricCard for
-          visual consistency across the catalog. */}
-      {product.image_url ? (
-        <Image
-          source={{ uri: product.image_url }}
-          style={styles.image}
-          resizeMode="cover"
-          accessibilityLabel={`${product.name} product image`}
-        />
-      ) : (
-        // Fallback when no image URL is set (e.g., during development
-        // before images are uploaded to Supabase Storage).
-        <View style={[styles.image, styles.imagePlaceholder]}>
-          <Text style={styles.placeholderText}>{product.name[0]}</Text>
-        </View>
-      )}
+      {/* Product image — AppImage handles blurhash placeholder during load
+          and letter fallback when no image URL exists (e.g., during development
+          before images are uploaded to Supabase Storage). */}
+      <AppImage
+        source={product.image_url}
+        style={styles.image}
+        accessibilityLabel={`${product.name} product image`}
+        fallbackText={product.name[0]}
+        fallbackStyle={styles.imagePlaceholder}
+        fallbackTextStyle={styles.placeholderText}
+      />
 
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={2}>

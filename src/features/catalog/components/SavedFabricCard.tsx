@@ -1,5 +1,6 @@
-import { View, Text, Image, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Fabric } from "@/types";
+import AppImage from "@/components/AppImage";
 
 /**
  * Props for the SavedFabricCard component.
@@ -71,10 +72,9 @@ export default function SavedFabricCard({
         accessibilityRole="button"
         accessibilityLabel={`${fabric.name}, ${priceDisplay}`}
       >
-        <Image
-          source={{ uri: fabric.image_url }}
+        <AppImage
+          source={fabric.image_url}
           style={styles.image}
-          resizeMode="cover"
           accessibilityLabel={`${fabric.name} fabric swatch`}
         />
 

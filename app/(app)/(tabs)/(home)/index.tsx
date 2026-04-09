@@ -1,11 +1,5 @@
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  Image,
-  StyleSheet,
-} from "react-native";
+import { View, Text, ScrollView, Pressable, StyleSheet } from "react-native";
+import AppImage from "@/components/AppImage";
 import { useRouter } from "expo-router";
 import RecentlyViewedRow from "@/components/RecentlyViewedRow";
 import { RecentlyViewedItem } from "@/stores/recentlyViewedStore";
@@ -89,18 +83,13 @@ export default function HomeScreen() {
               style={styles.fabricCard}
               onPress={() => router.navigate("/(fabrics)" as never)}
             >
-              {fabric.image_url ? (
-                <Image
-                  source={{ uri: fabric.image_url }}
-                  style={styles.fabricImage}
-                />
-              ) : (
-                <View style={styles.fabricPlaceholder}>
-                  <Text style={styles.fabricPlaceholderText}>
-                    {fabric.name[0]}
-                  </Text>
-                </View>
-              )}
+              <AppImage
+                source={fabric.image_url}
+                style={styles.fabricImage}
+                fallbackText={fabric.name[0]}
+                fallbackStyle={styles.fabricPlaceholder}
+                fallbackTextStyle={styles.fabricPlaceholderText}
+              />
               <Text style={styles.fabricName} numberOfLines={1}>
                 {fabric.name}
               </Text>

@@ -2,7 +2,6 @@ import { useRef, useEffect } from "react";
 import {
   View,
   Text,
-  Image,
   Pressable,
   Animated,
   ScrollView,
@@ -10,6 +9,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { Fabric } from "@/types";
+import AppImage from "@/components/AppImage";
 
 /**
  * Props for the FabricDetailModal.
@@ -111,10 +111,9 @@ export default function FabricDetailModal({
           {/* Image container with save button overlay — same top-right
               positioning as FabricCard for consistency across the app. */}
           <View>
-            <Image
-              source={{ uri: fabric.image_url }}
+            <AppImage
+              source={fabric.image_url}
               style={styles.image}
-              resizeMode="cover"
               accessibilityLabel={`${fabric.name} fabric detail image`}
             />
             <Pressable

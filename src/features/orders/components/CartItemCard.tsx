@@ -11,8 +11,9 @@
  * Same pattern used by Nike By You and Indochino.
  */
 
-import { View, Text, Image, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import { CartItem } from "@/stores/cartStore";
+import AppImage from "@/components/AppImage";
 
 interface CartItemCardProps {
   item: CartItem;
@@ -31,19 +32,13 @@ export default function CartItemCard({
     <View style={styles.card}>
       <View style={styles.row}>
         {/* Product thumbnail */}
-        {item.product.image_url ? (
-          <Image
-            source={{ uri: item.product.image_url }}
-            style={styles.thumbnail}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={[styles.thumbnail, styles.thumbnailFallback]}>
-            <Text style={styles.fallbackText}>
-              {item.product.name.charAt(0)}
-            </Text>
-          </View>
-        )}
+        <AppImage
+          source={item.product.image_url}
+          style={styles.thumbnail}
+          fallbackText={item.product.name.charAt(0)}
+          fallbackStyle={styles.thumbnailFallback}
+          fallbackTextStyle={styles.fallbackText}
+        />
 
         {/* Item details */}
         <View style={styles.info}>

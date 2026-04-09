@@ -8,5 +8,7 @@
 module.exports = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
+    "^expo-image$": "<rootDir>/src/__mocks__/expo-image.tsx",
+    "^@shopify/flash-list$": "<rootDir>/src/__mocks__/@shopify/flash-list.tsx",
   },
 };
