@@ -48,13 +48,27 @@ export default function AppImage({
   fallbackTextStyle,
   contentFit = "cover",
   style,
+  // Destructure accessibility props so fallback Views stay labeled.
+  // expo-image accepts these via ...rest, but the fallback paths render
+  // plain Views which need them explicitly to avoid regressing a11y.
+  accessibilityLabel,
+  accessibilityRole,
+  accessibilityHint,
+  accessible,
   ...rest
 }: AppImageProps) {
+  const a11yProps = {
+    accessibilityLabel,
+    accessibilityRole,
+    accessibilityHint,
+    accessible,
+  };
+
   // Missing source — render letter fallback or nothing
   if (!source) {
     if (fallbackText) {
       return (
-        <View style={[styles.fallback, style, fallbackStyle]}>
+        <View style={[styles.fallback, style, fallbackStyle]} {...a11yProps}>
           <Text style={[styles.fallbackText, fallbackTextStyle]}>
             {fallbackText}
           </Text>
@@ -63,7 +77,7 @@ export default function AppImage({
     }
     // No source and no fallback text — render empty View so parent
     // layout isn't disrupted (maintains the image's space)
-    return <View style={style} />;
+    return <View style={style} {...a11yProps} />;
   }
 
   // Source exists — render expo-image with defaults.
@@ -75,6 +89,7 @@ export default function AppImage({
       contentFit={contentFit}
       placeholder={{ blurhash: DEFAULT_BLURHASH }}
       transition={IMAGE_TRANSITION}
+      {...a11yProps}
       {...rest}
     />
   );
