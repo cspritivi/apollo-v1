@@ -134,4 +134,29 @@ describe("AppImage", () => {
 
     expect(screen.getByLabelText("Wool fabric swatch")).toBeTruthy();
   });
+
+  it("passes accessibilityLabel to fallback View when source is null with fallbackText", () => {
+    render(
+      <AppImage
+        source={null}
+        fallbackText="W"
+        accessibilityLabel="Wool fabric swatch"
+        style={{ width: 100, height: 100 }}
+      />,
+    );
+
+    expect(screen.getByLabelText("Wool fabric swatch")).toBeTruthy();
+  });
+
+  it("passes accessibilityLabel to empty fallback View when source is null without fallbackText", () => {
+    render(
+      <AppImage
+        source={null}
+        accessibilityLabel="Wool fabric swatch"
+        style={{ width: 100, height: 100 }}
+      />,
+    );
+
+    expect(screen.getByLabelText("Wool fabric swatch")).toBeTruthy();
+  });
 });
