@@ -161,9 +161,14 @@ jobs:
       # OTA updates go to the channel matching the build profile.
       # Runtime versioning (fingerprint policy in app.config.ts) ensures
       # updates only apply to binaries with compatible native code.
+      # --platform android: this is a mobile-only app (no react-native-web),
+      # so we must exclude web. EAS CLI defaults to --platform=all which
+      # fails on export. When iOS credentials are set up, add a second
+      # --platform ios flag here.
       - name: Publish OTA Update
         run: |
           eas update \
             --branch ${{ needs.resolve-profile.outputs.profile }} \
             --message "OTA: ${{ github.event.head_commit.message }}" \
+            --platform android \
             --non-interactive
