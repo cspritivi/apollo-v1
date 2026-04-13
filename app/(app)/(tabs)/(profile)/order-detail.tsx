@@ -164,12 +164,18 @@ export default function OrderDetailScreen() {
           Order ref: {order.id.slice(0, 8).toUpperCase()}
         </Text>
       </ScrollView>
-      {/* WhatsApp support FAB — pre-filled with order context */}
+      {/* WhatsApp support FAB — pre-filled with order context.
+        Pass raw join values (not the "Custom Item" UI fallback) so the
+        message omits the descriptor cleanly when the join returned no
+        product/fabric, rather than leaking placeholder strings. */}
       <SupportFAB
         context={{
           screen: "order-detail",
           orderId: order.id.slice(0, 8).toUpperCase(),
           orderStatus: order.current_status,
+          productName: order.products?.name,
+          fabricName: order.fabrics?.name,
+          finalPriceCents: order.final_price,
         }}
       />
     </View>
