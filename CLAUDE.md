@@ -527,12 +527,15 @@ These unblock the majority of the feature roadmap.
 6. ~~Home/Profile restructure (#20)~~ ✅ Done. Home is curated storefront, Profile is account dashboard.
 
 **Core features:**
-7. Running price in configurator (#25) — schema change + UI
-8. Push notifications (#21) — requires EAS Build
-9. Broadcast push notifications (#10) — new collections/fabrics announcements
-10. Guided measurements (#23) — important, larger effort
-11. Save full configurations (#22) — extends existing patterns
-12. Restore configurator state from recently viewed (#49) — extend recently viewed store
+7. Push notifications (#21) — requires EAS Build
+8. Broadcast push notifications (#10) — new collections/fabrics announcements
+9. Guided measurements (#23) — important, larger effort
+10. Save full configurations (#22) — extends existing patterns
+11. Restore configurator state from recently viewed (#49) — extend recently viewed store
+
+> Running price in configurator (#25) — closed as won't-fix. Contradicts
+> the "no price anxiety" decision documented in `ReviewSummary.tsx`.
+> `OptionCard` already shows per-option `+$X.XX` upcharges inline.
 
 **Medium effort:**
 13. Post-delivery fit check (#24)
