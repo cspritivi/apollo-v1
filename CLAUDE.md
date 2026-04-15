@@ -342,6 +342,16 @@ automated changelog generation. Interviewers recognise this pattern.
 
 ## What Claude Should Always Do
 
+- **Commit atomically at each logical milestone when implementing a feature.**
+  Do not leave a feature as a single large uncommitted blob. After each
+  discrete, self-contained unit of work (a migration, a new module + its
+  tests, a wiring change, an integration, etc.), create a commit with a
+  conventional-commits message describing that unit. This applies without
+  the user having to ask — it is the default expectation for any feature
+  implementation. Typical rhythm: one commit per file group that could
+  stand on its own in `git log` as "this is what changed and why." Do not
+  commit intermediate broken states; each commit should typecheck and pass
+  tests on its own wherever possible.
 - **Follow TDD (Test-Driven Development) for all new features.** Write failing
   tests first, then implement the minimum code to make them pass, then refactor.
   This applies to stores, hooks, utilities, and any testable logic. Tests live
