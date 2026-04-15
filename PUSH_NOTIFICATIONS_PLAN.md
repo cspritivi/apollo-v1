@@ -1,5 +1,48 @@
 # Plan: Push notifications for order status changes (#21)
 
+## Implementation status
+
+**Code lane — complete (9 atomic commits on `feat/push-notifications-21`):**
+
+- [x] Migration SQL written (`supabase/migrations/create_push_tokens_table.sql`)
+- [x] `expo-notifications` + `expo-device` installed, config plugin wired
+- [x] `src/lib/notifications.ts` utilities + 11 unit tests
+- [x] `src/features/notifications/{api,hooks}.ts` + 6 unit tests
+- [x] `src/hooks/usePushNotifications.ts` orchestrator + 8 component tests
+- [x] Root layout wiring (`app/_layout.tsx`)
+- [x] Sign-out token cleanup (`src/features/auth/api.ts`)
+- [x] Edge Function + README (`supabase/functions/notify-order-status/`)
+- [x] `tsc --noEmit` clean, `test:logic` 135/135, `test:components` 116/116
+
+**Environment lane — remaining work (cannot be done from the repo alone):**
+
+1. **Apply the migration** — paste
+   `supabase/migrations/create_push_tokens_table.sql` into the Supabase SQL
+   editor and run it. Confirm RLS is enabled and four policies exist.
+2. **Deploy the Edge Function** —
+   `npx supabase functions deploy notify-order-status --project-ref <ref>`.
+3. **Configure the Database Webhook** per the function README. Critical:
+   enable **"Send previous row data"** — without it, the old_record.current_status
+   check misfires and every UPDATE notifies.
+4. **(Optional) set `EXPO_ACCESS_TOKEN`** secret in the function for
+   higher Push API rate limits.
+5. **Rebuild the Android dev client** — `npm run build:dev:android`. Native
+   deps changed, so the previous dev-client APK won't load this JS bundle.
+   Use an emulator image labelled "Google Play" (not "Google APIs") or push
+   tokens won't provision.
+6. **Run the Manual Android verification checklist** in the
+   [Verification](#verification) section below: registration row, status
+   change → push, foreground behaviour, warm + cold tap routing,
+   malformed payload ignored, sign-out row deletion.
+7. **Run the iOS simulator handling-only checks** with
+   `xcrun simctl push booted com.apollo.tailor payload.apns`. Confirm
+   registration silently no-ops and the tap still routes.
+8. **Open the PR** against `main` with `Closes #21`.
+
+Everything below this point is the original plan, preserved for reference.
+
+---
+
 ## Context
 
 Customers currently only learn that their order status has changed by
@@ -314,31 +357,39 @@ is a deliberate follow-up — keeps this PR focused.
 
 ## Acceptance criteria
 
-- [ ] `push_tokens` table created via migration with RLS policies.
-- [ ] On Android, fresh login triggers permission prompt and inserts a row.
-- [ ] **Logging in twice on the same device does not create duplicate token rows**
-      (relies on `token UNIQUE` + ON CONFLICT upsert).
-- [ ] **Permission denied path is silent and non-blocking** — no thrown
-      errors, app remains usable, no token row created.
-- [ ] Status change in Supabase dashboard delivers a contextual push
-      notification on Android within seconds.
-- [ ] **Cold-start tap routing works** (app terminated → tap notification
-      → opens order detail screen), in addition to warm-start.
-- [ ] **Unknown or malformed `data.url` is ignored safely** — no router
-      navigation on bad payloads.
-- [ ] On iOS simulator, code path no-ops gracefully and the tap-handler
-      routes correctly when fed a fake payload via `xcrun simctl push`.
-- [ ] Edge Function deletes any token returning `DeviceNotRegistered`
-      at the **ticket** level (receipt polling deferred).
-- [ ] Sign out removes the current device's token through the auth
-      abstraction layer (not the profile screen). **Logout still succeeds
-      if token deletion fails** (offline / network error).
-- [ ] In-session token roll re-upserts via `addPushTokenListener`.
-- [ ] **Webhook duplicate delivery is acceptable in this PR** — Supabase
-      may retry on transient failure, which can produce duplicate
-      notifications for the same status change. Documented as a known
-      limitation; idempotency (e.g. dedup by `(orderId, newStatus)` in a
-      short-lived KV) is a follow-up.
-- [ ] Foreground notification behaviour matches the declared
-      `setNotificationHandler` config and is documented inline.
-- [ ] Logic + component test suites pass; typecheck clean.
+Legend: **[code]** = satisfied by merged code (tests cover it).
+**[env]** = still requires manual verification against a live Supabase +
+device.
+
+- [x] **[code]** `push_tokens` migration written with RLS policies. **[env]**
+      Table actually created in Supabase.
+- [ ] **[env]** On Android, fresh login triggers permission prompt and
+      inserts a row.
+- [x] **[code]** Logging in twice on the same device does not create
+      duplicate token rows (test in `api.test.ts` asserts
+      `onConflict: "token"`).
+- [x] **[code]** Permission denied path is silent and non-blocking (tested
+      in both `notifications.test.ts` and `usePushNotifications.test.tsx`).
+- [ ] **[env]** Status change in Supabase dashboard delivers a contextual
+      push notification on Android within seconds.
+- [x] **[code]** Cold-start tap routing wired with a `handledRef` latch
+      (tested). **[env]** Verify end-to-end (kill app, tap notification).
+- [x] **[code]** Unknown or malformed `data.url` is ignored safely
+      (`parseDeepLinkFromNotification` returns null; tested).
+- [ ] **[env]** On iOS simulator, registration silently no-ops and
+      `xcrun simctl push` tap routes correctly.
+- [x] **[code]** Edge Function deletes any token returning
+      `DeviceNotRegistered` at the ticket level. **[env]** Verify once
+      deployed by pointing a stale token at an order status change.
+- [x] **[code]** Sign out removes the current device's token via the auth
+      abstraction; failure does not block logout (try/catch swallow).
+      **[env]** Verify row is actually deleted from Supabase.
+- [x] **[code]** In-session token roll re-upserts via
+      `addPushTokenListener` (tested).
+- [x] **[code]** Webhook duplicate-delivery dedup is out of scope this PR
+      and documented in the function README as a follow-up.
+- [x] **[code]** Foreground notification behaviour is declared in
+      `setNotificationHandler` (banner + list + sound) and documented
+      inline. **[env]** Verify the declared behaviour matches what the
+      OS actually renders.
+- [x] **[code]** Logic + component test suites pass; typecheck clean.
