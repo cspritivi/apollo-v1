@@ -81,7 +81,27 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   runtimeVersion: {
     policy: "fingerprint",
   },
-  plugins: ["expo-router", "expo-asset"],
+  plugins: [
+    "expo-router",
+    "expo-asset",
+    /**
+     * expo-notifications config plugin — wires the Android notification
+     * icon + color at build time (native-side Manifest entries). The icon
+     * MUST be white-on-transparent; Android silhouettes any colored pixels
+     * into a flat shape. We reuse the launcher's monochrome foreground,
+     * which already meets this requirement. The channel itself is still
+     * created at runtime via setNotificationChannelAsync (see
+     * src/lib/notifications.ts) because SDK 54's plugin does not expose
+     * channel config options declaratively.
+     */
+    [
+      "expo-notifications",
+      {
+        icon: "./assets/notification-icon.png",
+        color: "#4f46e5",
+      },
+    ],
+  ],
   updates: {
     /**
      * EAS Update URL — tells the app where to check for OTA updates.
