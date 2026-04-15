@@ -7,6 +7,7 @@ module.exports = {
   testMatch: [
     "<rootDir>/src/features/**/*.test.tsx",
     "<rootDir>/src/components/**/*.test.tsx",
+    "<rootDir>/src/hooks/**/*.test.tsx",
     "<rootDir>/app/**/*.test.tsx",
   ],
   transformIgnorePatterns: [
