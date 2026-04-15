@@ -4,6 +4,15 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useSession } from "@/hooks/useSession";
 import { ActivityIndicator, View } from "react-native";
+import { setNotificationHandler } from "@/lib/notifications";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+
+/**
+ * Configure foreground display behaviour at module scope (before the first
+ * render). Setting this inside the component would leave a window where an
+ * incoming cold-start push has no handler registered yet.
+ */
+setNotificationHandler();
 
 /**
  * Root Layout — the top-level component that wraps every screen in the app.
@@ -42,6 +51,10 @@ export default function RootLayout() {
   const { session, isLoading } = useSession();
   const segments = useSegments();
   const router = useRouter();
+
+  // Push lifecycle — registration, tap routing, token roll. No-ops until a
+  // session is present; safe to call unconditionally (Rules of Hooks).
+  usePushNotifications();
 
   useEffect(() => {
     // Don't redirect while we're still checking for a persisted session.
