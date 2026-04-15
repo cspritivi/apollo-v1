@@ -1,4 +1,8 @@
 import { supabase } from "@/lib/supabase";
+import * as Notifications from "expo-notifications";
+import * as Device from "expo-device";
+import Constants from "expo-constants";
+import { deletePushToken } from "@/features/notifications/api";
 
 /**
  * Auth API — all Supabase auth calls live here.
@@ -126,6 +130,28 @@ export async function signIn({ email, password }: SignInParams) {
  * triggers the redirect to the login screen in root layout.
  */
 export async function signOut() {
+  // Best-effort push token cleanup BEFORE clearing the auth session. Once
+  // signOut completes, RLS blocks a later DELETE on push_tokens (the row is
+  // owned by auth.uid() which is now null). Wrapped in try/catch so that
+  // offline / 4xx / simulator conditions never block logout. The
+  // authoritative prune is server-side (Edge Function removes dead tokens
+  // on DeviceNotRegistered; future job will reap by last_seen_at).
+  try {
+    if (Device.isDevice) {
+      const projectId = Constants.expoConfig?.extra?.eas?.projectId as
+        | string
+        | undefined;
+      if (projectId) {
+        const { data: token } = await Notifications.getExpoPushTokenAsync({
+          projectId,
+        });
+        if (token) await deletePushToken(token);
+      }
+    }
+  } catch {
+    // Swallow — logout must always succeed from the user's perspective.
+  }
+
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
