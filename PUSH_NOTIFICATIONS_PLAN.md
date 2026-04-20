@@ -2,42 +2,61 @@
 
 ## Implementation status
 
-**Code lane — complete (9 atomic commits on `feat/push-notifications-21`):**
+**Code lane — complete (14 atomic commits on `feat/push-notifications-21`):**
 
 - [x] Migration SQL written (`supabase/migrations/create_push_tokens_table.sql`)
 - [x] `expo-notifications` + `expo-device` installed, config plugin wired
 - [x] `src/lib/notifications.ts` utilities + 11 unit tests
 - [x] `src/features/notifications/{api,hooks}.ts` + 6 unit tests
-- [x] `src/hooks/usePushNotifications.ts` orchestrator + 8 component tests
+- [x] `src/hooks/usePushNotifications.ts` orchestrator + 9 component tests
 - [x] Root layout wiring (`app/_layout.tsx`)
 - [x] Sign-out token cleanup (`src/features/auth/api.ts`)
 - [x] Edge Function + README (`supabase/functions/notify-order-status/`)
-- [x] `tsc --noEmit` clean, `test:logic` 135/135, `test:components` 116/116
+- [x] `google-services.json` added + `googleServicesFile` reference in
+      `app.config.ts` (required for FirebaseApp initialization)
+- [x] `addPushTokenListener` filtered to skip raw FCM tokens — only
+      upserts `ExponentPushToken[...]` format (raw platform tokens would
+      create unusable rows; discovered during emulator testing)
+- [x] Edge Function fetch wrapped in try/catch for network resilience
+- [x] `tsc --noEmit` clean, `test:logic` 135/135, `test:components` 117/117
 
-**Environment lane — remaining work (cannot be done from the repo alone):**
+**Environment lane — completed:**
 
-1. **Apply the migration** — paste
-   `supabase/migrations/create_push_tokens_table.sql` into the Supabase SQL
-   editor and run it. Confirm RLS is enabled and four policies exist.
-2. **Deploy the Edge Function** —
-   `npx supabase functions deploy notify-order-status --project-ref <ref>`.
-3. **Configure the Database Webhook** per the function README. Critical:
-   enable **"Send previous row data"** — without it, the old_record.current_status
-   check misfires and every UPDATE notifies.
-4. **(Optional) set `EXPO_ACCESS_TOKEN`** secret in the function for
-   higher Push API rate limits.
-5. **Rebuild the Android dev client** — `npm run build:dev:android`. Native
-   deps changed, so the previous dev-client APK won't load this JS bundle.
-   Use an emulator image labelled "Google Play" (not "Google APIs") or push
-   tokens won't provision.
-6. **Run the Manual Android verification checklist** in the
-   [Verification](#verification) section below: registration row, status
-   change → push, foreground behaviour, warm + cold tap routing,
-   malformed payload ignored, sign-out row deletion.
-7. **Run the iOS simulator handling-only checks** with
-   `xcrun simctl push booted com.apollo.tailor payload.apns`. Confirm
-   registration silently no-ops and the tap still routes.
-8. **Open the PR** against `main` with `Closes #21`.
+1. ~~Apply the migration~~ — done via Supabase SQL editor.
+2. ~~Deploy the Edge Function~~ — done via `npx supabase functions deploy`.
+3. ~~Configure the Database Webhook~~ — done in Supabase dashboard. Used
+   "Supabase Edge Function" type (auto-includes `old_record` for UPDATEs).
+4. ~~Firebase setup~~ — Firebase project created, `google-services.json`
+   downloaded and committed, FCM V1 Service Account Key uploaded to Expo
+   via `eas credentials`.
+
+**Server-side verified (via Edge Function logs):**
+
+- [x] Webhook fires on status change with correct `old_record`/`record`.
+- [x] Status diff detection works (`READY_FOR_TRIAL → TRIAL_COMPLETE`, etc.).
+- [x] Product + fabric enrichment works ("Your Black Wool Crepe Two-Piece Suit: ...").
+- [x] Token fetch returns the correct `ExponentPushToken[...]`.
+- [x] Expo Push API returns `status: "ok"` with a ticket ID — delivery
+      accepted by Expo and forwarded to FCM.
+
+**Remaining — physical device verification:**
+
+The Android emulator (Pixel 9, API 36, Google Play image) successfully
+registered an Expo push token and the server pipeline works end-to-end
+(ticket `status: "ok"`), but FCM did not deliver the notification to
+the emulator. This is a known emulator limitation — FCM delivery is
+unreliable on some emulator images. Remaining verification must happen
+on a **physical Android device**:
+
+1. Install the dev client APK on a physical Android phone.
+2. Log in → confirm `push_tokens` row appears in Supabase.
+3. Change an order's `current_status` in the dashboard → notification
+   should appear on the device.
+4. Tap the notification (warm-start + cold-start) → app opens on the
+   order detail screen.
+5. Sign out → confirm `push_tokens` row is deleted.
+6. iOS simulator tap-routing test via `xcrun simctl push`.
+7. **Open the PR** against `main` with `Closes #21`.
 
 Everything below this point is the original plan, preserved for reference.
 
