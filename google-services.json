@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "219476600594",
+    "project_id": "apollo-v1-5f3ed",
+    "storage_bucket": "apollo-v1-5f3ed.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:219476600594:android:a709762ef6e7019c5d35cb",
+        "android_client_info": {
+          "package_name": "com.apollo.tailor"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnGU9-wGyEQpr357vikEWiwLoVrvCACjU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
