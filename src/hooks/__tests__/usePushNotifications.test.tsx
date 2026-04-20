@@ -225,6 +225,22 @@ describe("usePushNotifications — token roll + cleanup", () => {
     );
   });
 
+  it("ignores raw FCM/APNs tokens (only upserts ExponentPushToken format)", async () => {
+    mockSessionValue = { session: { user: { id: "user-1" } } };
+    renderHook(() => usePushNotifications(), { wrapper });
+
+    await waitFor(() => expect(mockAddPushTokenListener).toHaveBeenCalled());
+    await waitFor(() => expect(mockUpsertPushToken).toHaveBeenCalledTimes(1));
+
+    const cb = mockAddPushTokenListener.mock.calls[0][0];
+    await act(async () => {
+      cb({ data: "cZRoJQotSRuHEYiYwF45_4:APA91bE9DpXg...", type: "expo" });
+    });
+
+    // Should still be 1 — the raw token was skipped.
+    expect(mockUpsertPushToken).toHaveBeenCalledTimes(1);
+  });
+
   it("cleans up both listeners on unmount", async () => {
     mockSessionValue = { session: { user: { id: "user-1" } } };
     const { unmount } = renderHook(() => usePushNotifications(), { wrapper });

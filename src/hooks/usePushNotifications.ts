@@ -113,7 +113,11 @@ export function usePushNotifications() {
       const pid = profileIdRef.current;
       if (!pid) return;
       const token = (tokenEvent as { data?: string }).data;
-      if (!token) return;
+      // addPushTokenListener fires with the raw platform token (FCM/APNs),
+      // not the Expo-wrapped token. The Expo Push API only accepts
+      // ExponentPushToken[...] format, so skip raw platform tokens —
+      // they'd be unusable and create orphaned rows.
+      if (!token || !token.startsWith("ExponentPushToken[")) return;
       upsertPushToken({
         profileId: pid,
         token,
