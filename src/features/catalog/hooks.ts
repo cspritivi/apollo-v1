@@ -44,14 +44,25 @@ import { ProductOption, SavedFabric } from "@/types";
  * background (stale-while-revalidate). This balances freshness with
  * performance on mobile networks.
  */
+/**
+ * WHY THE `enabled` OPTION:
+ * Supabase RLS requires an authenticated session — requests without a valid
+ * JWT return an empty array (not an error). On cold start the session is
+ * restored from AsyncStorage asynchronously, so React Query can fire before
+ * the JWT is available. Passing `enabled: !!session` from the screen delays
+ * the query until the session exists, preventing a cached empty result that
+ * would persist for the full staleTime window.
+ */
 export function useFabrics(filters?: {
   availableOnly?: boolean;
   colorTag?: string;
+  enabled?: boolean;
 }) {
   return useQuery({
     queryKey: ["fabrics", filters],
     queryFn: () => fetchFabrics(filters),
     staleTime: 5 * 60 * 1000, // 5 minutes — catalog data changes rarely
+    enabled: filters?.enabled ?? true,
   });
 }
 
@@ -246,11 +257,16 @@ export function useUnsaveFabric(userId: string) {
  * maybe once a month). 5 minutes keeps the catalog snappy on mobile
  * while still picking up changes within a single browsing session.
  */
-export function useProducts() {
+/**
+ * Same `enabled` guard as useFabrics — see comment there for rationale.
+ * Products have the same RLS policy, so the same cold-start race applies.
+ */
+export function useProducts(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["products"],
     queryFn: () => fetchProducts(),
     staleTime: 5 * 60 * 1000,
+    enabled: options?.enabled ?? true,
   });
 }
 

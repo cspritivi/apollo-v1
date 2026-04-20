@@ -1,5 +1,12 @@
 import { useCallback } from "react";
-import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+} from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { padGridData } from "@/lib/gridUtils";
 import { useRouter } from "expo-router";
@@ -7,6 +14,7 @@ import { useProducts } from "@/features/catalog/hooks";
 import ProductCard from "@/features/catalog/components/ProductCard";
 import { Product } from "@/types";
 import { useRecentlyViewedStore } from "@/stores/recentlyViewedStore";
+import { useSession } from "@/hooks/useSession";
 
 /**
  * Products catalog screen — browsable grid of available product types.
@@ -26,13 +34,14 @@ import { useRecentlyViewedStore } from "@/stores/recentlyViewedStore";
  */
 export default function ProductsScreen() {
   const router = useRouter();
+  const { session } = useSession();
   const {
     data: products,
     isLoading,
     error,
     refetch,
     isRefetching,
-  } = useProducts();
+  } = useProducts({ enabled: !!session });
 
   /**
    * Navigate to the configurator with the selected product.
@@ -75,24 +84,35 @@ export default function ProductsScreen() {
   }
 
   // --- Error state ---
+  // Wrapped in ScrollView with RefreshControl so the user can pull to retry.
   if (error) {
     return (
-      <View style={styles.centered}>
+      <ScrollView
+        contentContainerStyle={styles.centered}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+        }
+      >
         <Text style={styles.errorTitle}>Something went wrong</Text>
         <Text style={styles.errorMessage}>{error.message}</Text>
-      </View>
+      </ScrollView>
     );
   }
 
   // --- Empty state ---
   if (!products || products.length === 0) {
     return (
-      <View style={styles.centered}>
+      <ScrollView
+        contentContainerStyle={styles.centered}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+        }
+      >
         <Text style={styles.emptyTitle}>No products available</Text>
         <Text style={styles.emptyMessage}>
           Check back soon — new products are added regularly.
         </Text>
-      </View>
+      </ScrollView>
     );
   }
 
