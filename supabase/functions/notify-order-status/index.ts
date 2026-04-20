@@ -173,17 +173,22 @@ Deno.serve(async (req: Request) => {
   // Batch send. Expo accepts up to 100 per call; we're well under that for
   // one customer.
   const expoAccessToken = Deno.env.get("EXPO_ACCESS_TOKEN");
-  const pushRes = await fetch("https://exp.host/--/api/v2/push/send", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      ...(expoAccessToken
-        ? { Authorization: `Bearer ${expoAccessToken}` }
-        : {}),
-    },
-    body: JSON.stringify(messages),
-  });
+  let pushRes: Response;
+  try {
+    pushRes = await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(expoAccessToken
+          ? { Authorization: `Bearer ${expoAccessToken}` }
+          : {}),
+      },
+      body: JSON.stringify(messages),
+    });
+  } catch (e) {
+    return new Response(`fetch failed: ${e}`, { status: 502 });
+  }
 
   if (!pushRes.ok) {
     const text = await pushRes.text();
