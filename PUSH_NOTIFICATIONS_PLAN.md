@@ -39,14 +39,35 @@
 - [x] Expo Push API returns `status: "ok"` with a ticket ID — delivery
       accepted by Expo and forwarded to FCM.
 
-**Remaining — physical device verification:**
+**Remaining — device verification (two phases):**
 
 The Android emulator (Pixel 9, API 36, Google Play image) successfully
 registered an Expo push token and the server pipeline works end-to-end
 (ticket `status: "ok"`), but FCM did not deliver the notification to
 the emulator. This is a known emulator limitation — FCM delivery is
-unreliable on some emulator images. Remaining verification must happen
-on a **physical Android device**:
+unreliable on some emulator images.
+
+**Phase 1 — iOS simulator (requires MacBook + Xcode):**
+
+Verifies notification *handling* logic without needing APNs or Apple
+Developer enrollment. Use `xcrun simctl push` to inject notifications.
+
+1. Build iOS dev client: `npm run build:dev:ios`.
+2. Log in on simulator → confirm registration silently no-ops (no crash,
+   no `push_tokens` row created).
+3. Create `payload.apns` with the Edge Function's payload format
+   (`data.url: "/order-detail?orderId=..."`) and push via
+   `xcrun simctl push booted com.apollo.tailor payload.apns`.
+4. **Warm-start tap routing:** app is open → send push → tap → verify
+   navigation to order detail screen.
+5. **Cold-start tap routing:** kill app → send push → tap → verify app
+   launches and navigates to order detail screen.
+6. Sign out → confirm no crash (no-op path, no token row to delete).
+
+**Phase 2 — physical Android device (blocked until device available):**
+
+Verifies the full end-to-end delivery pipeline (webhook → Edge Function
+→ Expo Push API → FCM → device).
 
 1. Install the dev client APK on a physical Android phone.
 2. Log in → confirm `push_tokens` row appears in Supabase.
@@ -54,9 +75,15 @@ on a **physical Android device**:
    should appear on the device.
 4. Tap the notification (warm-start + cold-start) → app opens on the
    order detail screen.
-5. Sign out → confirm `push_tokens` row is deleted.
-6. iOS simulator tap-routing test via `xcrun simctl push`.
-7. **Open the PR** against `main` with `Closes #21`.
+5. Foreground notification: trigger status change while app is open →
+   verify banner/list/sound matches `setNotificationHandler` config.
+6. Sign out → confirm `push_tokens` row is deleted.
+7. Point a stale token at a status change → confirm
+   `DeviceNotRegistered` cleanup deletes the row.
+
+**PR plan:** Open the PR against `main` with `Closes #21` after Phase 1
+is complete. Phase 2 verification tracked as a follow-up GitHub issue
+linked from the PR body.
 
 Everything below this point is the original plan, preserved for reference.
 
@@ -377,38 +404,40 @@ is a deliberate follow-up — keeps this PR focused.
 ## Acceptance criteria
 
 Legend: **[code]** = satisfied by merged code (tests cover it).
-**[env]** = still requires manual verification against a live Supabase +
-device.
+**[phase1]** = verifiable on iOS simulator with `xcrun simctl push`.
+**[phase2]** = requires physical Android device.
 
 - [x] **[code]** `push_tokens` migration written with RLS policies. **[env]**
       Table actually created in Supabase.
-- [ ] **[env]** On Android, fresh login triggers permission prompt and
+- [ ] **[phase2]** On Android, fresh login triggers permission prompt and
       inserts a row.
 - [x] **[code]** Logging in twice on the same device does not create
       duplicate token rows (test in `api.test.ts` asserts
       `onConflict: "token"`).
 - [x] **[code]** Permission denied path is silent and non-blocking (tested
       in both `notifications.test.ts` and `usePushNotifications.test.tsx`).
-- [ ] **[env]** Status change in Supabase dashboard delivers a contextual
+- [ ] **[phase2]** Status change in Supabase dashboard delivers a contextual
       push notification on Android within seconds.
 - [x] **[code]** Cold-start tap routing wired with a `handledRef` latch
-      (tested). **[env]** Verify end-to-end (kill app, tap notification).
+      (tested). **[phase1]** Verify end-to-end via `xcrun simctl push`
+      (kill app, tap notification).
 - [x] **[code]** Unknown or malformed `data.url` is ignored safely
       (`parseDeepLinkFromNotification` returns null; tested).
-- [ ] **[env]** On iOS simulator, registration silently no-ops and
-      `xcrun simctl push` tap routes correctly.
+- [ ] **[phase1]** On iOS simulator, registration silently no-ops and
+      `xcrun simctl push` tap routes correctly (warm-start + cold-start).
 - [x] **[code]** Edge Function deletes any token returning
-      `DeviceNotRegistered` at the ticket level. **[env]** Verify once
+      `DeviceNotRegistered` at the ticket level. **[phase2]** Verify once
       deployed by pointing a stale token at an order status change.
 - [x] **[code]** Sign out removes the current device's token via the auth
       abstraction; failure does not block logout (try/catch swallow).
-      **[env]** Verify row is actually deleted from Supabase.
+      **[phase1]** Verify no crash on simulator (no-op path).
+      **[phase2]** Verify row is actually deleted from Supabase.
 - [x] **[code]** In-session token roll re-upserts via
       `addPushTokenListener` (tested).
 - [x] **[code]** Webhook duplicate-delivery dedup is out of scope this PR
       and documented in the function README as a follow-up.
 - [x] **[code]** Foreground notification behaviour is declared in
       `setNotificationHandler` (banner + list + sound) and documented
-      inline. **[env]** Verify the declared behaviour matches what the
+      inline. **[phase2]** Verify the declared behaviour matches what the
       OS actually renders.
 - [x] **[code]** Logic + component test suites pass; typecheck clean.
