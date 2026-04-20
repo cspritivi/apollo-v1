@@ -49,3 +49,4 @@ coverage/
 # One-time admin scripts that may contain or reference service role keys
 /scripts
 product-images/
+supabase/.temp/
