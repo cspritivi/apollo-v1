@@ -47,6 +47,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
      * Required for EAS Build and Play Store submission.
      */
     package: "com.apollo.tailor",
+    /**
+     * Points EAS Build to the Firebase client config so the native build
+     * initializes FirebaseApp with the FCM credentials. Without this,
+     * getExpoPushTokenAsync throws "FirebaseApp is not initialized".
+     */
+    googleServicesFile: "./google-services.json",
     adaptiveIcon: {
       backgroundColor: "#E6F4FE",
       foregroundImage: "./assets/android-icon-foreground.png",
