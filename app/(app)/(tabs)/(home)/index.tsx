@@ -8,6 +8,7 @@ import HeroBanner from "@/features/home/components/HeroBanner";
 import QuickActions from "@/features/home/components/QuickActions";
 import FeaturedSection from "@/features/home/components/FeaturedSection";
 import { useFabrics } from "@/features/catalog/hooks";
+import { useSession } from "@/hooks/useSession";
 import { Fabric } from "@/types";
 
 /**
@@ -36,10 +37,14 @@ const FEATURED_FABRIC_LIMIT = 8;
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { session } = useSession();
 
   // Fetch available fabrics for the featured section — same query used by
   // the Fabrics tab, so React Query deduplicates and caches automatically
-  const { data: fabrics } = useFabrics({ availableOnly: true });
+  const { data: fabrics } = useFabrics({
+    availableOnly: true,
+    enabled: !!session,
+  });
   const featuredFabrics = fabrics?.slice(0, FEATURED_FABRIC_LIMIT) ?? [];
 
   const handleRecentlyViewedPress = (item: RecentlyViewedItem) => {

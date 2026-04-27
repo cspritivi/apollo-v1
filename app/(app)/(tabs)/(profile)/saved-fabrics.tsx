@@ -49,6 +49,7 @@ export default function SavedFabricsScreen() {
 
   const { data: allFabrics, isLoading: isFabricsLoading } = useFabrics({
     availableOnly: true,
+    enabled: !!session,
   });
 
   const saveMutation = useSaveFabric(userId ?? "");

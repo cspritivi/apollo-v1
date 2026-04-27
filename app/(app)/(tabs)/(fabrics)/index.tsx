@@ -1,5 +1,12 @@
 import { useState, useCallback, useMemo } from "react";
-import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+} from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { padGridData } from "@/lib/gridUtils";
 import {
@@ -48,6 +55,10 @@ export default function FabricsScreen() {
     isRefetching,
   } = useFabrics({
     availableOnly: true,
+    // Gate on session to prevent firing before the JWT is available.
+    // Without this, RLS returns an empty array on cold start and React
+    // Query caches it for the full staleTime window.
+    enabled: !!session,
   });
 
   // Fetch saved fabric IDs to show save state on each card.
@@ -175,24 +186,36 @@ export default function FabricsScreen() {
   }
 
   // --- Error state ---
+  // Wrapped in ScrollView with RefreshControl so the user can pull to retry
+  // instead of being stuck on a dead-end screen.
   if (error) {
     return (
-      <View style={styles.centered}>
+      <ScrollView
+        contentContainerStyle={styles.centered}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+        }
+      >
         <Text style={styles.errorTitle}>Something went wrong</Text>
         <Text style={styles.errorMessage}>{error.message}</Text>
-      </View>
+      </ScrollView>
     );
   }
 
   // --- Empty state (all fabrics unavailable or none seeded) ---
   if (!fabrics || fabrics.length === 0) {
     return (
-      <View style={styles.centered}>
+      <ScrollView
+        contentContainerStyle={styles.centered}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+        }
+      >
         <Text style={styles.emptyTitle}>No fabrics available</Text>
         <Text style={styles.emptyMessage}>
           Check back soon — new fabrics are added regularly.
         </Text>
-      </View>
+      </ScrollView>
     );
   }
 
