@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useProduct, useProductOptions } from "@/features/catalog/hooks";
 import { useConfiguratorStore } from "@/stores/configuratorStore";
+import { useConfiguratorSnapshotStore } from "@/stores/configuratorSnapshotStore";
 import { useCartStore } from "@/stores/cartStore";
 import { useCreateOrder } from "@/features/orders/hooks";
 import { useSession } from "@/hooks/useSession";
@@ -67,6 +68,21 @@ export default function ConfiguratorScreen() {
   // --- Cart store ---
   const addToCart = useCartStore((s) => s.addItem);
 
+  // --- Snapshot store actions (issue #49) ---
+  // Save on unmount so the customer can resume an in-progress configuration
+  // from the recently viewed row. Clear when the configuration is consumed
+  // (cart-add or order placement) so we never show "In Progress" for a draft
+  // that has already been used.
+  const saveSnapshot = useConfiguratorSnapshotStore((s) => s.saveSnapshot);
+  const clearSnapshot = useConfiguratorSnapshotStore((s) => s.clearSnapshot);
+
+  // Consume guard -- flipped to true by handleAddToCart and the order
+  // mutation's onSuccess. The unmount cleanup checks it before saving so a
+  // just-consumed configuration is never re-saved. Defensive: today reset()
+  // already runs before navigation so the cleanup would see empty state, but
+  // this protects us if anything async ever lands between consume and unmount.
+  const consumedRef = useRef(false);
+
   // --- Order creation mutation (express checkout) ---
   const createOrderMutation = useCreateOrder();
 
@@ -117,13 +133,49 @@ export default function ConfiguratorScreen() {
     }
   }, [product, storeProduct?.id, setProduct]);
 
-  // --- Clean up on unmount ---
-  // When the user navigates away from the configurator (back button,
-  // tab switch), reset the store to prevent stale state if they
-  // return to configure a different product.
+  // --- Clean up on unmount: save snapshot if there's anything to save ---
+  // If the customer leaves mid-configuration (back button, tab switch), we
+  // persist their selections keyed by product id so they can resume later
+  // from the recently viewed row. The cleanup reads state via getState()
+  // because the closure captures whatever values were live at effect-setup.
+  //
+  // Skip the save when consumedRef is true (cart-add / order success path).
+  // Skip when there's nothing worth saving -- empty state should never
+  // create a snapshot, and a saved-then-immediately-evicted entry would
+  // pollute the LRU cap pointlessly.
   useEffect(() => {
-    return () => reset();
-  }, [reset]);
+    return () => {
+      if (consumedRef.current) {
+        reset();
+        return;
+      }
+
+      const state = useConfiguratorStore.getState();
+      const hasSelections =
+        state.fabric !== null ||
+        Object.keys(state.selectedOptions).length > 0 ||
+        state.customerNotes.trim().length > 0;
+
+      if (state.product && hasSelections) {
+        // Map the in-memory ProductOption objects back down to ids -- the
+        // snapshot is intentionally id-only so we never persist stale
+        // catalog data (see configuratorSnapshotStore).
+        const selectedOptionIds: Record<string, string> = {};
+        for (const [group, option] of Object.entries(state.selectedOptions)) {
+          selectedOptionIds[group] = option.id;
+        }
+        saveSnapshot(state.product.id, {
+          fabricId: state.fabric?.id ?? null,
+          selectedOptionIds,
+          currentStep: state.currentStep,
+          customerNotes: state.customerNotes,
+          savedAt: Date.now(),
+        });
+      }
+
+      reset();
+    };
+  }, [reset, saveSnapshot]);
 
   // --- Build step labels for the progress bar ---
   // Memoized because it only changes when the product changes.
@@ -243,7 +295,11 @@ export default function ConfiguratorScreen() {
       selectedOptions,
       customerNotes,
     });
-    // Reset configurator and navigate to products tab
+    // Cart add is synchronous (Zustand setState) so the configuration is
+    // consumed immediately. Clear the persisted snapshot and flag the
+    // unmount cleanup not to re-save it.
+    consumedRef.current = true;
+    clearSnapshot(product.id);
     reset();
     router.back();
 
@@ -288,6 +344,13 @@ export default function ConfiguratorScreen() {
             },
             {
               onSuccess: () => {
+                // Order placed successfully -- the configuration is
+                // consumed. Clear the persisted snapshot ONLY here, never
+                // before the mutation, so a server failure leaves the
+                // customer's draft intact and they can retry without
+                // losing state.
+                consumedRef.current = true;
+                clearSnapshot(product.id);
                 reset();
                 router.replace("/order-success");
               },
