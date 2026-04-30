@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -8,13 +8,18 @@ import {
   StyleSheet,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useProduct, useProductOptions } from "@/features/catalog/hooks";
+import {
+  useFabric,
+  useProduct,
+  useProductOptions,
+} from "@/features/catalog/hooks";
 import { useConfiguratorStore } from "@/stores/configuratorStore";
 import { useConfiguratorSnapshotStore } from "@/stores/configuratorSnapshotStore";
 import { useCartStore } from "@/stores/cartStore";
 import { useCreateOrder } from "@/features/orders/hooks";
 import { useSession } from "@/hooks/useSession";
 import { calculatePrice } from "@/features/orders/utils/calculatePrice";
+import { buildHydratedConfig } from "@/features/configurator/utils/buildHydratedConfig";
 import Toast from "react-native-toast-message";
 import ProgressBar from "@/features/configurator/components/ProgressBar";
 import FabricSelectionStep from "@/features/configurator/components/FabricSelectionStep";
@@ -61,7 +66,17 @@ import SupportFAB from "@/components/SupportFAB";
  * touching the other layers."
  */
 export default function ConfiguratorScreen() {
-  const { productId } = useLocalSearchParams<{ productId: string }>();
+  const { productId, resume } = useLocalSearchParams<{
+    productId: string;
+    /**
+     * "1" -> entry came from the recently viewed row (issue #49). The
+     * init effect auto-restores any saved snapshot for this product
+     * without prompting. Anything else (or absent) -> entry came from
+     * the catalog flow; if a snapshot exists we prompt before
+     * overwriting it.
+     */
+    resume?: string;
+  }>();
   const router = useRouter();
   const { session } = useSession();
 
@@ -96,7 +111,6 @@ export default function ConfiguratorScreen() {
   // Each selector subscribes to only the slice it needs — changing fabric
   // doesn't re-render the progress bar, changing step doesn't re-render
   // the review summary, etc.
-  const storeProduct = useConfiguratorStore((s) => s.product);
   const fabric = useConfiguratorStore((s) => s.fabric);
   const selectedOptions = useConfiguratorStore((s) => s.selectedOptions);
   const currentStep = useConfiguratorStore((s) => s.currentStep);
@@ -116,22 +130,126 @@ export default function ConfiguratorScreen() {
   const goToStep = useConfiguratorStore((s) => s.goToStep);
   const setCustomerNotes = useConfiguratorStore((s) => s.setCustomerNotes);
   const reset = useConfiguratorStore((s) => s.reset);
+  const hydrate = useConfiguratorStore((s) => s.hydrate);
 
-  // --- Initialize the store with the fetched product ---
-  // When product data loads from React Query, set it in the Zustand store.
-  // This triggers the store's setProduct which resets all other state,
-  // ensuring a clean configurator session.
-  //
-  // WHY CHECK storeProduct?.id !== product?.id:
-  // Without this guard, the effect would re-run on every render (since
-  // product is a new object reference from React Query each time) and
-  // reset the user's selections. We only want to set the product when
-  // it's genuinely a different product (or the first load).
+  // --- Snapshot read for restore decision (issue #49) ---
+  // Subscribed reactively so the init effect re-fires once the store
+  // rehydrates from AsyncStorage. Selecting by productId (instead of the
+  // whole map) keeps unrelated saves from re-rendering this screen.
+  const snapshot = useConfiguratorSnapshotStore((s) =>
+    productId ? s.snapshots[productId] : undefined,
+  );
+  const snapshotsHydrated = useConfiguratorSnapshotStore((s) => s.hasHydrated);
+
+  // useFabric MUST be called unconditionally on every render (rules of
+  // hooks). When the snapshot has no fabric (or there's no snapshot at
+  // all), pass undefined -- the hook short-circuits with `enabled: false`
+  // and never fires a request.
+  const snapshotFabricId = snapshot?.fabricId ?? undefined;
+  const fabricQuery = useFabric(snapshotFabricId);
+
+  // Tracks whether we've made the init decision. Drives the loading
+  // gate so the customer never sees a flash of empty/fresh config UI
+  // before the resume prompt resolves or auto-restore lands.
+  const [isInitialized, setIsInitialized] = useState(false);
+  // Separate ref-level guard: we may need to keep waiting on the alert
+  // user-tap AFTER deciding to start the init. The state flag drives UI;
+  // this ref drives "have we already kicked off init" to prevent the
+  // effect from stacking alerts on dependency churn.
+  const initStartedRef = useRef(false);
+
+  // --- Single init path replaces the old eager setProduct effect ---
+  // Waits for: snapshot store rehydrated + product loaded + grouped options
+  // loaded + (if a snapshot fabric is referenced) the fabric query settled.
+  // Then runs the decision tree exactly once. Does NOT layer on top of an
+  // eager setProduct -- that caused a "fresh config flash" before the
+  // restore landed in earlier iterations.
   useEffect(() => {
-    if (product && storeProduct?.id !== product.id) {
+    if (initStartedRef.current) return;
+    if (!productId) return;
+    if (!snapshotsHydrated) return;
+    if (!product) return;
+    if (!groupedOptions) return;
+
+    // If a snapshot referenced a fabric, wait for that query to settle
+    // (success OR error). Without this gate the helper would receive
+    // undefined and silently drop the fabric even when it exists.
+    const needsFabric = snapshotFabricId !== undefined;
+    const fabricSettled = fabricQuery.isSuccess || fabricQuery.isError;
+    if (needsFabric && !fabricSettled) return;
+
+    initStartedRef.current = true;
+
+    // No snapshot -> classic fresh start.
+    if (!snapshot) {
       setProduct(product);
+      setIsInitialized(true);
+      return;
     }
-  }, [product, storeProduct?.id, setProduct]);
+
+    const config = buildHydratedConfig(
+      snapshot,
+      product,
+      groupedOptions,
+      fabricQuery.data ?? null,
+    );
+
+    // Snapshot fully invalidated by catalog changes -> drop and start fresh.
+    if (config === null) {
+      clearSnapshot(productId);
+      setProduct(product);
+      setIsInitialized(true);
+      return;
+    }
+
+    // Came from recently viewed row -> auto-restore (issue #49 spec).
+    if (resume === "1") {
+      hydrate(config);
+      setIsInitialized(true);
+      return;
+    }
+
+    // Catalog entry path with an existing draft -> ask before overwriting.
+    // The loading state stays visible behind the alert until the user
+    // picks, so they never see a fresh-config flash mid-decision.
+    Alert.alert(
+      "Resume your previous configuration?",
+      "We saved where you left off last time.",
+      [
+        {
+          text: "Start fresh",
+          style: "cancel",
+          onPress: () => {
+            clearSnapshot(productId);
+            setProduct(product);
+            setIsInitialized(true);
+          },
+        },
+        {
+          text: "Resume",
+          onPress: () => {
+            hydrate(config);
+            setIsInitialized(true);
+          },
+        },
+      ],
+      { cancelable: false },
+    );
+  }, [
+    productId,
+    snapshotsHydrated,
+    snapshot,
+    product,
+    groupedOptions,
+    snapshotFabricId,
+    fabricQuery.isSuccess,
+    fabricQuery.isError,
+    fabricQuery.data,
+    resume,
+    setProduct,
+    hydrate,
+    clearSnapshot,
+  ]);
 
   // --- Clean up on unmount: save snapshot if there's anything to save ---
   // If the customer leaves mid-configuration (back button, tab switch), we
@@ -205,7 +323,10 @@ export default function ConfiguratorScreen() {
   }, [product, fabric, selectedOptions]);
 
   // --- Loading state ---
-  if (productLoading || optionsLoading) {
+  // Also gates on isInitialized so the customer never sees a flash of
+  // empty/fresh config UI before the snapshot restore decision lands
+  // (or before the resume prompt resolves).
+  if (productLoading || optionsLoading || !isInitialized) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color="#4f46e5" />
