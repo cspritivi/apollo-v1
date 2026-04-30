@@ -219,23 +219,33 @@ Home screen's `onItemPress` handler (decides the route param).
 
 **Home screen `onItemPress` (`app/(app)/(tabs)/(home)/index.tsx`):**
 
-- Read snapshot existence for the tapped product id.
-- Pass `resume` as a route param using the existing route shape:
+- Always pass `resume: "1"` for product taps from recently viewed.
+  The route param represents the **entry point** ("this came from
+  recently viewed"), not the snapshot's existence. The configurator
+  already waits on `hasHydrated` and decides "snapshot absent -> fresh
+  start" itself, so Home does not need to peek at the snapshot store.
+  This avoids a cold-start race where Home reads `snapshots` before
+  the store has rehydrated and would otherwise pass `resume: "0"`
+  incorrectly.
 
   ```ts
   router.push({
     pathname: "/(products)/configurator",
     params: {
       productId: item.id,
-      resume: hasSnapshot ? "1" : "0",
+      resume: "1",
     },
   });
   ```
 
-- Phase 4 reads `useLocalSearchParams<{ resume?: string }>()` to
-  decide auto-restore vs. prompt.
+- Phase 4 reads `useLocalSearchParams<{ resume?: string }>()`. The
+  decision tree there is unchanged: snapshot absent -> `setProduct`;
+  snapshot present + `resume === "1"` -> auto-hydrate; snapshot
+  present + no `resume` -> prompt.
 - Catalog tab navigation (`(products)/index.tsx`) is left unchanged
   -- omitting the `resume` param defaults to the prompt branch.
+- The pill on the row still uses snapshot existence (gated on
+  `hasHydrated`) as before; only the route param semantics change.
 
 ### Phase 6 -- Clear snapshot when configuration is consumed
 
