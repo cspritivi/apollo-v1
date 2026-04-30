@@ -49,9 +49,15 @@ export default function HomeScreen() {
 
   const handleRecentlyViewedPress = (item: RecentlyViewedItem) => {
     if (item.type === "product") {
+      // resume="1" tells the configurator this entry came from recently
+      // viewed (issue #49), which switches it to auto-restore any saved
+      // snapshot for this product instead of prompting. We pass it
+      // unconditionally and let the configurator decide what to do --
+      // peeking at the snapshot store from here would race with its
+      // async AsyncStorage rehydrate on cold start.
       router.push({
         pathname: "/(products)/configurator",
-        params: { productId: item.id },
+        params: { productId: item.id, resume: "1" },
       } as never);
     } else {
       router.navigate("/(fabrics)" as never);

@@ -4,6 +4,7 @@ import {
   RecentlyViewedItem,
   useRecentlyViewedStore,
 } from "@/stores/recentlyViewedStore";
+import { useConfiguratorSnapshotStore } from "@/stores/configuratorSnapshotStore";
 
 /**
  * RecentlyViewedRow — horizontal scrollable row of recently viewed items.
@@ -33,6 +34,12 @@ export default function RecentlyViewedRow({
 }: RecentlyViewedRowProps) {
   const items = useRecentlyViewedStore((s) => s.items);
 
+  // Snapshot store subscription for the "In Progress" pill (issue #49).
+  // Gate the pill on hasHydrated so we never flash it on/off during the
+  // AsyncStorage rehydrate window on cold start.
+  const snapshots = useConfiguratorSnapshotStore((s) => s.snapshots);
+  const snapshotsHydrated = useConfiguratorSnapshotStore((s) => s.hasHydrated);
+
   const filteredItems = filterType
     ? items.filter((item) => item.type === filterType)
     : items;
@@ -54,33 +61,60 @@ export default function RecentlyViewedRow({
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <Pressable
-            style={({ pressed }) => [
-              styles.card,
-              pressed && styles.cardPressed,
-            ]}
-            onPress={() => onItemPress(item)}
-            accessibilityRole="button"
-            accessibilityLabel={`${item.name}, recently viewed`}
-          >
-            <AppImage
-              source={item.imageUrl}
-              style={styles.image}
-              fallbackText={item.name.charAt(0)}
-              fallbackStyle={styles.imagePlaceholder}
-              fallbackTextStyle={styles.placeholderText}
-            />
-            <Text style={styles.name} numberOfLines={1}>
-              {item.name}
-            </Text>
-            <Text style={styles.price}>
-              {item.type === "fabric"
-                ? `$${(item.price / 100).toFixed(2)}/m`
-                : `From $${(item.price / 100).toFixed(2)}`}
-            </Text>
-          </Pressable>
-        )}
+        renderItem={({ item }) => {
+          // Pill shows only for product items with a saved snapshot, and
+          // only after the snapshot store has rehydrated. Fabric snapshots
+          // do not exist (configurator state is product-only).
+          const showInProgressPill =
+            item.type === "product" &&
+            snapshotsHydrated &&
+            snapshots[item.id] !== undefined;
+
+          // Append ", in progress" so screen reader users get the same
+          // signal sighted users get from the pill. The card's Pressable
+          // groups all child text on iOS, so we set the suffix on the
+          // accessibilityLabel directly rather than relying on the pill
+          // text being read.
+          const a11yLabel = showInProgressPill
+            ? `${item.name}, recently viewed, in progress`
+            : `${item.name}, recently viewed`;
+
+          return (
+            <Pressable
+              style={({ pressed }) => [
+                styles.card,
+                pressed && styles.cardPressed,
+              ]}
+              onPress={() => onItemPress(item)}
+              accessibilityRole="button"
+              accessibilityLabel={a11yLabel}
+            >
+              <AppImage
+                source={item.imageUrl}
+                style={styles.image}
+                fallbackText={item.name.charAt(0)}
+                fallbackStyle={styles.imagePlaceholder}
+                fallbackTextStyle={styles.placeholderText}
+              />
+              {showInProgressPill && (
+                // Absolute positioning anchored to the card. The card
+                // already sets overflow:hidden, so the pill clips to
+                // the rounded corners cleanly.
+                <View style={styles.inProgressPill} pointerEvents="none">
+                  <Text style={styles.inProgressPillText}>In Progress</Text>
+                </View>
+              )}
+              <Text style={styles.name} numberOfLines={1}>
+                {item.name}
+              </Text>
+              <Text style={styles.price}>
+                {item.type === "fabric"
+                  ? `$${(item.price / 100).toFixed(2)}/m`
+                  : `From $${(item.price / 100).toFixed(2)}`}
+              </Text>
+            </Pressable>
+          );
+        }}
       />
     </View>
   );
@@ -144,5 +178,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingBottom: 8,
     paddingTop: 2,
+  },
+  // "In Progress" pill (issue #49). Top-right of the card image, indigo
+  // background to match the existing accent color used for prices.
+  inProgressPill: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    backgroundColor: "#4f46e5",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  inProgressPillText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#fff",
   },
 });

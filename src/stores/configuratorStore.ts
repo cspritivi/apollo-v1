@@ -28,6 +28,7 @@
 
 import { create } from "zustand";
 import { Product, Fabric, ProductOption } from "@/types";
+import type { HydratedConfig } from "@/features/configurator/utils/buildHydratedConfig";
 
 // ============================================================================
 // STORE TYPES
@@ -51,6 +52,14 @@ interface ConfiguratorState {
   goToStep: (step: number) => void;
   setCustomerNotes: (notes: string) => void;
   reset: () => void;
+  /**
+   * Atomic restore from a reconciled snapshot. Use ONLY with the output
+   * of `buildHydratedConfig` -- this action does not validate inputs and
+   * does not run setProduct's reset path. It exists so issue #49 can
+   * write all slices in a single update without flashing the
+   * fresh-config UI mid-mount.
+   */
+  hydrate: (config: HydratedConfig) => void;
 
   // --- Computed helpers ---
   /**
@@ -162,6 +171,15 @@ export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
   setCustomerNotes: (notes) => set({ customerNotes: notes }),
 
   reset: () => set({ ...initialState }),
+
+  hydrate: (config) =>
+    set({
+      product: config.product,
+      fabric: config.fabric,
+      selectedOptions: config.selectedOptions,
+      currentStep: config.currentStep,
+      customerNotes: config.customerNotes,
+    }),
 
   totalSteps: () => calculateTotalSteps(get().product),
 
