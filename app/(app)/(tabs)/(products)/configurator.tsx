@@ -397,7 +397,6 @@ export default function ConfiguratorScreen() {
   const allOptionsSelected =
     product?.option_groups?.every((group) => !!selectedOptions[group]) ?? false;
   const isReviewReady = isReviewStep && fabric && allOptionsSelected;
-  const isNextDisabled = isReviewStep && !isReviewReady;
 
   // --- Format price for confirmation dialog ---
   const formatPrice = (cents: number) => {
