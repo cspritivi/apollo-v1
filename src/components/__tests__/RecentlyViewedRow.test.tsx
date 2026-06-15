@@ -1,8 +1,8 @@
 import React from "react";
 import { render } from "@testing-library/react-native";
 import RecentlyViewedRow from "../RecentlyViewedRow";
-import { RecentlyViewedItem } from "../../stores/recentlyViewedStore";
-import { ConfiguratorSnapshot } from "../../stores/configuratorSnapshotStore";
+import { RecentlyViewedItem } from "@/stores/recentlyViewedStore";
+import { ConfiguratorSnapshot } from "@/stores/configuratorSnapshotStore";
 
 /**
  * Tests for the "In Progress" pill on RecentlyViewedRow (issue #49).
