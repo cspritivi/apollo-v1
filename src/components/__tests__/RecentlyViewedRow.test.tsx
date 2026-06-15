@@ -1,5 +1,5 @@
 import React from "react";
-import { render } from "@testing-library/react-native";
+import { render, fireEvent } from "@testing-library/react-native";
 import RecentlyViewedRow from "../RecentlyViewedRow";
 import { RecentlyViewedItem } from "@/stores/recentlyViewedStore";
 import { ConfiguratorSnapshot } from "@/stores/configuratorSnapshotStore";
@@ -110,6 +110,59 @@ describe("RecentlyViewedRow -- In Progress pill", () => {
     expect(getByLabelText("Shirt, recently viewed")).toBeTruthy();
     // Only one "In Progress" pill renders (the matching product).
     expect(getAllByText("In Progress")).toHaveLength(1);
+  });
+
+  it("fires onItemPress with the tapped item and applies pressed styling", () => {
+    // The render-only pill tests never exercise the card's press path. This
+    // covers both the onPress callback (the screen wires navigation to it)
+    // and the Pressable's `pressed && styles.cardPressed` style branch.
+    mockItems = [productItem("p1", "Suit")];
+    mockHasHydrated = true;
+    const onItemPress = jest.fn();
+
+    const { getByLabelText } = render(
+      <RecentlyViewedRow onItemPress={onItemPress} />,
+    );
+
+    const card = getByLabelText("Suit, recently viewed");
+
+    // pressIn/pressOut toggle the internal pressed state, re-invoking the
+    // style callback with `pressed: true` (the cardPressed branch).
+    fireEvent(card, "pressIn");
+    fireEvent(card, "pressOut");
+
+    // Tap fires the callback with the exact item that was rendered.
+    fireEvent.press(card);
+
+    expect(onItemPress).toHaveBeenCalledTimes(1);
+    expect(onItemPress).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "p1", type: "product", name: "Suit" }),
+    );
+  });
+
+  it("renders nothing when there are no items", () => {
+    // Empty browsing history -> the row should disappear entirely rather
+    // than show an empty "Recently Viewed" header (covers the early return).
+    mockItems = [];
+    mockHasHydrated = true;
+
+    const { toJSON } = render(<RecentlyViewedRow onItemPress={jest.fn()} />);
+
+    expect(toJSON()).toBeNull();
+  });
+
+  it("filters items by type when filterType is provided", () => {
+    // The Fabrics screen passes filterType="product"/"fabric" to scope the
+    // row. This covers the `filterType ? items.filter(...) : items` branch.
+    mockItems = [productItem("p1", "Suit"), fabricItem("f1", "Wool")];
+    mockHasHydrated = true;
+
+    const { getByLabelText, queryByLabelText } = render(
+      <RecentlyViewedRow onItemPress={jest.fn()} filterType="product" />,
+    );
+
+    expect(getByLabelText("Suit, recently viewed")).toBeTruthy();
+    expect(queryByLabelText("Wool, recently viewed")).toBeNull();
   });
 
   it("never renders the pill on fabric items", () => {
