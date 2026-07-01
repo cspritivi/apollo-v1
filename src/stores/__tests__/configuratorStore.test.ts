@@ -488,4 +488,99 @@ describe("configuratorStore", () => {
       expect(useConfiguratorStore.getState().currentOptionGroup()).toBeNull();
     });
   });
+
+  // --------------------------------------------------------------------------
+  // HYDRATE (Phase 2 of issue #49)
+  //
+  // hydrate is the atomic restore action -- takes an already-resolved
+  // HydratedConfig (built upstream by buildHydratedConfig) and writes
+  // every slice in one update. It does NOT trigger setProduct's reset
+  // behavior, because the caller has already reconciled the snapshot.
+  // --------------------------------------------------------------------------
+
+  describe("hydrate", () => {
+    it("sets all slices in one call without triggering setProduct's reset", () => {
+      const { hydrate } = useConfiguratorStore.getState();
+      hydrate({
+        product: mockProduct,
+        fabric: mockFabric,
+        selectedOptions: {
+          collar_style: mockCollarOption,
+          cuff_style: mockCuffOption,
+        },
+        currentStep: 3,
+        customerNotes: "Pre-existing draft notes",
+      });
+
+      const state = useConfiguratorStore.getState();
+      expect(state.product).toEqual(mockProduct);
+      expect(state.fabric).toEqual(mockFabric);
+      expect(state.selectedOptions.collar_style).toEqual(mockCollarOption);
+      expect(state.selectedOptions.cuff_style).toEqual(mockCuffOption);
+      expect(state.currentStep).toBe(3);
+      expect(state.customerNotes).toBe("Pre-existing draft notes");
+    });
+
+    it("accepts a null fabric (notes-only / partial-restore case)", () => {
+      const { hydrate } = useConfiguratorStore.getState();
+      hydrate({
+        product: mockProduct,
+        fabric: null,
+        selectedOptions: {},
+        currentStep: 0,
+        customerNotes: "Just some notes",
+      });
+
+      const state = useConfiguratorStore.getState();
+      expect(state.product).toEqual(mockProduct);
+      expect(state.fabric).toBeNull();
+      expect(state.selectedOptions).toEqual({});
+      expect(state.customerNotes).toBe("Just some notes");
+    });
+
+    it("does NOT clobber existing options the way setProduct does", () => {
+      // Seed via the public action path -- prove this is not just an
+      // initial-state passthrough.
+      const { setProduct, setFabric, selectOption, hydrate } =
+        useConfiguratorStore.getState();
+      setProduct(mockProduct);
+      setFabric(mockFabric);
+      selectOption("pocket_style", mockPocketOption);
+
+      // Now hydrate with a different selection. Hydrate should fully
+      // replace state, not merge -- but the key contrast vs setProduct
+      // is that selectedOptions/notes/currentStep arrive WITH the call
+      // instead of being reset to {} / 0 / "".
+      hydrate({
+        product: mockProduct,
+        fabric: mockFabric,
+        selectedOptions: { collar_style: mockCollarOption },
+        currentStep: 2,
+        customerNotes: "after hydrate",
+      });
+
+      const state = useConfiguratorStore.getState();
+      expect(state.selectedOptions.collar_style).toEqual(mockCollarOption);
+      expect(state.selectedOptions.pocket_style).toBeUndefined();
+      expect(state.currentStep).toBe(2);
+      expect(state.customerNotes).toBe("after hydrate");
+    });
+
+    it("preserves a currentStep of 0 (does not coerce to a default)", () => {
+      // Guards against a sloppy `step || initialStep` implementation.
+      useConfiguratorStore.getState().goToStep(0);
+      useConfiguratorStore.getState().setProduct(mockProduct);
+      useConfiguratorStore.getState().goToStep(3);
+
+      useConfiguratorStore.getState().hydrate({
+        product: mockProduct,
+        fabric: null,
+        selectedOptions: {},
+        currentStep: 0,
+        customerNotes: "x",
+      });
+
+      expect(useConfiguratorStore.getState().currentStep).toBe(0);
+    });
+  });
 });

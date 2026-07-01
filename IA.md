@@ -854,3 +854,191 @@ and small datasets. FlatList is the right choice for this specific use case.
 > explicitly declared, otherwise recycled cells show stale UI. I also kept
 > FlatList for the small horizontal recently-viewed row where recycling has
 > no benefit and FlashList has known quirks."
+
+---
+
+## Configurator State Restore from Recently Viewed (#49)
+
+When a customer abandons a configurator mid-flow, the next time they tap that
+product (from the Recently Viewed row OR from the catalog) we restore the exact
+state — fabric, options, current step, notes — instead of starting fresh.
+A small "In Progress" pill on the recently viewed card signals the saved draft.
+
+This is a small feature with surprisingly many architectural choices. Each one
+was a fork in the road and a decent talking point on its own.
+
+### Why a Separate `configuratorSnapshotStore` (Not Embedded in Recently Viewed)
+
+The temptation was to extend `recentlyViewedStore` with an optional `snapshot`
+field. We considered it and rejected it for three reasons:
+
+1. **Snapshots are product-only.** Fabrics don't have configurator state.
+   Embedding would have polluted the `RecentlyViewedItem` type with a field that
+   only ever applies to half the items.
+2. **Different lifecycles.** Recently viewed entries persist as browsing
+   history — they stick around. Snapshots are cleared the moment the
+   configuration is consumed (cart-add or order success). Mixing the lifecycles
+   in one store would mean ad-hoc filtering on every read.
+3. **Cleaner test surface.** LRU + dedup on recently viewed is its own
+   domain. Save / restore / partial-reconcile / hydration-gate on snapshots is
+   another. Combining them would have made every test set up state for both
+   features.
+
+The split also keeps the door open for issue #22 (named multi-draft saves),
+which will be a third store, not yet another field on either of these.
+
+### Why ID-Only Snapshots (Not Full Object Snapshots)
+
+The cart store stores full `Product` and `Fabric` objects on `CartItem` so the
+cart card can render without re-fetching. The configurator snapshot store does
+the opposite: it stores only IDs.
+
+The reason is that the configurator already refetches `useProduct`,
+`useProductOptions`, and `useFabric` via React Query when the screen mounts.
+We're not avoiding a fetch — we're avoiding catalog drift. If we stored a
+full `ProductOption` object and the tailor renamed "Spread Collar" to
+"Classic Spread", the customer would resume into a configurator showing the
+old name on a card that no longer matches the catalog. With IDs, we
+re-resolve through React Query and get the current name, image, and price
+modifier. The trade-off is "small disk footprint + always fresh" vs. "slightly
+faster offline render" — for a draft (not a confirmed cart line item), fresh
+wins.
+
+### Hydration Gate as State (Not the Persist Method)
+
+Zustand's persist middleware exposes `useStore.persist.hasHydrated()` — a
+method, not a state slice. That's enough for one-shot reads but not for
+components that need to re-render the moment hydration finishes. We exposed
+`hasHydrated` as a state field on the store, flipped via `onRehydrateStorage`.
+
+This matters because two consumers gate UI on it:
+
+- The "In Progress" pill on `RecentlyViewedRow`. Without the gate, on cold
+  start the pill would be absent for a frame (snapshots map empty), then
+  flash on once rehydrate lands. Visible UI flicker on every app open.
+- The configurator's mount init effect. Without the gate, a synchronous read
+  of `getSnapshot(productId)` would return `undefined` on the first render
+  even when a saved snapshot exists, and the screen would silently
+  `setProduct(product)` and start fresh — silently destroying the customer's
+  draft.
+
+This is the same class of bug as "checking AsyncStorage synchronously without
+awaiting it." Making it state-driven is what lets the rest of the codebase
+forget about the async-rehydrate window.
+
+### Decoupling Route Param from Snapshot State
+
+A reviewer caught this one. My first design had Home check the snapshot store
+and pass `resume: hasSnapshot ? "1" : "0"`. That works on a warm start, but on
+a cold start (snapshot store mid-rehydrate) Home would read an empty map and
+incorrectly pass `resume: "0"`, and the configurator would prompt the customer
+to choose between resuming and starting fresh — when from their perspective
+they tapped Recently Viewed expecting auto-restore.
+
+The fix was to make the route param represent the **entry point**, not the
+data state. Recently Viewed always passes `resume: "1"`. The configurator —
+which already waits on `hasHydrated` — decides what to do with it: if a
+snapshot exists, restore; if not, start fresh. No race.
+
+This is a generalizable pattern: when one component needs to peek at another
+component's async-loaded state to make a decision, push the decision into the
+async-aware component instead.
+
+### `buildHydratedConfig` as a Pure Helper (Not Inside `hydrate`)
+
+The `hydrate` action on `configuratorStore` is dumb on purpose: it accepts a
+fully-resolved `HydratedConfig` and writes every slice in one update. All the
+messy reconciliation — dropping options whose IDs no longer exist, dropping a
+fabric that's been marked unavailable, clamping `currentStep` after the
+product's `option_groups` array shrunk — lives in a pure helper.
+
+Two payoffs:
+
+1. `hydrate` is a one-line setter. Its only test is "does it set state
+   atomically and not invoke setProduct's reset path." Easy.
+2. Every staleness branch tests in isolation. "Option group removed",
+   "fabric unavailable", "step out of range", "snapshot fully invalidated
+   returns null", "notes-only draft preserved" — none of them require
+   spinning up a Zustand store. They're 14 unit tests on a pure function.
+
+This is the same instinct as keeping reducers pure: the moment you let side
+effects creep into state-transition logic, your tests need an environment to
+run.
+
+### Partial Restore (Not Drop-on-Staleness)
+
+When a saved draft references an option that no longer exists, we have two
+choices: drop the whole snapshot, or drop just the invalid pieces and keep
+what's still valid. We picked the second.
+
+Reasoning: a customer who picked a fabric, three options, and typed a
+two-paragraph note shouldn't lose all of that because the tailor
+discontinued one collar style. Partial-restore keeps the valid selections,
+silently drops the invalid ones (the issue spec says to "gracefully ignore
+invalid selections"), and the customer fills in the gap when they reach that
+step. The only case where we return `null` is the fully-empty case — no
+valid fabric, no valid options, no notes — where there's literally nothing
+to restore.
+
+We made one explicit refinement to the empty rule after a review pass:
+notes-only drafts count as non-empty. Whitespace doesn't.
+`customerNotes.trim().length > 0` is the predicate.
+
+### Unmount-Save / Mount-Restore vs. Per-Keystroke Persistence
+
+Two persistence strategies were on the table:
+
+1. **Debounced save on every change.** Each option select fires a
+   `saveSnapshot` call (debounced). Resilient to crashes — the snapshot
+   reflects the latest state at all times.
+2. **Save once on unmount.** Cleanup function on the configurator screen
+   builds the snapshot from current state and persists it.
+
+We picked unmount-only. The argument for debounced is hard-crash resilience,
+but in practice React Native crashes that bypass `componentWillUnmount` are
+rare in dev builds and almost-never in production once Sentry is wired up.
+The cost of debounced saves is real: every selection writes to AsyncStorage,
+multiplying disk I/O on the hot path of the customer's flow.
+
+The unmount cleanup also gets a `consumedRef` guard. Cart-add and order-
+success set the ref to `true` before navigating, and the cleanup respects
+it. Without the guard, a brief async window between "consume" and "unmount"
+could re-save the just-cleared draft. Today the cleanup happens after
+synchronous `reset()` so the guard is defensive, but it locks in correctness
+against future code that might land async work in between.
+
+### Why Clear Snapshots ONLY on Mutation Success
+
+The cart-add path clears the snapshot immediately because cart-add is a
+synchronous Zustand setState — there's no failure mode. But the place-order
+path runs through `useCreateOrder().mutate(...)` which is a server call. The
+clear lives inside the mutation's `onSuccess`, never before.
+
+The reasoning: if the order fails (network issue, server error, backend
+validation), the customer's draft is still valid work. They tap retry, and
+the configurator state is intact. If we'd cleared on submit, the failed
+attempt would have left them with nothing to retry from.
+
+This is the same principle as "don't optimistically commit destructive
+actions" — for any operation that can fail, the destructive cleanup waits
+for the success signal.
+
+### Interview Answer
+
+> "It's a small feature on the surface — restore where the customer left off
+> — but every mechanical choice has a reason. I keep snapshots in their own
+> Zustand store keyed by productId, separate from recently viewed, because
+> the lifecycles differ: snapshots get cleared on consumption, recently
+> viewed entries don't. Snapshots are ID-only, not full objects, because the
+> configurator already refetches via React Query and we'd rather pay the
+> network round-trip than show stale catalog data. The async rehydrate of
+> AsyncStorage-backed Zustand persist is exposed as state, not just the
+> persist method, so the In Progress pill and the configurator's restore
+> decision can subscribe and re-render cleanly. Reconciliation lives in a
+> pure helper — partial-restore, fabric availability check, currentStep
+> clamping, notes-only preservation — so the store action stays atomic and
+> every staleness branch tests as a one-input one-output function. The
+> route param represents entry point ('came from recently viewed'), not
+> data state, which decouples Home from the snapshot store's hydration
+> timing. And the snapshot is cleared inside the order mutation's onSuccess,
+> never before, so a failed order keeps the draft intact."
