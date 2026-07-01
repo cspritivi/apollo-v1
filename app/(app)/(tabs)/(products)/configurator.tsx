@@ -417,11 +417,16 @@ export default function ConfiguratorScreen() {
         />
       </View>
 
-      {/* WhatsApp support FAB — pre-filled with the product being configured */}
+      {/* WhatsApp support FAB — pre-filled with the product being configured.
+        Fabric and step label are included when available so the tailor sees
+        exactly where the customer is in the flow. stepLabels reuses the
+        same array driving the progress bar above. */}
       <SupportFAB
         context={{
           screen: "configurator",
           productName: product?.name ?? "product",
+          fabricName: fabric?.name,
+          stepLabel: stepLabels[currentStep],
         }}
       />
     </View>
